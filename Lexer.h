@@ -21,7 +21,7 @@ enum Token {
     tok_number = -5 //数字
 };
 
-class lexer {
+class Lexer {
 public:
     std::string IdentifierStr; //如果是tok_identifier就传入
     double NumVal = INIT_NUM; //如果是tok_number则表示数字
@@ -31,7 +31,7 @@ public:
 
     /// lexer构造函数：传入代码
     /// params: rawStr 代码全文
-    explicit lexer(FileReaderWrapper fileReader) : fileReaderWrapper(std::move(fileReader)) {}
+    explicit Lexer(FileReaderWrapper fileReader) : fileReaderWrapper(std::move(fileReader)) {}
 
     int getNextToken() {
         static int LastChar = ' ';

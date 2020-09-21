@@ -7,4 +7,4 @@ set(CMAKE_CXX_STANDARD 20)
 link_directories(/usr/local/opt/llvm/lib)
 include_directories(/usr/local/opt/llvm/include)
 
-add_executable(llvm_kaleidoscope main.cpp lexer.cpp lexer.h ExprAST.cpp ExprAST.h parser.cpp parser.h global.h file_reader_wrapper.h)
+add_executable(llvm_kaleidoscope main.cpp Lexer.cpp Lexer.h ExprAST.cpp ExprAST.h parser.cpp parser.h global.h file_reader_wrapper.h)
