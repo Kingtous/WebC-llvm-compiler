@@ -23,8 +23,9 @@ enum Token {
 
 class Lexer {
 public:
-    std::string IdentifierStr; //如果是tok_identifier就传入
+    std::string identifierStr; //如果是tok_identifier就传入
     double NumVal = INIT_NUM; //如果是tok_number则表示数字
+    int currToken; //当前的token
 
     /// 当前的Token
     FileReaderWrapper fileReaderWrapper;
@@ -33,12 +34,13 @@ public:
     /// params: rawStr 代码全文
     explicit Lexer(FileReaderWrapper fileReader) : fileReaderWrapper(std::move(fileReader)) {}
 
-    int getNextToken() {
-        static int LastChar = ' ';
-        while (isspace(LastChar)) {
-            LastChar = fileReaderWrapper.readNext();
-        }
-    }
+    Lexer();
+
+    /// 获取下一个token
+    int getNextToken();
+
+private:
+    int _getNextToken();
 
 };
 

@@ -34,7 +34,10 @@ class BinaryExprAST : public ExprAST {
     char Oper;
     std::unique_ptr<ExprAST> LEA, REA;
 public:
-    explicit BinaryExprAST(char oper) : Oper(oper) {}
+    explicit BinaryExprAST(char oper, std::unique_ptr<ExprAST> LEA, std::unique_ptr<ExprAST> REA) : Oper(oper),
+                                                                                                    LEA(std::move(LEA)),
+                                                                                                    REA(std::move(
+                                                                                                            REA)) {}
 };
 
 /// 函数调用结点
@@ -64,6 +67,16 @@ class FunctionAST : public ExprAST {
 public:
     FunctionAST(std::unique_ptr<PrototypeAST> Proto, std::unique_ptr<ExprAST> Body) : Proto(std::move(Proto)),
                                                                                       Body(std::move(Body)) {}
+};
+
+/// 一元结点 - Expression class for a unary operator.
+class UnaryExprAST : public ExprAST {
+    char Opcode;
+    std::unique_ptr<ExprAST> Operand;
+
+public:
+    UnaryExprAST(char Opcode, std::unique_ptr<ExprAST> Operand)
+            : Opcode(Opcode), Operand(std::move(Operand)) {}
 };
 
 
