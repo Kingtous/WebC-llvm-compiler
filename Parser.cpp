@@ -203,8 +203,12 @@ void Parser::test() {
 }
 
 void Parser::HandleDefinition() {
-    if (parseDefinition()) {
-        fprintf(stderr, "Parsed a function definition.\n");
+    if (auto ast = parseDefinition()) {
+        if (auto *FnIR = ast->codegen()) {
+            fprintf(stderr, "Read function definition:");
+            FnIR->print(llvm::errs());
+            fprintf(stderr, "\n");
+        }
     } else {
         // Skip token for error recovery.
         _lexer.getNextToken();
@@ -212,8 +216,12 @@ void Parser::HandleDefinition() {
 }
 
 void Parser::HandleExtern() {
-    if (parseExtern()) {
-        fprintf(stderr, "Parsed an extern\n");
+    if (auto ast = parseExtern()) {
+        if (auto *FnIR = ast->codegen()) {
+            fprintf(stderr, "Read extern:");
+            FnIR->print(llvm::errs());
+            fprintf(stderr, "\n");
+        }
     } else {
         // Skip token for error recovery.
         _lexer.getNextToken();
@@ -222,8 +230,12 @@ void Parser::HandleExtern() {
 
 void Parser::HandleTopLevelExpression() {
 // Evaluate a top-level expression into an anonymous function.
-    if (parseTopLevelExpr()) {
-        fprintf(stderr, "Parsed a top-level expr\n");
+    if (auto ast = parseTopLevelExpr()) {
+        if (auto *FnIR = ast->codegen()) {
+            fprintf(stderr, "Read top-level expression:");
+            FnIR->print(llvm::errs());
+            fprintf(stderr, "\n");
+        }
     } else {
         // Skip token for error recovery.
         _lexer.getNextToken();

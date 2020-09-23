@@ -13,7 +13,7 @@ message(STATUS "Using defs in: ${LLVM_DEFINITIONS}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-add_executable(llvm_kaleidoscope main.cpp Lexer.cpp Lexer.h ExprAST.cpp ExprAST.h Parser.cpp Parser.h global.h file_reader_wrapper.h err_helper.h err_helper.cpp)
+add_executable(llvm_kaleidoscope main.cpp Lexer.cpp Lexer.h ExprAST.cpp ExprAST.h Parser.cpp Parser.h global.h file_reader_wrapper.h err_helper.h err_helper.cpp global.cpp)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
