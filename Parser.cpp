@@ -10,8 +10,8 @@
 std::unique_ptr<ExprAST> Parser::parseNumberExpr() {
     // 此处使用c++ 11"作者"不小心漏掉的然后被llvm补上的make_unique
     auto result = llvm::make_unique<NumberExprAST>(_lexer.NumVal);
-
-    return std::unique_ptr<ExprAST>();
+    _lexer.getNextToken();
+    return std::move(result);
 }
 
 std::unique_ptr<ExprAST> Parser::parseIdentifierExpr() {
@@ -89,7 +89,7 @@ std::unique_ptr<ExprAST> Parser::parseParentExpr() {
     return v;
 }
 
-Parser::Parser() {
+Parser::Parser(Lexer lexer) : _lexer(lexer) {
     // 定义算术优先级
     binOpPriority['<'] = 10;
     binOpPriority['>'] = 10;
@@ -179,10 +179,10 @@ std::unique_ptr<FunctionAST> Parser::parseTopLevelExpr() {
 }
 
 void Parser::test() {
-    fprintf(stderr, "输入> ");
+    fprintf(stdout, "输入> ");
     _lexer.getNextToken();
     while (1) {
-        fprintf(stderr, "输入> ");
+        fprintf(stdout, "输入> ");
         switch (_lexer.currToken) {
             case tok_eof:
                 return;

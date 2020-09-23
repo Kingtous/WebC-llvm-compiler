@@ -14,7 +14,7 @@
 /// 语法分析器
 class Parser {
 public:
-    Parser();
+    Parser(Lexer lexer);
 
     // 词法分析器
     Lexer _lexer;
@@ -43,13 +43,10 @@ public:
     // 处理extern
     std::unique_ptr<PrototypeAST> parseExtern();
 
-    // 处理unary
-    std::unique_ptr<ExprAST> parseUnary();
-
     // 测试函数：输入任意表达式进行测试
     std::unique_ptr<FunctionAST> parseTopLevelExpr();
 
-    //
+    // 测试
     void test();
 
 private:

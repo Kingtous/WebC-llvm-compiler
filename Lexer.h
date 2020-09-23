@@ -11,6 +11,7 @@
 
 #include "global.h"
 #include "file_reader_wrapper.h"
+#include "FileReader.h"
 
 /// Token类型
 enum Token {
@@ -28,19 +29,21 @@ public:
     int currToken; //当前的token
 
     /// 当前的Token
-    FileReaderWrapper fileReaderWrapper;
+    FileReader reader;
 
     /// lexer构造函数：传入代码
     /// params: rawStr 代码全文
-    explicit Lexer(FileReaderWrapper fileReader) : fileReaderWrapper(std::move(fileReader)) {}
-
-    Lexer();
+    explicit Lexer(FileReader fileReader) : reader(std::move(fileReader)) {}
 
     /// 获取下一个token
     int getNextToken();
 
 private:
     int _getNextToken();
+
+    char getchar();
+
+    char seek();
 
 };
 

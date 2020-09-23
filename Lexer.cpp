@@ -26,8 +26,8 @@ int Lexer::_getNextToken() {
             NumStr += LastChar;
             LastChar = getchar();
         } while (isdigit(LastChar) || LastChar == '.');
-
-        NumVal = strtod(NumStr.c_str(), 0);
+        // TODO 教程此处有问题，此处我认为需要更新LastChar：否则def test(a) a+1;报错
+        NumVal = strtod(NumStr.c_str(), nullptr);
         return tok_number;
     }
     if (LastChar == '#') {
@@ -53,4 +53,11 @@ int Lexer::getNextToken() {
     return currToken = _getNextToken();
 }
 
-Lexer::Lexer() {}
+char Lexer::getchar() {
+    return reader.getchar();
+}
+
+char Lexer::seek() {
+    return reader.seek();
+}
+

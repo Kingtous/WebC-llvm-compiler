@@ -7,17 +7,11 @@
 
 class FileReaderWrapper {
 public:
-    virtual char readNext() { return 0; };
+    virtual char getchar() = 0;
+
+    virtual char seek() = 0;
 
 };
 
-
-class RawTextReader : public FileReaderWrapper {
-    // TODO 增加构造方法
-public:
-    char readNext() override {
-        return FileReaderWrapper::readNext();
-    }
-};
 
 #endif //LLVM_KALEIDOSCOPE_FILE_READER_WRAPPER_H
