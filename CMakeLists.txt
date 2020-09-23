@@ -17,7 +17,7 @@ add_executable(llvm_kaleidoscope main.cpp Lexer.cpp Lexer.h ExprAST.cpp ExprAST.
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
-llvm_map_components_to_libnames(llvm_libs support core irreader)
+llvm_map_components_to_libnames(llvm_libs all)
 
 # Link against LLVM libraries
 target_link_libraries(llvm_kaleidoscope ${llvm_libs})

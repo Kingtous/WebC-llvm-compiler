@@ -13,3 +13,5 @@ llvm::IRBuilder<> Builder = llvm::IRBuilder<>(TheContext);
 std::unique_ptr<llvm::Module> TheModule = llvm::make_unique<llvm::Module>("Kingtous JIT", TheContext);
 /// 跟踪哪些值在当前范围以及他们LLVM表示被定义。（换句话说，它是代码的符号表）。
 std::map<std::string, llvm::Value *> NamedValues = std::map<std::string, llvm::Value *>();
+/// 遍优化器
+std::unique_ptr<llvm::FunctionPassManager> TheFPM = llvm::make_unique<llvm::FunctionPassManager>(TheModule.get());

@@ -1,1 +1,4 @@
-def test(x) 1+2+x;
+def average(x y) (x+y)/2;
+
+
+def main() average(3,4);

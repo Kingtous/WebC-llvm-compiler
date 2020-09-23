@@ -179,10 +179,10 @@ std::unique_ptr<FunctionAST> Parser::parseTopLevelExpr() {
 }
 
 void Parser::test() {
-    fprintf(stdout, "输入> ");
+    //fprintf(stdout, "输入> ");
     _lexer.getNextToken();
     while (1) {
-        fprintf(stdout, "输入> ");
+        //fprintf(stdout, "输入> ");
         switch (_lexer.currToken) {
             case tok_eof:
                 return;
