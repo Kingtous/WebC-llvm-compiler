@@ -17,7 +17,7 @@ int main() {
 //    // Simplify the control flow graph (deleting unreachable blocks, etc).
 //    TheFPM->addPass(createCFGSimplificationPass());
     //
-    FileReader reader("/Users/kingtous/CLionProjects/llvm-kaleidoscope/test.kl");
+    FileReader reader("../test.kl");
     Lexer lexer(reader);
     Parser parser(lexer);
     parser.test();

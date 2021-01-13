@@ -7,9 +7,9 @@
 
 #include <string>
 
-#include "file_reader_wrapper.h"
+#include "IFileReader.h"
 
-class FileReader : public FileReaderWrapper {
+class FileReader : public IFileReader {
 
     std::string content;
     unsigned int index = 0;

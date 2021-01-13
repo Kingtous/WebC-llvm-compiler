@@ -9,17 +9,20 @@
 #include <string>
 #include <utility>
 
-#include "global.h"
-#include "file_reader_wrapper.h"
+#include "Global.h"
+#include "IFileReader.h"
 #include "FileReader.h"
 
 /// Token类型
 enum Token {
-    tok_eof = -1, // EOF
-    tok_def = -2, // 函数定义
-    tok_extern = -3, //调用的标准库函数
-    tok_identifier = -4, //标识符
-    tok_number = -5 //数字
+    tok_eof = 258, // EOF
+    tok_func = 259, // 函数定义
+    tok_identifier = 260, //标识符: + - * /
+    tok_number = 261, //数字
+    tok_if = 262,
+    tok_else = 263,
+    tok_elif = 264,
+    tok_comma = 265 //逗号
 };
 
 class Lexer {

@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "global.h"
+#include "Global.h"
 
 
 /// 基结点
@@ -104,5 +104,17 @@ public:
             : Opcode(Opcode), Operand(std::move(Operand)) {}
 };
 
+
+/// 条件结点
+class ConditionAST : public ExprAST {
+    std::unique_ptr<ExprAST> if_cond;
+    std::unique_ptr<ExprAST> if_stmt;
+    std::unique_ptr<ExprAST> else_stmt;
+public:
+    ConditionAST(std::unique_ptr<ExprAST> if_cond, std::unique_ptr<ExprAST> else_cond) : if_cond(std::move(if_cond)),
+                                                                                      else_cond(std::move(else_cond)) {}
+
+    llvm::Value *codegen() override;
+};
 
 #endif //LLVM_KALEIDOSCOPE_EXPRAST_H

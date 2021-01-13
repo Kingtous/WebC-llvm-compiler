@@ -9,15 +9,44 @@ int Lexer::_getNextToken() {
     while (isspace(LastChar)) {
         LastChar = getchar();
     }
+    if (LastChar == ','){
+        return tok_comma;
+    }
     if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
         identifierStr = char(LastChar);
         while (isalnum((LastChar = getchar())))
             identifierStr += LastChar;
 
-        if (identifierStr == "def")
-            return tok_def;
-        else if (identifierStr == "extern")
-            return tok_extern;
+        if (identifierStr == "def"){
+            return tok_func;
+        }
+        else if (identifierStr == "const"){
+            return tok_const;
+        }
+        else if (identifierStr == "int"){
+            return tok_int; // int 基本类型声明
+        }
+        else if (identifierStr == "void"){
+            return tok_void;
+        }
+        else if (identifierStr == "if"){
+            return tok_if;
+        }
+        else if (identifierStr == "else"){
+            return tok_else;
+        }
+        else if (identifierStr == "while"){
+            return tok_while;
+        }
+        else if (identifierStr == "break"){
+            return tok_break;
+        }
+        else if (identifierStr == "continue"){
+            return tok_continue;
+        }
+        else if (identifierStr == "return"){
+            return tok_return;
+        }
         return tok_identifier;
     }
     if (isdigit(LastChar) || LastChar == '.') {   // Number: [0-9.]+

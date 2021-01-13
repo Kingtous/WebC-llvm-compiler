@@ -89,6 +89,22 @@ std::unique_ptr<ExprAST> Parser::parseParentExpr() {
     return v;
 }
 
+std::unique_ptr<ExprAST> Parser::parseCondition() {
+    _lexer.getNextToken();//过滤(
+    auto v = parseExpression(); //获取里面的内容
+    if (!v) {
+        // 出错
+        return nullptr;
+    }
+    // 判断里面
+
+    if (_lexer.currToken != ')') {
+        return LogError("expected ')'");
+    }
+    _lexer.getNextToken();
+    return v;
+}
+
 Parser::Parser(Lexer lexer) : _lexer(lexer) {
     // 定义算术优先级
     binOpPriority['<'] = 10;
@@ -145,8 +161,17 @@ std::unique_ptr<PrototypeAST> Parser::parsePrototypeExpr() {
 
     // Read the list of argument names.
     std::vector<std::string> ArgNames;
-    while (_lexer.getNextToken() == tok_identifier)
-        ArgNames.push_back(_lexer.identifierStr);
+    // (a,b)
+    while (true){
+        int nextToken = _lexer.getNextToken();
+        if (nextToken == tok_identifier){
+            ArgNames.push_back(_lexer.identifierStr);
+        } else if (nextToken == tok_comma){
+            continue;
+        } else {
+            break;
+        }
+    }
     if (_lexer.currToken != ')')
         return LogErrorP("Expected ')' in prototype");
     // success.
@@ -189,7 +214,7 @@ void Parser::test() {
             case ';': // ignore top-level semicolons.
                 _lexer.getNextToken();
                 break;
-            case tok_def:
+            case tok_func:
                 HandleDefinition();
                 break;
             case tok_extern:

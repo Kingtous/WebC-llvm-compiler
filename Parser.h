@@ -8,7 +8,7 @@
 #include <map>
 #include <llvm/ADT/STLExtras.h>
 
-#include "err_helper.h"
+#include "ErrHelper.h"
 #include "Lexer.h"
 
 /// 语法分析器
@@ -30,6 +30,9 @@ public:
 
     // 封装的处理方法
     std::unique_ptr<ExprAST> parsePrimary();
+
+    // 封装条件语句
+    std::unique_ptr<ExprAST> parseCondition();
 
     // 处理带有括号的表达式
     std::unique_ptr<ExprAST> parseParentExpr();

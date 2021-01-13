@@ -2,7 +2,7 @@
 // Created by 金韬 on 2020/9/22.
 //
 
-#include "global.h"
+#include "Global.h"
 
 /// 全局变量
 // TheContext 是一个不透明的对象，拥有许多核心LLVM数据结构，例如类型和常量值表。

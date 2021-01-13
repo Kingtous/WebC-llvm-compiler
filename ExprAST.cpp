@@ -3,7 +3,7 @@
 //
 
 #include "ExprAST.h"
-#include "err_helper.h"
+#include "ErrHelper.h"
 
 
 llvm::Value *NumberExprAST::codegen() {
@@ -82,6 +82,23 @@ llvm::Function *PrototypeAST::codegen() {
     return F;
 }
 
+llvm::Function *ConditionAST::codegen() {
+    // Make the function type:  double(double,double) etc.
+    llvm::FunctionType *FT =
+            llvm::FunctionType::get(llvm::Type::getDoubleTy(TheContext), Doubles, false);
+
+    llvm::Function *F =
+            llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, TheModule.get());
+
+    // Set names for all arguments.
+    unsigned Idx = 0;
+    for (auto &Arg : F->args())
+        Arg.setName(args[Idx++]);
+
+    return F;
+}
+
+
 const std::string &PrototypeAST::getName() const {
     return name;
 }
@@ -99,7 +116,7 @@ llvm::Function *FunctionAST::codegen() {
         return (llvm::Function *) LogErrorV("Function cannot be redefined.");
 
     // Create a new basic block to start insertion into.
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "entry", TheFunction);
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "jintao_entry", TheFunction);
     Builder.SetInsertPoint(BB);
 
     // Record the function arguments in the NamedValues map.
