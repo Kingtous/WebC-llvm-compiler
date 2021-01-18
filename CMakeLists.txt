@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(llvm_kaleidoscope)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 find_package(LLVM REQUIRED CONFIG)
 
@@ -13,7 +13,9 @@ message(STATUS "Using defs in: ${LLVM_DEFINITIONS}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-add_executable(llvm_kaleidoscope main.cpp Lexer.cpp Lexer.h ExprAST.cpp ExprAST.h Parser.cpp Parser.h Global.h IFileReader.h ErrHelper.h ErrHelper.cpp Global.cpp FileReader.cpp FileReader.h)
+add_executable(llvm_kaleidoscope 
+	main.cpp Lexer.cpp Lexer.h NodeAST.cpp NodeAST.h Parser.cpp Parser.h Global.h
+	ErrHelper.h ErrHelper.cpp Global.cpp FileReader.cpp FileReader.h IFileReader.h)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

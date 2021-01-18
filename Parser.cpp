@@ -7,14 +7,14 @@
 
 /// 生成：数字结点 ::= 数字
 /// 当token为tok_number时调用生成一个AST子树
-std::unique_ptr<ExprAST> Parser::parseNumberExpr() {
+std::unique_ptr<NodeAST> Parser::parseNumberExpr() {
     // 此处使用c++ 11"作者"不小心漏掉的然后被llvm补上的make_unique
     auto result = llvm::make_unique<NumberExprAST>(_lexer.NumVal);
     _lexer.getNextToken();
     return std::move(result);
 }
 
-std::unique_ptr<ExprAST> Parser::parseIdentifierExpr() {
+std::unique_ptr<NodeAST> Parser::parseIdentifierExpr() {
     std::string name = _lexer.identifierStr;
     _lexer.getNextToken();
 
@@ -25,7 +25,7 @@ std::unique_ptr<ExprAST> Parser::parseIdentifierExpr() {
         // 证明此时为一个函数调用：function(
         _lexer.getNextToken();
         // 开启获取文本函数调用
-        std::vector<std::unique_ptr<ExprAST>> args;
+        std::vector<std::unique_ptr<NodeAST>> args;
         if (_lexer.currToken != ')') {
             // 还没碰到)
             while (true) {
@@ -54,7 +54,7 @@ std::unique_ptr<ExprAST> Parser::parseIdentifierExpr() {
 
 }
 
-std::unique_ptr<ExprAST> Parser::parseExpression() {
+std::unique_ptr<NodeAST> Parser::parseExpression() {
     auto L = parsePrimary();
     if (!L) {
         return nullptr;
@@ -62,7 +62,7 @@ std::unique_ptr<ExprAST> Parser::parseExpression() {
     return parseBinOpRHS(0, std::move(L));
 }
 
-std::unique_ptr<ExprAST> Parser::parsePrimary() {
+std::unique_ptr<NodeAST> Parser::parsePrimary() {
     switch (_lexer.currToken) {
         case tok_identifier:
             return parseIdentifierExpr();
@@ -70,12 +70,14 @@ std::unique_ptr<ExprAST> Parser::parsePrimary() {
             return parseNumberExpr();
         case '(':
             return parseParentExpr();
+        case tok_if:
+            return parseIfExpr();
         default:
             return LogError("unknown token");
     }
 }
 
-std::unique_ptr<ExprAST> Parser::parseParentExpr() {
+std::unique_ptr<NodeAST> Parser::parseParentExpr() {
     _lexer.getNextToken();//过滤(
     auto v = parseExpression(); //获取里面的内容
     if (!v) {
@@ -89,7 +91,21 @@ std::unique_ptr<ExprAST> Parser::parseParentExpr() {
     return v;
 }
 
-std::unique_ptr<ExprAST> Parser::parseCondition() {
+std::unique_ptr<ConditionAST> Parser::parseIfExpr() {
+    _lexer.getNextToken();//过滤(
+    auto v = parseExpression(); //获取里面的内容
+    if (!v) {
+        // 出错
+        return nullptr;
+    }
+    if (_lexer.currToken != ')') {
+        return LogError("expected ')'");
+    }
+    _lexer.getNextToken();
+    return v;
+}
+
+std::unique_ptr<NodeAST> Parser::parseCondition() {
     _lexer.getNextToken();//过滤(
     auto v = parseExpression(); //获取里面的内容
     if (!v) {
@@ -115,7 +131,7 @@ Parser::Parser(Lexer lexer) : _lexer(lexer) {
     binOpPriority['/'] = 35;
 }
 
-std::unique_ptr<ExprAST> Parser::parseBinOpRHS(int priority, std::unique_ptr<ExprAST> &&L) {
+std::unique_ptr<NodeAST> Parser::parseBinOpRHS(int priority, std::unique_ptr<NodeAST> &&L) {
     while (1) {
         int tokenPriority = getTokenPriority();
         if (tokenPriority < priority) {

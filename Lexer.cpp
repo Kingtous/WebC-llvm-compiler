@@ -23,12 +23,6 @@ int Lexer::_getNextToken() {
         else if (identifierStr == "const"){
             return tok_const;
         }
-        else if (identifierStr == "int"){
-            return tok_int; // int 基本类型声明
-        }
-        else if (identifierStr == "void"){
-            return tok_void;
-        }
         else if (identifierStr == "if"){
             return tok_if;
         }

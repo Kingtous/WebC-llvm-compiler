@@ -22,7 +22,13 @@ enum Token {
     tok_if = 262,
     tok_else = 263,
     tok_elif = 264,
-    tok_comma = 265 //逗号
+    tok_comma = 265, //逗号
+    tok_const = 266,
+    tok_extern = 267,
+    tok_while = 268,
+    tok_break = 269,
+    tok_continue = 270,
+    tok_return = 271
 };
 
 class Lexer {

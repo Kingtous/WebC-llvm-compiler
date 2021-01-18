@@ -5,6 +5,7 @@
 #ifndef LLVM_KALEIDOSCOPE_GLOBAL_H
 #define LLVM_KALEIDOSCOPE_GLOBAL_H
 
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
@@ -35,6 +36,9 @@
 
 /// 初始化数字
 #define INIT_NUM -1
+
+/// 特性前缀
+#define LabelPrefix "neuq_kingtous_"
 
 /// 全局变量
 /// TheContext 是一个不透明的对象，拥有许多核心LLVM数据结构，例如类型和常量值表。

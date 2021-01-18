@@ -6,10 +6,10 @@
 #define LLVM_KALEIDOSCOPE_ERRHELPER_H
 
 #include <memory>
-#include "ExprAST.h"
+#include "NodeAST.h"
 
 /// LogError* - These are little helper functions for error handling.
-std::unique_ptr<ExprAST> LogError(const char *Str);
+std::unique_ptr<NodeAST> LogError(const char *Str);
 
 std::unique_ptr<PrototypeAST> LogErrorP(const char *Str);
 

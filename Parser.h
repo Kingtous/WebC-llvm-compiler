@@ -20,22 +20,22 @@ public:
     Lexer _lexer;
 
     // 解析数字
-    std::unique_ptr<ExprAST> parseNumberExpr();
+    std::unique_ptr<NodeAST> parseNumberExpr();
 
     // 解析标识符
-    std::unique_ptr<ExprAST> parseIdentifierExpr();
+    std::unique_ptr<NodeAST> parseIdentifierExpr();
 
     // 解析表达式
-    std::unique_ptr<ExprAST> parseExpression();
+    std::unique_ptr<NodeAST> parseExpression();
 
     // 封装的处理方法
-    std::unique_ptr<ExprAST> parsePrimary();
+    std::unique_ptr<NodeAST> parsePrimary();
 
     // 封装条件语句
-    std::unique_ptr<ExprAST> parseCondition();
+    std::unique_ptr<NodeAST> parseCondition();
 
     // 处理带有括号的表达式
-    std::unique_ptr<ExprAST> parseParentExpr();
+    std::unique_ptr<NodeAST> parseParentExpr();
 
     // 处理extern
     std::unique_ptr<PrototypeAST> parsePrototypeExpr();
@@ -46,6 +46,9 @@ public:
     // 处理extern
     std::unique_ptr<PrototypeAST> parseExtern();
 
+    // 处理if
+    std::unique_ptr<ConditionAST> parseIfExpr();
+
     // 测试函数：输入任意表达式进行测试
     std::unique_ptr<FunctionAST> parseTopLevelExpr();
 
@@ -55,7 +58,7 @@ public:
 private:
     std::map<char, int> binOpPriority;
 
-    std::unique_ptr<ExprAST> parseBinOpRHS(int priority, std::unique_ptr<ExprAST> &&uniquePtr);
+    std::unique_ptr<NodeAST> parseBinOpRHS(int priority, std::unique_ptr<NodeAST> &&uniquePtr);
 
     // 获取token优先级
     int getTokenPriority();
