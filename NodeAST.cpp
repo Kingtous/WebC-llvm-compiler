@@ -5,7 +5,7 @@
 #include "NodeAST.h"
 #include "ErrHelper.h"
 
-llvm::Value *NumberExprAST::codegen() {
+llvm::Value *DoubleExprAST::codegen() {
     // 在LLVM IR中，数字常量用ConstantFP类表示 ，它在APFloat 内部保存数值（APFloat能够保持任意精度的浮点常量）
     return llvm::ConstantFP::get(TheContext, llvm::APFloat(Val));
 }
@@ -42,6 +42,9 @@ llvm::Value *BinaryExprAST::codegen() {
             return LogErrorV("invalid binary operator");
     }
 }
+
+BinaryExprAST::BinaryExprAST(char oper, ExpressionAST *lea, const ExpressionAST &rea) : Oper(oper), LEA(lea),
+                                                                                        REA(rea) {}
 
 llvm::Value *CallExprAST::codegen() {
     // Look up the name in the global module table.
@@ -186,6 +189,10 @@ const std::string &PrototypeAST::getName() const {
     return name;
 }
 
+PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST> &args) {
+
+}
+
 llvm::Function *FunctionAST::codegen() {
     llvm::Function *TheFunction = TheModule->getFunction(Proto->getName());
 
@@ -222,6 +229,8 @@ llvm::Function *FunctionAST::codegen() {
     return nullptr;
 }
 
+FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {}
+
 int NodeAST::getAstType() const {
     return astType;
 }
@@ -238,3 +247,15 @@ Value *BlockAST::codegen() {
     }
     return lastStatementValue;
 }
+
+VariableDeclarationAST::VariableDeclarationAST(const string &type, const string &identifier) : type(type),
+                                                                                               identifier(identifier) {}
+
+Value *ExpressionStatementAST::codegen() {
+    return nullptr;
+}
+
+ExpressionStatementAST::ExpressionStatementAST(ExpressionAST *expr) : expr(expr) {}
+
+VariableAssignmentAST::VariableAssignmentAST(const string &identifier, ExpressionAST *expr) : identifier(identifier),
+                                                                                              expr(expr) {}

@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "IFIleReader.h"
+#include "IFileReader.h"
 
 class FileReader : public IFileReader {
 

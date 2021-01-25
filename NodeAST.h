@@ -16,8 +16,6 @@ using namespace llvm;
 
 enum ASTType {
     TopAST = 0,
-
-
 };
 
 //////////////////// 基类结点 ///////////////////////
@@ -25,11 +23,6 @@ enum ASTType {
 /// 基结点
 class NodeAST {
 public:
-    int astType = 0;
-
-    int getAstType() const;
-
-    void setAstType(int astType);
 
     virtual ~NodeAST() = default;
 
@@ -44,6 +37,14 @@ class ExpressionAST : public NodeAST {
 class StatementAST : public NodeAST {
 };
 
+class ExpressionStatementAST : public NodeAST {
+    ExpressionAST* expr;
+public:
+    ExpressionStatementAST(ExpressionAST *expr);
+
+    Value *codegen() override;
+};
+
 /// 块结点，一个块含有多种声明，也可作为一个程序的入口点
 class BlockAST : public NodeAST {
 public:
@@ -54,12 +55,77 @@ public:
 
 //////////////////// 用于存储数字的结点 ///////////////////////
 
+// 标识符
+class IdentifierExprAST : public ExpressionAST {
+public:
+    std::string identifier;
+
+    explicit IdentifierExprAST(std::string identifier) : identifier(std::move(identifier)) {}
+
+    /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
+    /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
+    /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
+    /// 换句话说，没有办法“改变”SSA值。
+    llvm::Value *codegen() override;
+};
+
+// 变量声明语句
+class VariableDeclarationAST : public ExpressionAST {
+public:
+    // 变量类型
+    std::string type;
+    // 变量名
+    std::string identifier;
+    // 可能有赋值
+    ExpressionAST* expr;
+
+    VariableDeclarationAST(const string &type, const string &identifier);
+
+    /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
+    /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
+    /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
+    /// 换句话说，没有办法“改变”SSA值。
+    llvm::Value *codegen() override;
+};
+
+// 变量声明语句
+class VariableAssignmentAST : public ExpressionAST {
+public:
+    // 变量名
+    std::string identifier;
+    // 可能有赋值
+    ExpressionAST* expr;
+
+    VariableAssignmentAST(const string &identifier, ExpressionAST *expr);
+
+    /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
+    /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
+    /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
+    /// 换句话说，没有办法“改变”SSA值。
+    llvm::Value *codegen() override;
+};
+
+
 /// 数值语法结点
-class NumberExprAST : public ExpressionAST {
+class DoubleExprAST : public ExpressionAST {
 public:
     double Val;
 
-    explicit NumberExprAST(double val) : Val(val) {}
+    explicit DoubleExprAST(double val) : Val(val) {}
+
+    /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
+    /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
+    /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
+    /// 换句话说，没有办法“改变”SSA值。
+    llvm::Value *codegen() override;
+};
+
+/// 数值语法结点
+class IntegerExprAST : public ExpressionAST {
+public:
+    int Val;
+
+    explicit IntegerExprAST(int val) : Val(val) {}
 
     /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
     /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
@@ -81,12 +147,10 @@ public:
 class BinaryExprAST : public ExpressionAST {
     // 操作符
     char Oper;
-    std::unique_ptr<NodeAST> LEA, REA;
+    ExpressionAST* LEA;
+    ExpressionAST* REA;
 public:
-    explicit BinaryExprAST(char oper, std::unique_ptr<NodeAST> LEA, std::unique_ptr<NodeAST> REA) : Oper(oper),
-                                                                                                    LEA(std::move(LEA)),
-                                                                                                    REA(std::move(
-                                                                                                            REA)) {}
+    BinaryExprAST(char oper, ExpressionAST *lea, const ExpressionAST &rea);
 
     llvm::Value *codegen() override;
 };
@@ -94,10 +158,10 @@ public:
 /// 函数调用结点
 class CallExprAST : public ExpressionAST {
     std::string callName;
-    std::vector<std::unique_ptr<NodeAST>> args;
+    std::vector<ExpressionAST*> args;
 
 public:
-    CallExprAST(std::string callName, std::vector<std::unique_ptr<NodeAST>> args) : callName(std::move(callName)),
+    CallExprAST(std::string callName, std::vector<ExpressionAST*> args) : callName(std::move(callName)),
                                                                                     args(std::move(args)) {};
 
     llvm::Value *codegen() override;
@@ -106,11 +170,12 @@ public:
 /// 函数描述结点
 /// 用于描述函数名字，参数名称，参数个数
 class PrototypeAST : public NodeAST {
+    std::string returnType;
     std::string name;
-    std::vector<std::string> args;
+    std::vector<VariableDeclarationAST> args;
 
 public:
-    PrototypeAST(std::string name, std::vector<std::string> args) : name(std::move(name)), args(std::move(args)) {}
+    PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST> &args);
 
     llvm::Function *codegen() override;
 
@@ -119,11 +184,10 @@ public:
 
 /// 函数结点
 class FunctionAST : public NodeAST {
-    std::unique_ptr<PrototypeAST> Proto;
-    std::unique_ptr<NodeAST> Body;
+    PrototypeAST* Proto;
+    BlockAST* Body;
 public:
-    FunctionAST(std::unique_ptr<PrototypeAST> Proto, std::unique_ptr<NodeAST> Body) : Proto(std::move(Proto)),
-                                                                                      Body(std::move(Body)) {}
+    FunctionAST(PrototypeAST *proto, BlockAST *body);
 
     llvm::Function *codegen() override;
 };

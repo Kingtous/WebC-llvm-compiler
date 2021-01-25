@@ -1,6 +1,6 @@
 #include <iostream>
-#include "Parser.h"
-#include "FileReader.h"
+#include "parser/Parser.h"
+#include "parser/FileReader.h"
 
 using namespace llvm;
 

@@ -8,7 +8,7 @@
 #include <map>
 #include <llvm/ADT/STLExtras.h>
 
-#include "ErrHelper.h"
+#include "../ErrHelper.h"
 #include "Lexer.h"
 
 /// 语法分析器

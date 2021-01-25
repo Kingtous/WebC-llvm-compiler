@@ -13,9 +13,12 @@ message(STATUS "Using defs in: ${LLVM_DEFINITIONS}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+aux_source_directory(parser PARSER)
+
 add_executable(llvm_kaleidoscope 
-	main.cpp Lexer.cpp Lexer.h NodeAST.cpp NodeAST.h Parser.cpp Parser.h Global.h
-	ErrHelper.h ErrHelper.cpp Global.cpp FileReader.cpp FileReader.h IFileReader.h)
+	main.cpp NodeAST.cpp NodeAST.h Global.h
+	ErrHelper.h ErrHelper.cpp Global.cpp ${PARSER}
+		)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

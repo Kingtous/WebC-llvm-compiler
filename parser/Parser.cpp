@@ -9,7 +9,7 @@
 /// 当token为tok_number时调用生成一个AST子树
 std::unique_ptr<NodeAST> Parser::parseNumberExpr() {
     // 此处使用c++ 11"作者"不小心漏掉的然后被llvm补上的make_unique
-    auto result = llvm::make_unique<NumberExprAST>(_lexer.NumVal);
+    auto result = llvm::make_unique<DoubleExprAST>(_lexer.NumVal);
     _lexer.getNextToken();
     return std::move(result);
 }

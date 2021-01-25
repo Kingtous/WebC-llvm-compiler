@@ -9,9 +9,10 @@
 #include <string>
 #include <utility>
 
-#include "Global.h"
+#include "../Global.h"
 #include "IFileReader.h"
 #include "FileReader.h"
+#include "NewParser.tab.h"
 
 /// Token类型
 enum Token {
