@@ -104,7 +104,98 @@ static BlockAST* program;
 #  endif
 # endif
 
-#include "NewParser.tab.h"
+
+/* Debug traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
+
+/* Token kinds.  */
+#ifndef YYTOKENTYPE
+# define YYTOKENTYPE
+  enum yytokentype
+  {
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    T_IDENTIFIER = 258,            /* T_IDENTIFIER  */
+    T_INTEGER = 259,               /* T_INTEGER  */
+    T_DOUBLE = 260,                /* T_DOUBLE  */
+    T_ADD = 261,                   /* T_ADD  */
+    T_SUB = 262,                   /* T_SUB  */
+    T_MUL = 263,                   /* T_MUL  */
+    T_DIV = 264,                   /* T_DIV  */
+    T_MOD = 265,                   /* T_MOD  */
+    T_ASSIGN = 266,                /* T_ASSIGN  */
+    T_EQU = 267,                   /* T_EQU  */
+    T_N_EQU = 268,                 /* T_N_EQU  */
+    T_LESS = 269,                  /* T_LESS  */
+    T_GREATER = 270,               /* T_GREATER  */
+    T_REVERSE = 271,               /* T_REVERSE  */
+    T_LESS_EQU = 272,              /* T_LESS_EQU  */
+    T_GREATER_EQU = 273,           /* T_GREATER_EQU  */
+    T_COMMA = 274,                 /* T_COMMA  */
+    T_SEMICOLON = 275,             /* T_SEMICOLON  */
+    T_L_SPAR = 276,                /* T_L_SPAR  */
+    T_R_SPAR = 277,                /* T_R_SPAR  */
+    T_L_MPAR = 278,                /* T_L_MPAR  */
+    T_R_MPAR = 279,                /* T_R_MPAR  */
+    T_L_LPAR = 280,                /* T_L_LPAR  */
+    T_R_LPAR = 281,                /* T_R_LPAR  */
+    T_FOR = 282,                   /* T_FOR  */
+    T_WHILE = 283,                 /* T_WHILE  */
+    T_BREAK = 284,                 /* T_BREAK  */
+    T_CONTINUE = 285,              /* T_CONTINUE  */
+    T_IF = 286,                    /* T_IF  */
+    T_ELSE = 287,                  /* T_ELSE  */
+    T_RETURN = 288,                /* T_RETURN  */
+    T_VOID = 289,                  /* T_VOID  */
+    T_INT = 290,                   /* T_INT  */
+    T_OR = 291,                    /* T_OR  */
+    T_AND = 292,                   /* T_AND  */
+    T_MINUS = 293,                 /* T_MINUS  */
+    T_POS = 294                    /* T_POS  */
+  };
+  typedef enum yytokentype yytoken_kind_t;
+#endif
+
+/* Value type.  */
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+union YYSTYPE
+{
+#line 16 "NewParser.y"
+
+	Node* node;
+	ExpressionAST* expr;
+	StatementAST* stmt;
+	BlockAST* block;
+	IdentifierExprAST* IdentifierExprAST;
+	VariableDeclarationAST* vdeclar;
+	std::vector<VariableDeclarationAST*> *varvec;
+	std::vector<ExpressionAST*> *exprvec;
+	std::string *string;
+	double double_value;
+	int int_value;
+	int token;
+
+#line 186 "NewParser.tab.c"
+
+};
+typedef union YYSTYPE YYSTYPE;
+# define YYSTYPE_IS_TRIVIAL 1
+# define YYSTYPE_IS_DECLARED 1
+#endif
+
+
+extern YYSTYPE yylval;
+
+int yyparse (void);
+
+
 /* Symbol kind.  */
 enum yysymbol_kind_t
 {
@@ -534,9 +625,9 @@ static const yytype_int8 yytranslate[] =
 static const yytype_uint8 yyrline[] =
 {
        0,    70,    70,    75,    76,    79,    80,    83,    88,    89,
-      96,    97,    98,    99,   100,   101,   104,   105,   106,   110,
-     114,   120,   121,   122,   123,   124,   125,   126,   127,   128,
-     129,   130,   133,   134,   137,   144,   145,   147
+      97,    98,    99,   100,   101,   102,   105,   106,   107,   111,
+     115,   121,   122,   123,   124,   125,   126,   127,   128,   129,
+     130,   131,   134,   135,   138,   145,   146,   148
 };
 #endif
 
@@ -1159,146 +1250,146 @@ yyreduce:
                 {
 			program = (yyvsp[0].block);
 		}
-#line 1163 "NewParser.tab.c"
+#line 1254 "NewParser.tab.c"
     break;
 
   case 3: /* stmts: stmt  */
 #line 75 "NewParser.y"
              {(yyval.block) = new BlockAST(); (yyval.block)->statements.push_back((yyvsp[0].stmt));}
-#line 1169 "NewParser.tab.c"
+#line 1260 "NewParser.tab.c"
     break;
 
   case 4: /* stmts: stmts stmt  */
 #line 76 "NewParser.y"
                      {(yyvsp[-1].block)->statements.push_back((yyvsp[0].stmt));}
-#line 1175 "NewParser.tab.c"
+#line 1266 "NewParser.tab.c"
     break;
 
   case 7: /* ident: T_IDENTIFIER  */
 #line 83 "NewParser.y"
                      { (yyval.ident) = new IdentifierExprAST(*(yyvsp[0].ident)); delete (yyvsp[0].ident);}
-#line 1181 "NewParser.tab.c"
+#line 1272 "NewParser.tab.c"
     break;
 
   case 8: /* var_decl: ident ident  */
 #line 88 "NewParser.y"
                        {(yyval.stmt) = new VariableDeclarationAST(*(yyvsp[-1].ident),*(yyvsp[0].ident));}
-#line 1187 "NewParser.tab.c"
+#line 1278 "NewParser.tab.c"
     break;
 
   case 9: /* var_decl: ident ident T_ASSIGN expr  */
 #line 89 "NewParser.y"
                                     {(yyval.stmt) = new VariableDeclarationAST(*(yyvsp[-3].ident),*(yyvsp[-2].ident),(yyvsp[0].expr));}
-#line 1193 "NewParser.tab.c"
+#line 1284 "NewParser.tab.c"
     break;
 
   case 10: /* expr: ident T_ASSIGN expr  */
-#line 96 "NewParser.y"
+#line 97 "NewParser.y"
                            {(yyval.expr) = new VariableAssignmentAST(*(yyvsp[-2].ident),(yyvsp[0].expr));}
-#line 1199 "NewParser.tab.c"
+#line 1290 "NewParser.tab.c"
     break;
 
   case 11: /* expr: ident T_L_SPAR call_args T_R_SPAR  */
-#line 97 "NewParser.y"
+#line 98 "NewParser.y"
                                             {(yyval.expr) = new CallExprAST(*(yyvsp[-3].ident),*(yyvsp[-1].exprvec)); }
-#line 1205 "NewParser.tab.c"
+#line 1296 "NewParser.tab.c"
     break;
 
   case 12: /* expr: ident  */
-#line 98 "NewParser.y"
+#line 99 "NewParser.y"
                 {(yyval.ident) = (yyvsp[0].ident);}
-#line 1211 "NewParser.tab.c"
+#line 1302 "NewParser.tab.c"
     break;
 
   case 14: /* expr: expr bin_oper expr  */
-#line 100 "NewParser.y"
+#line 101 "NewParser.y"
                              {(yyval.expr) = new BinaryExprAST((yyvsp[-1].token),(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1217 "NewParser.tab.c"
+#line 1308 "NewParser.tab.c"
     break;
 
   case 15: /* expr: T_L_SPAR expr T_R_SPAR  */
-#line 101 "NewParser.y"
+#line 102 "NewParser.y"
                                  {(yyval.expr) = (yyvsp[-1].expr);}
-#line 1223 "NewParser.tab.c"
+#line 1314 "NewParser.tab.c"
     break;
 
   case 16: /* call_args: %empty  */
-#line 104 "NewParser.y"
+#line 105 "NewParser.y"
              {(yyval.exprvec) = new std::vector<ExpressionAST*>();}
-#line 1229 "NewParser.tab.c"
+#line 1320 "NewParser.tab.c"
     break;
 
   case 17: /* call_args: expr  */
-#line 105 "NewParser.y"
+#line 106 "NewParser.y"
                {(yyval.exprvec) = new std::vector<ExpressionAST*>();(yyval.exprvec)->push_back((yyvsp[0].expr));}
-#line 1235 "NewParser.tab.c"
+#line 1326 "NewParser.tab.c"
     break;
 
   case 18: /* call_args: call_args T_COMMA expr  */
-#line 106 "NewParser.y"
+#line 107 "NewParser.y"
                                  {(yyvsp[-2].exprvec)->push_back((yyvsp[0].expr));}
-#line 1241 "NewParser.tab.c"
+#line 1332 "NewParser.tab.c"
     break;
 
   case 19: /* number: T_DOUBLE  */
-#line 111 "NewParser.y"
+#line 112 "NewParser.y"
                 {
                     (yyval.expr) = new NumberExprAST(atof((yyvsp[0].double_value)->c_str()));
                 }
-#line 1249 "NewParser.tab.c"
+#line 1340 "NewParser.tab.c"
     break;
 
   case 20: /* number: T_INTEGER  */
-#line 114 "NewParser.y"
+#line 115 "NewParser.y"
                    {
        		(yyval.expr) = new IntegerExprAST(atoi((yyvsp[0].int_value)->c_str()));
        }
-#line 1257 "NewParser.tab.c"
+#line 1348 "NewParser.tab.c"
     break;
 
   case 32: /* block: T_L_LPAR stmts T_R_LPAR  */
-#line 133 "NewParser.y"
+#line 134 "NewParser.y"
                                 {(yyval.block) = (yyvsp[-1].block)}
-#line 1263 "NewParser.tab.c"
+#line 1354 "NewParser.tab.c"
     break;
 
   case 33: /* block: T_L_LPAR T_R_LPAR  */
-#line 134 "NewParser.y"
+#line 135 "NewParser.y"
                             {(yyval.block) = new BlockAST();}
-#line 1269 "NewParser.tab.c"
+#line 1360 "NewParser.tab.c"
     break;
 
   case 34: /* func_decl: ident ident T_L_SPAR func_args T_R_SPAR block  */
-#line 138 "NewParser.y"
+#line 139 "NewParser.y"
 {
 	PrototypeAST* proto = new PrototypeAST(*(yyvsp[-5].ident),*(yyvsp[-4].ident),*(yyvsp[-2].varvec));
 	BlockAST* body = (yyvsp[0].block);
 	(yyval.stmt) = new FunctionAST(proto,body);
 }
-#line 1279 "NewParser.tab.c"
+#line 1370 "NewParser.tab.c"
     break;
 
   case 35: /* func_args: %empty  */
-#line 144 "NewParser.y"
+#line 145 "NewParser.y"
             { (yyval.varvec) = new std::vector<VariableDeclarationAST*>(); }
-#line 1285 "NewParser.tab.c"
+#line 1376 "NewParser.tab.c"
     break;
 
   case 36: /* func_args: var_decl  */
-#line 145 "NewParser.y"
+#line 146 "NewParser.y"
                  { (yyval.varvec) = new std::vector<VariableDeclarationAST*>();
                    (yyval.varvec)->push_back((yyvsp[0].var_decl)); }
-#line 1292 "NewParser.tab.c"
+#line 1383 "NewParser.tab.c"
     break;
 
   case 37: /* func_args: func_args T_COMMA var_decl  */
-#line 147 "NewParser.y"
+#line 148 "NewParser.y"
                                    { (yyvsp[-2].varvec)->push_back((yyvsp[0].var_decl)); }
-#line 1298 "NewParser.tab.c"
+#line 1389 "NewParser.tab.c"
     break;
 
 
-#line 1302 "NewParser.tab.c"
+#line 1393 "NewParser.tab.c"
 
       default: break;
     }
@@ -1492,4 +1583,21 @@ yyreturn:
   return yyresult;
 }
 
-#line 150 "NewParser.y"
+#line 151 "NewParser.y"
+
+
+BlockAST* run_parser() {
+    yyin = fopen(FILE_IN.c_str(), "r+");
+    yyout = fopen(FILE_OUT.c_str(), "w+");
+    program = nullptr;
+    int ret = yyparse();
+    if (ret != 0)
+        program = nullptr;
+    else if (PRINT_AST) {
+        DisplayVisitor v(4, AST_NAME);
+        program->accept(&v);
+    }
+    fclose(yyin);
+    fclose(yyout);
+    return program;
+}

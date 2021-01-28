@@ -53,15 +53,17 @@ static BlockAST* program;
 %type <exprvec> call_args
 %type <token> bin_oper
 // 标识 or 优先级 > and
+%left T_EQU T_N_EQU T_LESS T_GREATER T_LESS_EQU T_GREATER_EQU
 %left T_OR
 %left T_AND
 %left T_ADD T_SUB
 %left T_MUL T_DIV T_MOD
+
 // 标识无关token，在处理优先级时忽略
 %nonassoc T_L_MPAR
 %nonassoc T_R_SPAR
 %nonassoc T_MINUS T_POS T_REVERSE
-%nonassoc T_ELSE T_EQU T_N_EQU T_LESS T_GREATER T_LESS_EQU T_GREATER_EQU
+%nonassoc T_ELSE
 %nonassoc T_VOID T_INT
 // 开始为program
 %start program
