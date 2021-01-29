@@ -70,7 +70,7 @@ public:
 };
 
 // 变量声明语句
-class VariableDeclarationAST : public ExpressionAST {
+class VariableDeclarationAST : public StatementAST {
 public:
     // 变量类型
     std::string type;
@@ -79,8 +79,8 @@ public:
     // 可能有赋值
     ExpressionAST* expr;
 
-    VariableDeclarationAST(const string &type, const string &identifier);
-
+    VariableDeclarationAST(const std::string& type, const std::string& identifier);
+    VariableDeclarationAST(const std::string& type, const std::string& identifier,ExpressionAST* expr);
     /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
     /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
@@ -125,7 +125,7 @@ class IntegerExprAST : public ExpressionAST {
 public:
     int Val;
 
-    explicit IntegerExprAST(int val) : Val(val) {}
+    IntegerExprAST(int val) : Val(val) {}
 
     /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
     /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
@@ -146,11 +146,11 @@ public:
 /// 二元操作结点
 class BinaryExprAST : public ExpressionAST {
     // 操作符
-    char Oper;
+    int Oper;
     ExpressionAST* LEA;
     ExpressionAST* REA;
 public:
-    BinaryExprAST(char oper, ExpressionAST *lea, const ExpressionAST &rea);
+    explicit BinaryExprAST(int oper, ExpressionAST *lea, ExpressionAST* &rea);
 
     llvm::Value *codegen() override;
 };
@@ -172,10 +172,10 @@ public:
 class PrototypeAST : public NodeAST {
     std::string returnType;
     std::string name;
-    std::vector<VariableDeclarationAST> args;
+    std::vector<VariableDeclarationAST*> args;
 
 public:
-    PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST> &args);
+    PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args);
 
     llvm::Function *codegen() override;
 
@@ -183,7 +183,7 @@ public:
 };
 
 /// 函数结点
-class FunctionAST : public NodeAST {
+class FunctionAST : public StatementAST {
     PrototypeAST* Proto;
     BlockAST* Body;
 public:

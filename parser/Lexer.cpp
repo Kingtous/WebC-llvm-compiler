@@ -10,38 +10,32 @@ int Lexer::_getNextToken() {
         LastChar = getchar();
     }
     if (LastChar == ','){
-        return tok_comma;
+        return T_COMMA;
     }
     if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
         identifierStr = char(LastChar);
         while (isalnum((LastChar = getchar())))
             identifierStr += LastChar;
 
-        if (identifierStr == "def"){
-            return tok_func;
-        }
-        else if (identifierStr == "const"){
-            return tok_const;
-        }
-        else if (identifierStr == "if"){
-            return tok_if;
+        if (identifierStr == "if"){
+            return T_IF;
         }
         else if (identifierStr == "else"){
-            return tok_else;
+            return T_ELSE;
         }
         else if (identifierStr == "while"){
-            return tok_while;
+            return T_WHILE;
         }
         else if (identifierStr == "break"){
-            return tok_break;
+            return T_BREAK;
         }
         else if (identifierStr == "continue"){
-            return tok_continue;
+            return T_CONTINUE;
         }
         else if (identifierStr == "return"){
-            return tok_return;
+            return T_RETURN;
         }
-        return tok_identifier;
+        return T_INTEGER;
     }
     if (isdigit(LastChar) || LastChar == '.') {   // Number: [0-9.]+
         std::string NumStr;
@@ -50,8 +44,8 @@ int Lexer::_getNextToken() {
             LastChar = getchar();
         } while (isdigit(LastChar) || LastChar == '.');
         // TODO 教程此处有问题，此处我认为需要更新LastChar：否则def test(a) a+1;报错
-        NumVal = strtod(NumStr.c_str(), nullptr);
-        return tok_number;
+        yylval.double_value = strtod(NumStr.c_str(), nullptr);
+        return T_DOUBLE;
     }
     if (LastChar == '#') {
         // Comment until end of line.
@@ -64,7 +58,7 @@ int Lexer::_getNextToken() {
     }
     // Check for end of file.  Don't eat the EOF.
     if (LastChar == EOF)
-        return tok_eof;
+        return T_EOF;
 
     // Otherwise, just return the character as its ascii value.
     int ThisChar = LastChar;
@@ -84,3 +78,8 @@ char Lexer::seek() {
     return reader.seek();
 }
 
+Lexer* TheLexer = nullptr;
+
+int yylex() {
+    return TheLexer->getNextToken();
+}

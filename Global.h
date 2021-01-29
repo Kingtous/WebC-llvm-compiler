@@ -51,5 +51,4 @@ extern std::unique_ptr<llvm::Module> TheModule;
 extern std::map<std::string, llvm::Value *> NamedValues;
 /// 遍优化器
 extern std::unique_ptr<llvm::FunctionPassManager> TheFPM;
-
 #endif //LLVM_KALEIDOSCOPE_GLOBAL_H

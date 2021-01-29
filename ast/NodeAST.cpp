@@ -3,6 +3,8 @@
 //
 
 #include "NodeAST.h"
+
+#include <utility>
 #include "ErrHelper.h"
 
 llvm::Value *DoubleExprAST::codegen() {
@@ -43,7 +45,7 @@ llvm::Value *BinaryExprAST::codegen() {
     }
 }
 
-BinaryExprAST::BinaryExprAST(char oper, ExpressionAST *lea, const ExpressionAST &rea) : Oper(oper), LEA(lea),
+BinaryExprAST::BinaryExprAST(int oper, ExpressionAST *lea, ExpressionAST* &rea) : Oper(oper), LEA(lea),
                                                                                         REA(rea) {}
 
 llvm::Value *CallExprAST::codegen() {
@@ -78,9 +80,9 @@ llvm::Function *PrototypeAST::codegen() {
 
     // Set names for all arguments.
     unsigned Idx = 0;
-    for (auto &Arg : F->args())
-        Arg.setName(args[Idx++]);
-
+    for (auto &Arg : F->args()){
+        Arg.setName(args[Idx++]->identifier);
+    }
     return F;
 }
 
@@ -189,9 +191,8 @@ const std::string &PrototypeAST::getName() const {
     return name;
 }
 
-PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST> &args) {
-
-}
+PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args)
+        : returnType(returnType), name(name), args(args) {}
 
 llvm::Function *FunctionAST::codegen() {
     llvm::Function *TheFunction = TheModule->getFunction(Proto->getName());
@@ -231,14 +232,6 @@ llvm::Function *FunctionAST::codegen() {
 
 FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {}
 
-int NodeAST::getAstType() const {
-    return astType;
-}
-
-void NodeAST::setAstType(int astType) {
-    NodeAST::astType = astType;
-}
-
 Value *BlockAST::codegen() {
     auto iterator = statements.begin();
     Value* lastStatementValue;
@@ -248,9 +241,6 @@ Value *BlockAST::codegen() {
     return lastStatementValue;
 }
 
-VariableDeclarationAST::VariableDeclarationAST(const string &type, const string &identifier) : type(type),
-                                                                                               identifier(identifier) {}
-
 Value *ExpressionStatementAST::codegen() {
     return nullptr;
 }
@@ -259,3 +249,34 @@ ExpressionStatementAST::ExpressionStatementAST(ExpressionAST *expr) : expr(expr)
 
 VariableAssignmentAST::VariableAssignmentAST(const string &identifier, ExpressionAST *expr) : identifier(identifier),
                                                                                               expr(expr) {}
+
+llvm::Value *VariableAssignmentAST::codegen() {
+    // TODO
+    return nullptr;
+}
+
+VariableDeclarationAST::VariableDeclarationAST(const std::string& type, const std::string& identifier) {
+    this->type = type;
+    this->identifier = identifier;
+    this->expr = nullptr;
+}
+
+VariableDeclarationAST::VariableDeclarationAST(const string &type, const string &identifier, ExpressionAST * expr) {
+    this->type = type;
+    this->identifier = identifier;
+    this->expr = expr;
+}
+
+llvm::Value *VariableDeclarationAST::codegen() {
+    // TODO
+    return nullptr;
+}
+
+llvm::Value *IntegerExprAST::codegen() {
+    return ConstantInt::get(Type::getInt16Ty(TheContext),Val,true);
+}
+
+llvm::Value *IdentifierExprAST::codegen() {
+    // TODO
+    return nullptr;
+}

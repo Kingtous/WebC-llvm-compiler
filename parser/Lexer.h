@@ -12,25 +12,7 @@
 #include "../Global.h"
 #include "IFileReader.h"
 #include "FileReader.h"
-#include "NewParser.tab.h"
-
-/// Token类型
-enum Token {
-    tok_eof = 258, // EOF
-    tok_func = 259, // 函数定义
-    tok_identifier = 260, //标识符: + - * /
-    tok_number = 261, //数字
-    tok_if = 262,
-    tok_else = 263,
-    tok_elif = 264,
-    tok_comma = 265, //逗号
-    tok_const = 266,
-    tok_extern = 267,
-    tok_while = 268,
-    tok_break = 269,
-    tok_continue = 270,
-    tok_return = 271
-};
+#include "Parser.hpp"
 
 class Lexer {
 public:
@@ -54,8 +36,10 @@ private:
     char getchar();
 
     char seek();
-
 };
 
+extern Lexer* TheLexer;
+
+int yylex();
 
 #endif //LLVM_KALEIDOSCOPE_LEXER_H

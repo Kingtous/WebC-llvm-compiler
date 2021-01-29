@@ -1,2 +1,10 @@
 # Project exclude paths
 /cmake-build-debug/
+/build/
+/CMakeFiles/
+CMakeCache.txt
+*.log
+*.cbp
+*.output
+.vscode/**
+Makefile

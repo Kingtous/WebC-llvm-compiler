@@ -1,5 +1,5 @@
 #include <iostream>
-#include "parser/Parser.h"
+#include "parser/Parser.hpp"
 #include "parser/FileReader.h"
 
 using namespace llvm;
@@ -19,8 +19,9 @@ int main() {
     //
     FileReader reader("test.syk");
     Lexer lexer(reader);
-    Parser parser(lexer);
-    parser.test();
+    TheLexer = &lexer;
+    int result = yyparse();
+
     // 生成目标代码
     InitializeAllTargetInfos();
     InitializeAllTargets();
