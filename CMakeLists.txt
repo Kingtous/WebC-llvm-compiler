@@ -22,6 +22,7 @@ add_definitions(${LLVM_DEFINITIONS})
 include_directories(
         .
         parser
+        codegen
 )
 
 aux_source_directory(. ROOT)
@@ -33,8 +34,8 @@ message(STATUS "语法树定义：${AST}")
 
 add_executable(llvm_kaleidoscope
         ${ROOT} ${AST} ${PARSER}
-#        ${BISON_Parser_OUTPUTS}
-        )
+        #        ${BISON_Parser_OUTPUTS}
+        codegen/CodeGen.h codegen/CodeGen.cpp)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

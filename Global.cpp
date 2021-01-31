@@ -15,3 +15,5 @@ std::unique_ptr<llvm::Module> TheModule = llvm::make_unique<llvm::Module>("Kingt
 std::map<std::string, llvm::Value *> NamedValues = std::map<std::string, llvm::Value *>();
 /// 遍优化器
 std::unique_ptr<llvm::FunctionPassManager> TheFPM = llvm::make_unique<llvm::FunctionPassManager>(TheModule.get());
+/// 代码生成上下文
+CodeGenContext TheCodeGenContext;

@@ -18,6 +18,11 @@ enum ASTType {
     TopAST = 0,
 };
 
+enum VarType {
+    INT,
+    VOID
+};
+
 //////////////////// 基类结点 ///////////////////////
 
 /// 基结点
@@ -87,7 +92,8 @@ public:
     // 变量名
     std::string identifier;
     // 可能有赋值
-    ExpressionAST* expr;
+    ExpressionAST *expr;
+    bool isConst = false;
 
     VariableDeclarationAST(const std::string& type, const std::string& identifier);
     VariableDeclarationAST(const std::string& type, const std::string& identifier,ExpressionAST* expr);
@@ -243,5 +249,7 @@ public:
 
     llvm::Value *codegen() override;
 };
+
+Type *getTypeFromStr(const std::string &type);
 
 #endif //LLVM_KALEIDOSCOPE_NODEAST_H

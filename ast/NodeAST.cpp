@@ -70,17 +70,25 @@ llvm::Value *CallExprAST::codegen() {
 
 llvm::Function *PrototypeAST::codegen() {
     // Make the function type:  double(double,double) etc.
-    std::vector<llvm::Type *> Doubles(args.size(),
-                                      llvm::Type::getDoubleTy(TheContext));
-    llvm::FunctionType *FT =
-            llvm::FunctionType::get(llvm::Type::getDoubleTy(TheContext), Doubles, false);
+    std::vector<llvm::Type *> Args(args.size());
+    for (auto arg : args) {
+        Args.push_back(getTypeFromStr(arg->type));
+    }
+    llvm::FunctionType *FT;
+    if (returnType == "int") {
+        FT =
+                llvm::FunctionType::get(llvm::Type::getInt16Ty(TheContext), Args, false);
+    } else {
+        FT =
+                llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), Args, false);
+    }
 
     llvm::Function *F =
             llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, TheModule.get());
 
     // Set names for all arguments.
     unsigned Idx = 0;
-    for (auto &Arg : F->args()){
+    for (auto &Arg : F->args()) {
         Arg.setName(args[Idx++]->identifier);
     }
     return F;
@@ -252,7 +260,11 @@ VariableAssignmentAST::VariableAssignmentAST(const string &identifier, Expressio
 
 llvm::Value *VariableAssignmentAST::codegen() {
     // TODO
-    return nullptr;
+    TheCodeGenContext.
+    if (NamedValues.find(identifier) == NamedValues.end()) {
+        NamedValues[identifier] = expr == nullptr ? nullptr : expr->codegen();
+    }
+    return expr->codegen();
 }
 
 VariableDeclarationAST::VariableDeclarationAST(const std::string& type, const std::string& identifier) {
@@ -268,8 +280,27 @@ VariableDeclarationAST::VariableDeclarationAST(const string &type, const string 
 }
 
 llvm::Value *VariableDeclarationAST::codegen() {
-    // TODO
-    return nullptr;
+    Value *ret = nullptr;
+    auto vp = TheCodeGenContext.get_current_locals();
+    if (vp == nullptr) {
+        // 全局变量
+        auto global_variable = TheModule->getNamedGlobal(identifier);
+        if (global_variable) {
+            fprintf(stderr, "variable %s redefined", identifier.c_str());
+            return nullptr;
+        } else {
+// TODO
+//            auto* v = new GlobalVariable(TheModule,isConst,getTypeFromStr(type),
+//                                                   GlobalVariable::LinkageTypes::PrivateLinkage,Constant::getNullValue(getTypeFromStr(type))
+//                                                   ,identifier);
+            ret = Builder.CreateStore(expr->codegen(), global_variable);
+        }
+    } else {
+        if (vp->localVars.find(identifier) == vp->localVars.end()) {
+            (*vp)[identifier] = expr == nullptr ? nullptr : ret = expr->codegen();
+        }
+    }
+    return ret;
 }
 
 llvm::Value *IntegerExprAST::codegen() {
@@ -288,6 +319,23 @@ ReturnStmtAST::ReturnStmtAST() {
 }
 
 llvm::Value *ReturnStmtAST::codegen() {
-    // TODO
-    return nullptr;
+    if (expr == nullptr) {
+        return Builder.CreateRetVoid();
+    } else {
+        return Builder.CreateRet(expr->codegen());
+    }
+}
+
+Type *getTypeFromStr(const std::string &type) {
+    if (type == "int") {
+        return Type::getInt16Ty(TheContext);
+    } else if (type == "void") {
+        return Type::getVoidTy(TheContext);
+    } else if (type == "double") {
+        return Type::getDoubleTy(TheContext);
+    } else if (type == "float") {
+        return Type::getFloatTy(TheContext);
+    } else {
+        return nullptr;
+    }
 }

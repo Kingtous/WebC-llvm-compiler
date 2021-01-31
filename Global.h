@@ -5,6 +5,7 @@
 #ifndef LLVM_KALEIDOSCOPE_GLOBAL_H
 #define LLVM_KALEIDOSCOPE_GLOBAL_H
 
+#include <codegen/CodeGen.h>
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Optional.h"
@@ -52,4 +53,6 @@ extern std::unique_ptr<llvm::Module> TheModule;
 extern std::map<std::string, llvm::Value *> NamedValues;
 /// 遍优化器
 extern std::unique_ptr<llvm::FunctionPassManager> TheFPM;
+/// 代码生成上下文
+extern CodeGenContext TheCodeGenContext;
 #endif //LLVM_KALEIDOSCOPE_GLOBAL_H
