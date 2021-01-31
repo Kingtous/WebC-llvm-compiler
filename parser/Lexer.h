@@ -7,6 +7,7 @@
 #define LLVM_KALEIDOSCOPE_LEXER_H
 
 #include <string>
+#include <cctype>
 #include <utility>
 
 #include "../Global.h"
@@ -16,7 +17,7 @@
 
 class Lexer {
 public:
-    std::string identifierStr; //如果是tok_identifier就传入
+    std::string identifierStr = ""; //如果是tok_identifier就传入
     double NumVal = INIT_NUM; //如果是tok_number则表示数字
     int currToken; //当前的token
 

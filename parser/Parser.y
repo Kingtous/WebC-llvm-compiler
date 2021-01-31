@@ -7,14 +7,13 @@
 #include "Lexer.h"
   #include "ast/NodeAST.h"
 // 程序分析入口点
-static BlockAST* program;
+extern BlockAST* program;
 using std::vector;
-  extern FILE * yyin;
-  extern FILE * yyout;
 }
 
 %{
-void yyerror(const char *s) { printf("ERROR: %sn", s); }
+extern char *yytext;
+void yyerror(const char *s) { fprintf(stderr,"parser error:%s\n",s); }
 %}
 
 // 声明变量可能有的类型
@@ -34,7 +33,7 @@ void yyerror(const char *s) { printf("ERROR: %sn", s); }
 }
 /// 终结符
 // 设置结点对应的类型
-%token <ident> T_IDENTIFIER
+%token <string> T_IDENTIFIER
 %token <int_value> T_INTEGER
 %token <double_value> T_DOUBLE
 // 计算符号
@@ -44,11 +43,11 @@ void yyerror(const char *s) { printf("ERROR: %sn", s); }
 // , ; () [] {}
 %token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR
 // 循环
-%token <ident> T_FOR T_WHILE T_BREAK T_CONTINUE
+%token <token> T_FOR T_WHILE T_BREAK T_CONTINUE
 %token <token> T_IF T_ELSE
 %token <token> T_RETURN
 %token <token> T_VOID T_INT
-%token <token> T_EOF
+%token END 0 "END OF FILE"
 /// 非终结符
 // type 类型 为此类型的名称
 %type <block> program block stmts
@@ -74,8 +73,9 @@ void yyerror(const char *s) { printf("ERROR: %sn", s); }
 %start program
 %%
 
-program : stmts {
+program : stmts{
 			program = $1;
+			fprintf(stdout,"parse success\n");
 		}
 	;
 
@@ -83,11 +83,17 @@ stmts : stmt {$$ = new BlockAST(); $$->statements.push_back($<stmt>1);}
 	| stmts stmt {$1->statements.push_back($<stmt>2);}
 	;
 
-stmt : var_decl
-	| func_decl
+stmt : var_decl ';' {printf("build var decl stmt\n");}
+	| func_decl {$$ = $1;}
+	| ident T_ASSIGN expr ';' {$$ = new VariableAssignmentAST($1->identifier,$3);}
+	| T_RETURN ';'{$$ = new ReturnStmtAST();}
+	| T_RETURN expr ';'{$$ = new ReturnStmtAST($2);}
+	| ';' {}
 	;
 
-ident : T_IDENTIFIER { $$ = new IdentifierExprAST(*$1); delete $1;}
+ident : T_IDENTIFIER {
+//std::fprintf(stderr,"build identifier: %s\n", $1->c_str());
+ $$ = new IdentifierExprAST(*$1);}
       ;
 
 // int a
@@ -102,12 +108,10 @@ var_decl : ident ident {
 	;
 
 
-// a=b;
 // func() func(a,b) func(a)
 // a;
 // a<b
-expr : ident T_ASSIGN expr {$$ = new VariableAssignmentAST($1->identifier,$3);}
-	| ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$3); }
+expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$3); }
 	| ident {$<ident>$ = $1;}
 	| number
 	| T_L_SPAR expr T_R_SPAR {$$ = $2;}
@@ -142,6 +146,7 @@ func_decl : ident ident T_L_SPAR func_args T_R_SPAR block
 	PrototypeAST* proto = new PrototypeAST($1->identifier,$2->identifier,*$4);
 	BlockAST* body = $6;
 	$$ = new FunctionAST(proto,body);
+	printf("build function %s \n",$2->identifier.c_str());
 }
 
 func_args : { $$ = new std::vector<VariableDeclarationAST*>(); }
@@ -151,6 +156,8 @@ func_args : { $$ = new std::vector<VariableDeclarationAST*>(); }
       ;
 
 %%
+
+BlockAST* program = nullptr;
 
 BlockAST* run_parser(std::string path) {
     FILE* yyin = fopen(path.c_str(), "r+");

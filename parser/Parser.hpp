@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.4.  */
+/* A Bison parser, made by GNU Bison 3.7.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -49,21 +49,19 @@ extern int yydebug;
 
 #include "Lexer.h"
   #include "ast/NodeAST.h"
-// 程序分析入口点
-static BlockAST* program;
-using std::vector;
-  extern FILE * yyin;
-  extern FILE * yyout;
 
-#line 59 "Parser.hpp"
+// 程序分析入口点
+extern BlockAST *program;
+using std::vector;
+
+#line 57 "Parser.hpp"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-  enum yytokentype
-  {
+enum yytokentype {
     YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
+    END = 0,                       /* "END OF FILE"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     T_IDENTIFIER = 258,            /* T_IDENTIFIER  */
@@ -99,12 +97,11 @@ using std::vector;
     T_RETURN = 288,                /* T_RETURN  */
     T_VOID = 289,                  /* T_VOID  */
     T_INT = 290,                   /* T_INT  */
-    T_EOF = 291,                   /* T_EOF  */
-    T_OR = 292,                    /* T_OR  */
-    T_AND = 293,                   /* T_AND  */
-    T_MINUS = 294,                 /* T_MINUS  */
-    T_POS = 295                    /* T_POS  */
-  };
+    T_OR = 291,                    /* T_OR  */
+    T_AND = 292,                   /* T_AND  */
+    T_MINUS = 293,                 /* T_MINUS  */
+    T_POS = 294                    /* T_POS  */
+};
   typedef enum yytokentype yytoken_kind_t;
 #endif
 
@@ -112,7 +109,7 @@ using std::vector;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 21 "Parser.y"
+#line 20 "Parser.y"
 
 	NodeAST* node;
 	ExpressionAST* expr;
@@ -127,7 +124,7 @@ union YYSTYPE
 	int int_value;
 	int token;
 
-#line 131 "Parser.hpp"
+#line 128 "Parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

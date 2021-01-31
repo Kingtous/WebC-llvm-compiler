@@ -38,11 +38,21 @@ class StatementAST : public NodeAST {
 };
 
 class ExpressionStatementAST : public NodeAST {
-    ExpressionAST* expr;
+    ExpressionAST *expr;
 public:
     ExpressionStatementAST(ExpressionAST *expr);
 
     Value *codegen() override;
+};
+
+class ReturnStmtAST : public StatementAST {
+    ExpressionAST *expr; // 可以为null
+public:
+    ReturnStmtAST();
+
+    explicit ReturnStmtAST(ExpressionAST *expr);
+
+    llvm::Value *codegen() override;
 };
 
 /// 块结点，一个块含有多种声明，也可作为一个程序的入口点
@@ -88,13 +98,13 @@ public:
     llvm::Value *codegen() override;
 };
 
-// 变量声明语句
-class VariableAssignmentAST : public ExpressionAST {
+// 变量赋值句
+class VariableAssignmentAST : public StatementAST {
 public:
     // 变量名
     std::string identifier;
     // 可能有赋值
-    ExpressionAST* expr;
+    ExpressionAST *expr;
 
     VariableAssignmentAST(const string &identifier, ExpressionAST *expr);
 

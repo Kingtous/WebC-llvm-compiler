@@ -273,10 +273,21 @@ llvm::Value *VariableDeclarationAST::codegen() {
 }
 
 llvm::Value *IntegerExprAST::codegen() {
-    return ConstantInt::get(Type::getInt16Ty(TheContext),Val,true);
+    return ConstantInt::get(Type::getInt16Ty(TheContext), Val, true);
 }
 
 llvm::Value *IdentifierExprAST::codegen() {
+    // TODO
+    return nullptr;
+}
+
+ReturnStmtAST::ReturnStmtAST(ExpressionAST *expr) : expr(expr) {}
+
+ReturnStmtAST::ReturnStmtAST() {
+    expr = nullptr;
+}
+
+llvm::Value *ReturnStmtAST::codegen() {
     // TODO
     return nullptr;
 }
