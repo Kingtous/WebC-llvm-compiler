@@ -25,28 +25,51 @@ llvm::Value *BinaryExprAST::codegen() {
     llvm::Value *R = REA->codegen();
     if (!L || !R)
         return nullptr;
-
-    switch (Oper) {
-        case '+':
-            return Builder.CreateFAdd(L, R, "addtmp");
-        case '-':
-            return Builder.CreateFSub(L, R, "subtmp");
-        case '*':
-            return Builder.CreateFMul(L, R, "multmp");
-        case '/':
-            return Builder.CreateFDiv(L, R, "divtmp");
-        case '<':
-            L = Builder.CreateFCmpULT(L, R, "cmptmp");
-            // Convert bool 0/1 to double 0.0 or 1.0
-            return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext),
-                                        "booltmp");
-        default:
-            return LogErrorV("invalid binary operator");
+    if (typeid(*LEA) == typeid(IntegerExprAST) && typeid(*REA) == typeid(IntegerExprAST)){
+        switch (type) {
+            case BinaryType::add:
+                return Builder.CreateAdd(L, R, "addtmp");
+            case BinaryType::sub:
+                return Builder.CreateSub(L, R, "subtmp");
+            case BinaryType::mul:
+                return Builder.CreateMul(L, R, "multmp");
+            case BinaryType::div:
+                return Builder.CreateFDiv(L, R, "divtmp");
+            case BinaryType::mod:
+                // TODO mod
+//                L = Builder.Create(L, R, "cmptmp");
+                // Convert bool 0/1 to double 0.0 or 1.0
+                return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext),
+                                            "booltmp");
+            default:
+                return LogErrorV(("invalid binary operator"));
+        }
+    } else {
+        switch (type) {
+            case BinaryType::add:
+                return Builder.CreateFAdd(L, R, "addtmp");
+            case BinaryType::sub:
+                return Builder.CreateFSub(L, R, "subtmp");
+            case BinaryType::mul:
+                return Builder.CreateFMul(L, R, "multmp");
+            case BinaryType::div:
+                return Builder.CreateFDiv(L, R, "divtmp");
+            case BinaryType::mod:
+                L = Builder.CreateFCmpULT(L, R, "cmptmp");
+                // Convert bool 0/1 to double 0.0 or 1.0
+                // TODO
+                return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext),
+                                            "booltmp");
+            default:
+                return LogErrorV(("invalid binary operator"));
+        }
     }
+
 }
 
-BinaryExprAST::BinaryExprAST(int oper, ExpressionAST *lea, ExpressionAST* &rea) : Oper(oper), LEA(lea),
-                                                                                        REA(rea) {}
+BinaryExprAST::BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST* &rea) : type(type), LEA(lea),
+                                                                                        REA(rea) {
+}
 
 llvm::Value *CallExprAST::codegen() {
     // Look up the name in the global module table.
@@ -74,15 +97,7 @@ llvm::Function *PrototypeAST::codegen() {
     for (auto arg : args) {
         Args.push_back(getTypeFromStr(arg->type));
     }
-    llvm::FunctionType *FT;
-    if (returnType == "int") {
-        FT =
-                llvm::FunctionType::get(llvm::Type::getInt16Ty(TheContext), Args, false);
-    } else {
-        FT =
-                llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), Args, false);
-    }
-
+    llvm::FunctionType *FT = llvm::FunctionType::get(getTypeFromStr(returnType), Args, false);;
     llvm::Function *F =
             llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, TheModule.get());
 
@@ -217,24 +232,29 @@ llvm::Function *FunctionAST::codegen() {
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "jintao_entry", TheFunction);
     Builder.SetInsertPoint(BB);
+    TheCodeGenContext.push_block(BB);
 
     // Record the function arguments in the NamedValues map.
     NamedValues.clear();
     for (auto &Arg : TheFunction->args())
         NamedValues[Arg.getName()] = &Arg;
 
-    if (llvm::Value *RetVal = Body->codegen()) {
+    if (Body->codegen()) {
         // Finish off the function.
-        Builder.CreateRet(RetVal);
-
+        // TODO 后期自动匹配return，自动追加
         // Validate the generated code, checking for consistency.
-        verifyFunction(*TheFunction);
-
+        auto isNotValid = verifyFunction(*TheFunction,&errs());
+        if (isNotValid){
+            LogError(("function '" + Proto->getName() + "' not valid\n").c_str());
+            return nullptr;
+        }
+        TheCodeGenContext.pop_block();
         return TheFunction;
     }
-
+    TheCodeGenContext.pop_block();
     // Error reading body, remove function.
     TheFunction->eraseFromParent();
+
     return nullptr;
 }
 
@@ -250,7 +270,7 @@ Value *BlockAST::codegen() {
 }
 
 Value *ExpressionStatementAST::codegen() {
-    return nullptr;
+    return expr->codegen();
 }
 
 ExpressionStatementAST::ExpressionStatementAST(ExpressionAST *expr) : expr(expr) {}
@@ -259,12 +279,19 @@ VariableAssignmentAST::VariableAssignmentAST(const string &identifier, Expressio
                                                                                               expr(expr) {}
 
 llvm::Value *VariableAssignmentAST::codegen() {
-    // TODO
-    TheCodeGenContext.
-    if (NamedValues.find(identifier) == NamedValues.end()) {
-        NamedValues[identifier] = expr == nullptr ? nullptr : expr->codegen();
+    Value* result = nullptr;
+    auto vars = TheCodeGenContext.get_current_locals()->localVars;
+    if (vars.find(identifier) != vars.end()) {
+        vars[identifier] = expr == nullptr ? nullptr : result = expr->codegen();
+    } else {
+        auto gv = TheModule->getNamedGlobal(identifier);
+        if (gv){
+            result = Builder.CreateStore(expr->codegen(),gv);
+        } else {
+            return LogErrorV((identifier + " redefined!").c_str());
+        }
     }
-    return expr->codegen();
+    return result;
 }
 
 VariableDeclarationAST::VariableDeclarationAST(const std::string& type, const std::string& identifier) {
@@ -289,27 +316,39 @@ llvm::Value *VariableDeclarationAST::codegen() {
             fprintf(stderr, "variable %s redefined", identifier.c_str());
             return nullptr;
         } else {
-// TODO
-//            auto* v = new GlobalVariable(TheModule,isConst,getTypeFromStr(type),
-//                                                   GlobalVariable::LinkageTypes::PrivateLinkage,Constant::getNullValue(getTypeFromStr(type))
-//                                                   ,identifier);
-            ret = Builder.CreateStore(expr->codegen(), global_variable);
+            auto* gv = new GlobalVariable(*TheModule,getTypeFromStr(type),isConst,
+                                                   GlobalVariable::LinkageTypes::ExternalLinkage,
+                                                   Constant::getNullValue(getTypeFromStr(type))
+                                                   ,identifier);
+            gv->setInitializer(dyn_cast<Constant>(expr->codegen()));
+            ret = gv;
         }
     } else {
         if (vp->localVars.find(identifier) == vp->localVars.end()) {
-            (*vp)[identifier] = expr == nullptr ? nullptr : ret = expr->codegen();
+            (vp->localVars)[identifier] = expr == nullptr ? nullptr : ret = expr->codegen();
         }
     }
     return ret;
 }
 
 llvm::Value *IntegerExprAST::codegen() {
-    return ConstantInt::get(Type::getInt16Ty(TheContext), Val, true);
+    return ConstantInt::get(Type::getInt32Ty(TheContext), Val, true);
 }
 
 llvm::Value *IdentifierExprAST::codegen() {
-    // TODO
-    return nullptr;
+    auto locals = TheCodeGenContext.get_current_locals();
+    if (locals){
+        if (locals->localVars.find(identifier) != locals->localVars.end()){
+            return locals->localVars[identifier];
+        }
+    }
+    // 可能是全局变量
+    auto gv = TheModule->getNamedGlobal(identifier);
+    if (gv){
+        return Builder.CreateLoad(gv);
+    } else {
+        return LogErrorV((identifier + " is not defined!!!").c_str());
+    }
 }
 
 ReturnStmtAST::ReturnStmtAST(ExpressionAST *expr) : expr(expr) {}
@@ -328,7 +367,7 @@ llvm::Value *ReturnStmtAST::codegen() {
 
 Type *getTypeFromStr(const std::string &type) {
     if (type == "int") {
-        return Type::getInt16Ty(TheContext);
+        return Type::getInt32Ty(TheContext);
     } else if (type == "void") {
         return Type::getVoidTy(TheContext);
     } else if (type == "double") {

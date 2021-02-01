@@ -115,11 +115,11 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| ident {$<ident>$ = $1;}
 	| number
 	| T_L_SPAR expr T_R_SPAR {$$ = $2;}
-	| expr T_ADD expr {$$ = new BinaryExprAST($2,$1,$3);}
-	| expr T_SUB expr {$$ = new BinaryExprAST($2,$1,$3);}
-	| expr T_MUL expr {$$ = new BinaryExprAST($2,$1,$3);}
-	| expr T_DIV expr {$$ = new BinaryExprAST($2,$1,$3);}
-	| expr T_MOD expr {$$ = new BinaryExprAST($2,$1,$3);}
+	| expr T_ADD expr {$$ = new BinaryExprAST(BinaryType::add,$1,$3);}
+	| expr T_SUB expr {$$ = new BinaryExprAST(BinaryType::sub,$1,$3);}
+	| expr T_MUL expr {$$ = new BinaryExprAST(BinaryType::mul,$1,$3);}
+	| expr T_DIV expr {$$ = new BinaryExprAST(BinaryType::div,$1,$3);}
+	| expr T_MOD expr {$$ = new BinaryExprAST(BinaryType::mod,$1,$3);}
 	;
 
 call_args :  {$$ = new std::vector<ExpressionAST*>();}

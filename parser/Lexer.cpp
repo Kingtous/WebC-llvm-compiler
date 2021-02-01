@@ -62,12 +62,34 @@ int Lexer::_getNextToken() {
         } else if (LastChar == '}') {
             LastChar = getchar();
             return T_R_LPAR;
+        } else if (LastChar == '+') {
+            LastChar = getchar();
+            return T_ADD;
+        } else if (LastChar == '-') {
+            LastChar = getchar();
+            return T_SUB;
+        } else if (LastChar == '*') {
+            LastChar = getchar();
+            return T_MUL;
+        } else if (LastChar == '/' && seek() != '/') {
+            LastChar = getchar();
+            return T_DIV;
+        } else if (LastChar == '%') {
+            LastChar = getchar();
+            return T_MOD;
         }
+
         identifierStr = char(LastChar);
 
 
         while (ispunct((LastChar = getchar())))
             identifierStr += LastChar;
+        // 注释
+        if (identifierStr == "//"){
+            while ((LastChar = getchar()) != '\n');
+            LastChar = getchar();
+            return _getNextToken();
+        }
         if (identifierStr == "==") {
             return T_EQU;
         } else if (identifierStr == "=") {
@@ -83,12 +105,19 @@ int Lexer::_getNextToken() {
             NumStr += LastChar;
             LastChar = getchar();
         } while (isdigit(LastChar) || LastChar == '.');
-        // TODO 教程此处有问题，此处我认为需要更新LastChar：否则def test(a) a+1;报错
-        yylval.double_value = strtod(NumStr.c_str(), nullptr);
+        if (NumStr.find('.') == string::npos){
+            yylval.int_value = stoi(NumStr);
 #ifdef DEBUG_FLAG
-        std::fprintf(stderr,"read double: %f\n", yylval.double_value);
+            std::fprintf(stderr,"KEX: read int: %d\n", yylval.int_value);
 #endif
-        return T_DOUBLE;
+            return T_INTEGER;
+        } else {
+            yylval.double_value = stod(NumStr);
+#ifdef DEBUG_FLAG
+            std::fprintf(stderr,"KEX: read double: %f\n", yylval.double_value);
+#endif
+            return T_DOUBLE;
+        }
     }
     if (LastChar == '#') {
         // Comment until end of line.

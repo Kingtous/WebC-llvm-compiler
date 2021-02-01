@@ -5,7 +5,7 @@
 #ifndef LLVM_KALEIDOSCOPE_GLOBAL_H
 #define LLVM_KALEIDOSCOPE_GLOBAL_H
 
-#include <codegen/CodeGen.h>
+#include "CodeGen.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Optional.h"
@@ -34,7 +34,7 @@
 /// 状态字
 #define OK 0
 #define ERR -1
-//#define DEBUG_FLAG 1
+#define DEBUG_FLAG 1
 
 /// 初始化数字
 #define INIT_NUM -1

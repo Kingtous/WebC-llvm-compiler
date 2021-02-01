@@ -1,0 +1,5 @@
+// this is a comment
+int num = 99999999+ 1;
+int getNum(){
+	return num;
+}

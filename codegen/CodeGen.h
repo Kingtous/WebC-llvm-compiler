@@ -10,8 +10,6 @@
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/Support/raw_ostream.h>
 
-#include "Global.h"
-
 using namespace llvm;
 
 class CodeGenBlock {

@@ -31,11 +31,13 @@ aux_source_directory(parser PARSER)
 message(STATUS "解释器文件含有：${PARSER}")
 aux_source_directory(ast AST)
 message(STATUS "语法树定义：${AST}")
+aux_source_directory(codegen CodeGen)
+message(STATUS "代码生成：${CodeGen}")
 
 add_executable(llvm_kaleidoscope
         ${ROOT} ${AST} ${PARSER}
         #        ${BISON_Parser_OUTPUTS}
-        codegen/CodeGen.h codegen/CodeGen.cpp)
+        ${CodeGen})
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <typeinfo>
 
 #include "Global.h"
 
@@ -21,6 +22,14 @@ enum ASTType {
 enum VarType {
     INT,
     VOID
+};
+
+enum BinaryType {
+    add,
+    sub,
+    mul,
+    div,
+    mod
 };
 
 //////////////////// 基类结点 ///////////////////////
@@ -162,11 +171,11 @@ public:
 /// 二元操作结点
 class BinaryExprAST : public ExpressionAST {
     // 操作符
-    int Oper;
+    BinaryType type;
     ExpressionAST* LEA;
     ExpressionAST* REA;
 public:
-    explicit BinaryExprAST(int oper, ExpressionAST *lea, ExpressionAST* &rea);
+    explicit BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST* &rea);
 
     llvm::Value *codegen() override;
 };

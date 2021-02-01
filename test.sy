@@ -1,6 +1,0 @@
-// this is a comment
-int a = 5;
-int main(){
-	a = 10;
-	return a;
-}

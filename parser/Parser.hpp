@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.  */
+/* A Bison parser, made by GNU Bison 3.7.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -49,9 +49,8 @@ extern int yydebug;
 
 #include "Lexer.h"
   #include "ast/NodeAST.h"
-
 // 程序分析入口点
-extern BlockAST *program;
+extern BlockAST* program;
 using std::vector;
 
 #line 57 "Parser.hpp"
@@ -59,7 +58,8 @@ using std::vector;
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-enum yytokentype {
+  enum yytokentype
+  {
     YYEMPTY = -2,
     END = 0,                       /* "END OF FILE"  */
     YYerror = 256,                 /* error  */
@@ -101,7 +101,7 @@ enum yytokentype {
     T_AND = 292,                   /* T_AND  */
     T_MINUS = 293,                 /* T_MINUS  */
     T_POS = 294                    /* T_POS  */
-};
+  };
   typedef enum yytokentype yytoken_kind_t;
 #endif
 
