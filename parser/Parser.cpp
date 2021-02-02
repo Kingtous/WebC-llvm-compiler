@@ -1249,7 +1249,7 @@ yyreduce:
 
   case 17: /* expr: T_L_SPAR expr T_R_SPAR  */
 #line 117 "Parser.y"
-                                 {(yyval.expr) = (yyvsp[-1].expr);}
+                                 {(yyval.expr) = (yyvsp[-1].expr); fprintf(stderr,"build (expr).\n");}
 #line 1254 "Parser.cpp"
     break;
 

@@ -34,7 +34,7 @@ llvm::Value *BinaryExprAST::codegen() {
             case BinaryType::mul:
                 return Builder.CreateMul(L, R, "multmp");
             case BinaryType::div:
-                return Builder.CreateFDiv(L, R, "divtmp");
+                return Builder.CreateSDiv(L, R, "divtmp");
             case BinaryType::mod:
                 // TODO mod
 //                L = Builder.Create(L, R, "cmptmp");

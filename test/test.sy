@@ -1,6 +1,6 @@
 // this is a comment
 int num = 99999999+ 1;
 int getNum(){
-    num = num + 1;
+    num=(num+1)/2+1*5;
 	return num;
 }

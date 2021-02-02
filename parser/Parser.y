@@ -114,7 +114,7 @@ var_decl : ident ident {
 expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$3); }
 	| ident {$<ident>$ = $1;}
 	| number
-	| T_L_SPAR expr T_R_SPAR {$$ = $2;}
+	| T_L_SPAR expr T_R_SPAR {$$ = $2; fprintf(stderr,"build (expr).\n");}
 	| expr T_ADD expr {$$ = new BinaryExprAST(BinaryType::add,$1,$3);}
 	| expr T_SUB expr {$$ = new BinaryExprAST(BinaryType::sub,$1,$3);}
 	| expr T_MUL expr {$$ = new BinaryExprAST(BinaryType::mul,$1,$3);}

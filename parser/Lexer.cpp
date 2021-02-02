@@ -77,6 +77,15 @@ int Lexer::_getNextToken() {
         } else if (LastChar == '%') {
             LastChar = getchar();
             return T_MOD;
+        } else if (LastChar == '='){
+            if (seek() == '='){
+                getchar();
+                LastChar = getchar();
+                return T_EQU;
+            } else {
+                LastChar = getchar();
+                return T_ASSIGN;
+            }
         }
 
         identifierStr = char(LastChar);
@@ -89,11 +98,6 @@ int Lexer::_getNextToken() {
             while ((LastChar = getchar()) != '\n');
             LastChar = getchar();
             return _getNextToken();
-        }
-        if (identifierStr == "==") {
-            return T_EQU;
-        } else if (identifierStr == "=") {
-            return T_ASSIGN;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;
