@@ -25,7 +25,7 @@ llvm::Value *BinaryExprAST::codegen() {
     llvm::Value *R = REA->codegen();
     if (!L || !R)
         return nullptr;
-    if (typeid(*LEA) == typeid(IntegerExprAST) && typeid(*REA) == typeid(IntegerExprAST)){
+    if (L->getType() == getTypeFromStr("int") && R->getType() == getTypeFromStr("int")){
         switch (type) {
             case BinaryType::add:
                 return Builder.CreateAdd(L, R, "addtmp");
