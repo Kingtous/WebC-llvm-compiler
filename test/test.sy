@@ -1,6 +1,6 @@
 // this is a comment
-int num = 99999999+ 1;
-int getNum(){
-    num=(num+1)/2+1*5;
-	return num;
+int num = 9999;
+int getNum(int param){
+    param = (param % 3)*2 + 1/3 +6*5;
+    return param;
 }

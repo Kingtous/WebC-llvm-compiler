@@ -25,41 +25,41 @@ llvm::Value *BinaryExprAST::codegen() {
     llvm::Value *R = REA->codegen();
     if (!L || !R)
         return nullptr;
-    if (L->getType() == getTypeFromStr("int") && R->getType() == getTypeFromStr("int")){
+    if (L->getType() == getTypeFromStr("int") && R->getType() == getTypeFromStr("int")) {
         switch (type) {
             case BinaryType::add:
-                return Builder.CreateAdd(L, R, "addtmp");
+                return Builder.CreateAdd(L, R, "add");
             case BinaryType::sub:
-                return Builder.CreateSub(L, R, "subtmp");
+                return Builder.CreateSub(L, R, "sub");
             case BinaryType::mul:
-                return Builder.CreateMul(L, R, "multmp");
+                return Builder.CreateMul(L, R, "mul");
             case BinaryType::div:
-                return Builder.CreateSDiv(L, R, "divtmp");
+                return Builder.CreateSDiv(L, R, "div");
             case BinaryType::mod:
-                // TODO mod
-//                L = Builder.Create(L, R, "cmptmp");
-                // Convert bool 0/1 to double 0.0 or 1.0
-                return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext),
-                                            "booltmp");
+                return Builder.CreateSRem(L, R,
+                                          "mod");
             default:
                 return LogErrorV(("invalid binary operator"));
         }
     } else {
+        // 类型不相同，做类型转换
+        if (L->getType()->isIntegerTy()) {
+            L = Builder.CreateSIToFP(L, R->getType());
+        }
+        if (R->getType()->isIntegerTy()) {
+            R = Builder.CreateSIToFP(R, L->getType());
+        }
         switch (type) {
             case BinaryType::add:
-                return Builder.CreateFAdd(L, R, "addtmp");
+                return Builder.CreateFAdd(L, R, "add");
             case BinaryType::sub:
-                return Builder.CreateFSub(L, R, "subtmp");
+                return Builder.CreateFSub(L, R, "sub");
             case BinaryType::mul:
-                return Builder.CreateFMul(L, R, "multmp");
+                return Builder.CreateFMul(L, R, "mul");
             case BinaryType::div:
-                return Builder.CreateFDiv(L, R, "divtmp");
+                return Builder.CreateFDiv(L, R, "div");
             case BinaryType::mod:
-                L = Builder.CreateFCmpULT(L, R, "cmptmp");
-                // Convert bool 0/1 to double 0.0 or 1.0
-                // TODO
-                return Builder.CreateUIToFP(L, llvm::Type::getDoubleTy(TheContext),
-                                            "booltmp");
+                return Builder.CreateFRem(L, R, "mod");
             default:
                 return LogErrorV(("invalid binary operator"));
         }
@@ -67,8 +67,8 @@ llvm::Value *BinaryExprAST::codegen() {
 
 }
 
-BinaryExprAST::BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST* &rea) : type(type), LEA(lea),
-                                                                                        REA(rea) {
+BinaryExprAST::BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST *&rea) : type(type), LEA(lea),
+                                                                                         REA(rea) {
 }
 
 llvm::Value *CallExprAST::codegen() {
@@ -93,7 +93,7 @@ llvm::Value *CallExprAST::codegen() {
 
 llvm::Function *PrototypeAST::codegen() {
     // Make the function type:  double(double,double) etc.
-    std::vector<llvm::Type *> Args(args.size());
+    std::vector<llvm::Type *> Args;
     for (auto arg : args) {
         Args.push_back(getTypeFromStr(arg->type));
     }
@@ -111,27 +111,27 @@ llvm::Function *PrototypeAST::codegen() {
 
 Value *ConditionAST::codegen() {
     // 解析if表达式
-    Value* ifCondV = if_cond->codegen();
-    if (!ifCondV){
+    Value *ifCondV = if_cond->codegen();
+    if (!ifCondV) {
         return LogErrorV("if parse error");
     }
     // 创建一条 icnp ne指令，用于if的比较，由于是bool比较，此处直接与0比较。
-    ifCondV = Builder.CreateICmpNE(ifCondV,ConstantFP::get(TheContext,APFloat(0.0)),"neuq_jintao_ifcond");
+    ifCondV = Builder.CreateICmpNE(ifCondV, ConstantFP::get(TheContext, APFloat(0.0)), "neuq_jintao_ifcond");
     // 获取if里面的函数体，准备创建基础块
     auto theFunction = Builder.GetInsertBlock()->getParent();
-    if (!theFunction){
+    if (!theFunction) {
         return LogErrorV("if没在函数体内使用");
     }
     // 创建三个basic block，先添加IfTrue至函数体里面
-    BasicBlock* bbIfTrue = BasicBlock::Create(TheContext,"neuq_jintao_if_true",theFunction);
-    BasicBlock* bbElse = BasicBlock::Create(TheContext,"neuq_jintao_else");
-    BasicBlock* bbIfEnd = BasicBlock::Create(TheContext,"neuq_jintao_if_end");
+    BasicBlock *bbIfTrue = BasicBlock::Create(TheContext, "neuq_jintao_if_true", theFunction);
+    BasicBlock *bbElse = BasicBlock::Create(TheContext, "neuq_jintao_else");
+    BasicBlock *bbIfEnd = BasicBlock::Create(TheContext, "neuq_jintao_if_end");
     // 创建条件分支,createCondBr(条件结果，为true的basic block，为false的basic block)
-    Builder.CreateCondBr(ifCondV,bbIfTrue,bbElse);
+    Builder.CreateCondBr(ifCondV, bbIfTrue, bbElse);
     // 开启往Basic Block中塞入代码
     Builder.SetInsertPoint(bbIfTrue);
-    Value* ifTrueV = if_stmt->codegen();
-    if (!ifTrueV){
+    Value *ifTrueV = if_stmt->codegen();
+    if (!ifTrueV) {
         return LogErrorV("if里面的内容有误");
     }
     // if 中为true的代码写完了，将if跳转到else后面，也就是IfEnd结点。这符合逻辑，同时也是LLVM的强制要求，每个Basic Block必须以跳转结尾
@@ -141,8 +141,8 @@ Value *ConditionAST::codegen() {
     // 塞入else
     theFunction->getBasicBlockList().push_back(bbElse);
     Builder.SetInsertPoint(bbElse);
-    Value* elseV = else_stmt->codegen();
-    if (!elseV){
+    Value *elseV = else_stmt->codegen();
+    if (!elseV) {
         return LogErrorV("else里面内容有误");
     }
     Builder.CreateBr(bbIfEnd);
@@ -150,57 +150,57 @@ Value *ConditionAST::codegen() {
     // 创建末尾结点
     theFunction->getBasicBlockList().push_back(bbIfEnd);
     Builder.SetInsertPoint(bbIfEnd);
-    PHINode* pn = Builder.CreatePHI(Type::getDoubleTy(TheContext),2,"neuq_jintao_iftmp");
-    pn->addIncoming(ifTrueV,bbIfTrue);
-    pn->addIncoming(elseV,bbElse);
+    PHINode *pn = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "neuq_jintao_iftmp");
+    pn->addIncoming(ifTrueV, bbIfTrue);
+    pn->addIncoming(elseV, bbElse);
     return pn;
 }
 
 Value *ForExprAST::codegen() {
     // 先执行for(xxx;;)
-    Value* StartV = Start->codegen();
-    if (!StartV){
+    Value *StartV = Start->codegen();
+    if (!StartV) {
         return LogErrorV("for的初始语句有误");
     }
-    Function* theFuntion = Builder.GetInsertBlock()->getParent();
+    Function *theFuntion = Builder.GetInsertBlock()->getParent();
     // 拿到当前Start生成的那个BasicBlock
-    BasicBlock* bbStart = Builder.GetInsertBlock();
+    BasicBlock *bbStart = Builder.GetInsertBlock();
     // 在当前的函数末尾创建个循环体
-    BasicBlock* bbLoop = BasicBlock::Create(TheContext,"kingtous_loop",theFuntion);
+    BasicBlock *bbLoop = BasicBlock::Create(TheContext, "kingtous_loop", theFuntion);
     Builder.CreateBr(bbLoop);
     // insert code into bbLoop
     Builder.SetInsertPoint(bbLoop);
-    PHINode* phi = Builder.CreatePHI(Type::getDoubleTy(TheContext),2,VarName.c_str());
-    phi->addIncoming(StartV,bbStart);
+    PHINode *phi = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, VarName.c_str());
+    phi->addIncoming(StartV, bbStart);
     // SSA特性+防止shadow
-    Value* oldV = NamedValues[VarName];
+    Value *oldV = NamedValues[VarName];
     NamedValues[VarName] = phi;
-    if (!Body->codegen()){
+    if (!Body->codegen()) {
         return nullptr;
     }
 
     // 开始解析for(;;xxx)
-    Value* StepV = nullptr;
-    if (Step){
+    Value *StepV = nullptr;
+    if (Step) {
         StepV = Step->codegen();
-        if (!StepV){
+        if (!StepV) {
             return LogErrorV("for(xx;xx;here) 解析错误");
         }
     }
-    
-    Value* endV = End->codegen();
-    if (!endV){
+
+    Value *endV = End->codegen();
+    if (!endV) {
         return LogErrorV("解析for终止条件失败");
     }
-    endV = Builder.CreateFCmpONE(endV,ConstantFP::get(TheContext,APFloat(0.0)),"jintao_compare");
-    BasicBlock* bbEnd = Builder.GetInsertBlock();
+    endV = Builder.CreateFCmpONE(endV, ConstantFP::get(TheContext, APFloat(0.0)), "jintao_compare");
+    BasicBlock *bbEnd = Builder.GetInsertBlock();
 
-    BasicBlock* bbAfterFor = BasicBlock::Create(TheContext,"after_for",theFuntion);
-    Builder.CreateCondBr(endV,bbLoop,bbAfterFor);
+    BasicBlock *bbAfterFor = BasicBlock::Create(TheContext, "after_for", theFuntion);
+    Builder.CreateCondBr(endV, bbLoop, bbAfterFor);
     Builder.SetInsertPoint(bbEnd);
 
-    phi->addIncoming(StepV,bbEnd);
-    if (oldV){
+    phi->addIncoming(StepV, bbEnd);
+    if (oldV) {
         NamedValues[VarName] = oldV;
     } else {
         NamedValues.erase(VarName);
@@ -218,42 +218,45 @@ PrototypeAST::PrototypeAST(const string &returnType, const string &name, const v
         : returnType(returnType), name(name), args(args) {}
 
 llvm::Function *FunctionAST::codegen() {
-    llvm::Function *TheFunction = TheModule->getFunction(Proto->getName());
+    llvm::Function *function = TheModule->getFunction(Proto->getName());
 
-    if (!TheFunction)
-        TheFunction = Proto->codegen();
+    if (!function)
+        function = Proto->codegen();
 
-    if (!TheFunction)
+    if (!function)
         return nullptr;
     // 如果函数不为空，则表示已定义过了
-    if (!TheFunction->empty())
+    if (!function->empty())
         return (llvm::Function *) LogErrorV("Function cannot be redefined.");
 
     // Create a new basic block to start insertion into.
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "jintao_entry", TheFunction);
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "jintao_entry", function);
     Builder.SetInsertPoint(BB);
     TheCodeGenContext.push_block(BB);
+    TheCodeGenContext.setFunction(function);
 
     // Record the function arguments in the NamedValues map.
-    NamedValues.clear();
-    for (auto &Arg : TheFunction->args())
-        NamedValues[Arg.getName()] = &Arg;
+//    auto funcVars = TheCodeGenContext.get_current_locals()->localVars;
+    for (auto &Arg : function->args()){
+        TheCodeGenContext.get_current_locals()->localVars.insert(make_pair(Arg.getName().data(),&Arg));
+    }
 
     if (Body->codegen()) {
         // Finish off the function.
         // TODO 后期自动匹配return，自动追加
         // Validate the generated code, checking for consistency.
-        auto isNotValid = verifyFunction(*TheFunction,&errs());
-        if (isNotValid){
+        auto isNotValid = verifyFunction(*function, &errs());
+        if (isNotValid) {
             LogError(("function '" + Proto->getName() + "' not valid\n").c_str());
             return nullptr;
         }
         TheCodeGenContext.pop_block();
-        return TheFunction;
+        return function;
     }
     TheCodeGenContext.pop_block();
+    TheCodeGenContext.removeFunction();
     // Error reading body, remove function.
-    TheFunction->eraseFromParent();
+    function->eraseFromParent();
 
     return nullptr;
 }
@@ -262,8 +265,8 @@ FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Bo
 
 Value *BlockAST::codegen() {
     auto iterator = statements.begin();
-    Value* lastStatementValue;
-    for (;iterator!=statements.end();iterator++){
+    Value *lastStatementValue;
+    for (; iterator != statements.end(); iterator++) {
         lastStatementValue = (*iterator)->codegen();
     }
     return lastStatementValue;
@@ -279,14 +282,15 @@ VariableAssignmentAST::VariableAssignmentAST(const string &identifier, Expressio
                                                                                               expr(expr) {}
 
 llvm::Value *VariableAssignmentAST::codegen() {
-    Value* result = nullptr;
-    auto vars = TheCodeGenContext.get_current_locals()->localVars;
-    if (vars.find(identifier) != vars.end()) {
-        vars[identifier] = expr == nullptr ? nullptr : result = expr->codegen();
+    Value *result = nullptr;
+    auto vars = LOCALS;
+    auto idx = LOCALS.find(identifier);
+    if (idx != vars.end()) {
+        idx->second = expr == nullptr ? nullptr : result = expr->codegen();
     } else {
         auto gv = TheModule->getNamedGlobal(identifier);
-        if (gv){
-            result = Builder.CreateStore(expr->codegen(),gv);
+        if (gv) {
+            result = Builder.CreateStore(expr->codegen(), gv);
         } else {
             return LogErrorV((identifier + " redefined!").c_str());
         }
@@ -294,13 +298,13 @@ llvm::Value *VariableAssignmentAST::codegen() {
     return result;
 }
 
-VariableDeclarationAST::VariableDeclarationAST(const std::string& type, const std::string& identifier) {
+VariableDeclarationAST::VariableDeclarationAST(const std::string &type, const std::string &identifier) {
     this->type = type;
     this->identifier = identifier;
     this->expr = nullptr;
 }
 
-VariableDeclarationAST::VariableDeclarationAST(const string &type, const string &identifier, ExpressionAST * expr) {
+VariableDeclarationAST::VariableDeclarationAST(const string &type, const string &identifier, ExpressionAST *expr) {
     this->type = type;
     this->identifier = identifier;
     this->expr = expr;
@@ -316,10 +320,9 @@ llvm::Value *VariableDeclarationAST::codegen() {
             fprintf(stderr, "variable %s redefined", identifier.c_str());
             return nullptr;
         } else {
-            auto* gv = new GlobalVariable(*TheModule,getTypeFromStr(type),isConst,
-                                                   GlobalVariable::LinkageTypes::ExternalLinkage,
-                                                   Constant::getNullValue(getTypeFromStr(type))
-                                                   ,identifier);
+            auto *gv = new GlobalVariable(*TheModule, getTypeFromStr(type), isConst,
+                                          GlobalVariable::LinkageTypes::ExternalLinkage,
+                                          Constant::getNullValue(getTypeFromStr(type)), identifier);
             gv->setInitializer(dyn_cast<Constant>(expr->codegen()));
             ret = gv;
         }
@@ -337,14 +340,15 @@ llvm::Value *IntegerExprAST::codegen() {
 
 llvm::Value *IdentifierExprAST::codegen() {
     auto locals = TheCodeGenContext.get_current_locals();
-    if (locals){
-        if (locals->localVars.find(identifier) != locals->localVars.end()){
-            return locals->localVars[identifier];
+    if (locals) {
+        auto idx = locals->localVars.find(identifier);
+        if (idx != locals->localVars.end()) {
+            return idx->second;
         }
     }
     // 可能是全局变量
     auto gv = TheModule->getNamedGlobal(identifier);
-    if (gv){
+    if (gv) {
         return Builder.CreateLoad(gv);
     } else {
         return LogErrorV((identifier + " is not defined!!!").c_str());
@@ -368,6 +372,12 @@ llvm::Value *ReturnStmtAST::codegen() {
 Type *getTypeFromStr(const std::string &type) {
     if (type == "int") {
         return Type::getInt32Ty(TheContext);
+    } else if (type == "long") {
+        return Type::getInt64Ty(TheContext);
+    } else if (type == "short"){
+        return Type::getInt8Ty(TheContext);
+    } else if (type == "bool"){
+        return Type::getInt1Ty(TheContext); // 本质上就是1字节的int
     } else if (type == "void") {
         return Type::getVoidTy(TheContext);
     } else if (type == "double") {

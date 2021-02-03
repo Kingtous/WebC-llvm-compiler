@@ -27,6 +27,10 @@ public:
     CodeGenBlock *pop_block();
 
     CodeGenBlock *get_current_locals();
+
+    void setFunction(Function* func);
+    Function* getFunc();
+    void removeFunction();
 };
 
 #endif //LLVM_KALEIDOSCOPE_CODEGEN_H

@@ -65,7 +65,7 @@ int Lexer::_getNextToken() {
         } else if (LastChar == '+') {
             LastChar = getchar();
             return T_ADD;
-        } else if (LastChar == '-') {
+        } else if (LastChar == '-' && isspace(seek())) {
             LastChar = getchar();
             return T_SUB;
         } else if (LastChar == '*') {
@@ -98,6 +98,17 @@ int Lexer::_getNextToken() {
             while ((LastChar = getchar()) != '\n');
             LastChar = getchar();
             return _getNextToken();
+        }
+        if (identifierStr == "-"){
+            // 负数
+            int token = _getNextToken();
+            if (token == T_INTEGER){
+                yylval.int_value = -yylval.int_value;
+            }
+            else if (token == T_DOUBLE){
+                yylval.double_value = -yylval.double_value;
+            }
+            return token;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;

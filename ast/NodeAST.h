@@ -12,6 +12,8 @@
 
 #include "Global.h"
 
+#define LOCALS TheCodeGenContext.get_current_locals()->localVars
+
 using namespace std;
 using namespace llvm;
 

@@ -81,7 +81,7 @@ int main() {
     dest.flush();
 
     outs() << "Wrote " << Filename << "\n";
-    popen("objdump -D test/output.o > test/output.txt","r");
+    popen("objdump -S test/output.o > test/output.txt","r");
     popen("g++ test/output.o -o test/output","r");
 
 

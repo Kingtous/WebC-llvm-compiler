@@ -24,3 +24,15 @@ CodeGenBlock *CodeGenContext::get_current_locals() {
         return blocks.top();
     }
 }
+
+void CodeGenContext::setFunction(Function *func) {
+    function = func;
+}
+
+Function *CodeGenContext::getFunc() {
+    return function;
+}
+
+void CodeGenContext::removeFunction() {
+    function = nullptr;
+}
