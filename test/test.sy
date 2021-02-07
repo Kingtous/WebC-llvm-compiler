@@ -4,8 +4,6 @@ int getNum(int param2){
 //    param = 1;
     if (param<0){
         param = param + 5;
-    } else {
-        param = param-5;
     }
     return param;
 }
