@@ -117,6 +117,7 @@ union YYSTYPE
 	BlockAST* block;
 	IdentifierExprAST* ident;
 	VariableDeclarationAST* vdeclar;
+	ConditionAST* cond;
 	std::vector<VariableDeclarationAST*> *varvec;
 	std::vector<ExpressionAST*> *exprvec;
 	std::string *string;
@@ -124,7 +125,7 @@ union YYSTYPE
 	int int_value;
 	int token;
 
-#line 128 "Parser.hpp"
+#line 129 "Parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

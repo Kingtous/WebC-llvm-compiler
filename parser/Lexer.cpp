@@ -27,8 +27,7 @@ int Lexer::_getNextToken() {
             return T_IF;
         } else if (identifierStr == "else") {
             return T_ELSE;
-        }
-        else if (identifierStr == "while"){
+        } else if (identifierStr == "while") {
             return T_WHILE;
         } else if (identifierStr == "break") {
             return T_BREAK;
@@ -77,8 +76,8 @@ int Lexer::_getNextToken() {
         } else if (LastChar == '%') {
             LastChar = getchar();
             return T_MOD;
-        } else if (LastChar == '='){
-            if (seek() == '='){
+        } else if (LastChar == '=') {
+            if (seek() == '=') {
                 getchar();
                 LastChar = getchar();
                 return T_EQU;
@@ -86,6 +85,27 @@ int Lexer::_getNextToken() {
                 LastChar = getchar();
                 return T_ASSIGN;
             }
+        } else if (LastChar == '<') {
+            if (seek() == '=') {
+                getchar();
+                LastChar = getchar();
+                return T_LESS_EQU;
+            } else {
+                LastChar = getchar();
+                return T_LESS;
+            }
+        } else if (LastChar == '>') {
+            if (seek() == '=') {
+                getchar();
+                LastChar = getchar();
+                return T_GREATER_EQU;
+            } else {
+                LastChar = getchar();
+                return T_GREATER;
+            }
+        } else if (LastChar == '!') {
+            LastChar = getchar();
+            return T_REVERSE;
         }
 
         identifierStr = char(LastChar);
@@ -94,21 +114,24 @@ int Lexer::_getNextToken() {
         while (ispunct((LastChar = getchar())))
             identifierStr += LastChar;
         // 注释
-        if (identifierStr == "//"){
+        if (identifierStr == "//") {
             while ((LastChar = getchar()) != '\n');
             LastChar = getchar();
             return _getNextToken();
         }
-        if (identifierStr == "-"){
+        if (identifierStr == "-") {
             // 负数
-            int token = _getNextToken();
-            if (token == T_INTEGER){
-                yylval.int_value = -yylval.int_value;
+            if (isdigit(seek())){
+                int token = _getNextToken();
+                if (token == T_INTEGER) {
+                    yylval.int_value = -yylval.int_value;
+                } else if (token == T_DOUBLE) {
+                    yylval.double_value = -yylval.double_value;
+                }
+                return token;
+            } else {
+                return T_SUB;
             }
-            else if (token == T_DOUBLE){
-                yylval.double_value = -yylval.double_value;
-            }
-            return token;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;
@@ -120,16 +143,16 @@ int Lexer::_getNextToken() {
             NumStr += LastChar;
             LastChar = getchar();
         } while (isdigit(LastChar) || LastChar == '.');
-        if (NumStr.find('.') == string::npos){
+        if (NumStr.find('.') == string::npos) {
             yylval.int_value = stoi(NumStr);
 #ifdef DEBUG_FLAG
-            std::fprintf(stderr,"KEX: read int: %d\n", yylval.int_value);
+            std::fprintf(stderr, "KEX: read int: %d\n", yylval.int_value);
 #endif
             return T_INTEGER;
         } else {
             yylval.double_value = stod(NumStr);
 #ifdef DEBUG_FLAG
-            std::fprintf(stderr,"KEX: read double: %f\n", yylval.double_value);
+            std::fprintf(stderr, "KEX: read double: %f\n", yylval.double_value);
 #endif
             return T_DOUBLE;
         }
@@ -156,12 +179,12 @@ int Lexer::_getNextToken() {
 int Lexer::getNextToken() {
     currToken = _getNextToken();
 #ifdef DEBUG_FLAG
-    if (currToken == T_IDENTIFIER){
-        std::fprintf(stderr,"KEX: read identifier: %s\n", (*yylval.string).c_str());
-    } else if (currToken < 258){
-        std::fprintf(stderr,"KEX: read character: %c\n", currToken);
+    if (currToken == T_IDENTIFIER) {
+        std::fprintf(stderr, "KEX: read identifier: %s\n", (*yylval.string).c_str());
+    } else if (currToken < 258) {
+        std::fprintf(stderr, "KEX: read character: %c\n", currToken);
     } else {
-        std::fprintf(stderr,"KEX: read token type: %d\n", currToken);
+        std::fprintf(stderr, "KEX: read token type: %d\n", currToken);
     }
 #endif
     return currToken;
@@ -175,7 +198,7 @@ char Lexer::seek() {
     return reader.seek();
 }
 
-Lexer* TheLexer = nullptr;
+Lexer *TheLexer = nullptr;
 
 int yylex() {
     return TheLexer->getNextToken();

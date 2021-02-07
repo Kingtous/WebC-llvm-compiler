@@ -29,6 +29,7 @@ int main() {
             return 0;
         }
     }
+    outs() << "generating codes...\n";
     // 生成目标代码
     InitializeAllTargetInfos();
     InitializeAllTargets();

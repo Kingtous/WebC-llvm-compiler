@@ -31,7 +31,12 @@ enum BinaryType {
     sub,
     mul,
     div,
-    mod
+    mod,
+    less,
+    less_equ,
+    greater,
+    greater_equ,
+    equ
 };
 
 //////////////////// 基类结点 ///////////////////////
@@ -177,7 +182,7 @@ class BinaryExprAST : public ExpressionAST {
     ExpressionAST* LEA;
     ExpressionAST* REA;
 public:
-    explicit BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST* &rea);
+    BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST *rea);
 
     llvm::Value *codegen() override;
 };
@@ -232,15 +237,13 @@ public:
 
 
 /// 条件结点 TODO 加入一个exit，可以退出条件结点
-class ConditionAST : public NodeAST {
-    std::unique_ptr<NodeAST> if_cond;
-    std::unique_ptr<NodeAST> if_stmt;
-    std::unique_ptr<NodeAST> else_stmt;
+class ConditionAST : public StatementAST {
+    ExpressionAST* if_cond;
+    BlockAST* if_stmt;
+    BlockAST* else_stmt;
 public:
 
-    ConditionAST(std::unique_ptr<NodeAST> if_cond, std::unique_ptr<NodeAST> else_cond) : if_cond(std::move(if_cond)),
-                                                                                         else_stmt(std::move(
-                                                                                                 else_cond)) {}
+    ConditionAST(ExpressionAST *ifCond, BlockAST *ifStmt, BlockAST *elseStmt);
 
     llvm::Value *codegen() override;
 };

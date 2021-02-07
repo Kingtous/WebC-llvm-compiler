@@ -24,6 +24,7 @@ void yyerror(const char *s) { fprintf(stderr,"parser error:%s\n",s); }
 	BlockAST* block;
 	IdentifierExprAST* ident;
 	VariableDeclarationAST* vdeclar;
+	ConditionAST* cond;
 	std::vector<VariableDeclarationAST*> *varvec;
 	std::vector<ExpressionAST*> *exprvec;
 	std::string *string;
@@ -53,6 +54,7 @@ void yyerror(const char *s) { fprintf(stderr,"parser error:%s\n",s); }
 %type <block> program block stmts
 %type <ident> ident
 %type <expr> number expr
+%type <cond> if_condition
 %type <stmt> stmt var_decl func_decl
 %type <varvec> func_args
 %type <exprvec> call_args
@@ -85,6 +87,7 @@ stmts : stmt {$$ = new BlockAST(); $$->statements.push_back($<stmt>1);}
 
 stmt : var_decl ';' {printf("build var decl stmt\n");}
 	| func_decl {$$ = $1;}
+	| if_condition {$$ = $1;}
 	| ident T_ASSIGN expr ';' {$$ = new VariableAssignmentAST($1->identifier,$3);}
 	| T_RETURN ';'{$$ = new ReturnStmtAST();}
 	| T_RETURN expr ';'{$$ = new ReturnStmtAST($2);}
@@ -113,6 +116,7 @@ var_decl : ident ident {
 // a<b
 expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$3); }
 	| ident {$<ident>$ = $1;}
+	| T_SUB ident {$$ = new BinaryExprAST(BinaryType::sub,new IntegerExprAST(0),$2);}
 	| number
 	| T_L_SPAR expr T_R_SPAR {$$ = $2; fprintf(stderr,"build (expr).\n");}
 	| expr T_ADD expr {$$ = new BinaryExprAST(BinaryType::add,$1,$3);}
@@ -120,6 +124,11 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| expr T_MUL expr {$$ = new BinaryExprAST(BinaryType::mul,$1,$3);}
 	| expr T_DIV expr {$$ = new BinaryExprAST(BinaryType::div,$1,$3);}
 	| expr T_MOD expr {$$ = new BinaryExprAST(BinaryType::mod,$1,$3);}
+	| expr T_LESS expr {$$ = new BinaryExprAST(BinaryType::less,$1,$3);}
+	| expr T_GREATER expr {$$ = new BinaryExprAST(BinaryType::greater,$1,$3);}
+	| expr T_LESS_EQU expr {$$ = new BinaryExprAST(BinaryType::less_equ,$1,$3);}
+	| expr T_GREATER_EQU expr {$$ = new BinaryExprAST(BinaryType::greater_equ,$1,$3);}
+	| expr T_EQU expr {$$ = new BinaryExprAST(BinaryType::equ,$1,$3);}
 	;
 
 call_args :  {$$ = new std::vector<ExpressionAST*>();}
@@ -154,6 +163,10 @@ func_args : { $$ = new std::vector<VariableDeclarationAST*>(); }
                    $$->push_back($<vdeclar>1); } //$1为stmt类型，但是我们要取子类vdeclar类型
       | func_args T_COMMA var_decl { $1->push_back($<vdeclar>3); }
       ;
+
+if_condition : T_IF T_L_SPAR expr T_R_SPAR block {$$ = new ConditionAST($3,$5,nullptr);}
+	| T_IF T_L_SPAR expr T_R_SPAR block T_ELSE block {$$ = new ConditionAST($3,$5,$7);}
+	;
 
 %%
 
