@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(llvm_kaleidoscope)
+project(sysyplus_compiler)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -34,7 +34,7 @@ message(STATUS "语法树定义：${AST}")
 aux_source_directory(codegen CodeGen)
 message(STATUS "代码生成：${CodeGen}")
 
-add_executable(llvm_kaleidoscope
+add_executable(sysyplus_compiler
         ${ROOT} ${AST} ${PARSER}
         #        ${BISON_Parser_OUTPUTS}
         ${CodeGen})
@@ -46,4 +46,4 @@ add_executable(llvm_kaleidoscope
 #message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
-target_link_libraries(llvm_kaleidoscope LLVM)
+target_link_libraries(sysyplus_compiler LLVM)
