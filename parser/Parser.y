@@ -15,7 +15,7 @@ using std::vector;
 #include "Lexer.h"
 extern char *yytext;
 void yyerror(const char *s)
-{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCLineNumber()); }
+{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCCol()); }
 %}
 
 // 声明变量可能有的类型

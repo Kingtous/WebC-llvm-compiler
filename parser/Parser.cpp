@@ -79,7 +79,7 @@
 #include "Lexer.h"
 extern char *yytext;
 void yyerror(const char *s)
-{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCLineNumber()); }
+{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCCol()); }
 
 #line 85 "Parser.cpp"
 

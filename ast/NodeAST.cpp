@@ -40,6 +40,8 @@ llvm::Value *BinaryExprAST::codegen() {
                                           "mod");
             case BinaryType::less:
                 return Builder.CreateICmpSLT(L,R,"less_than");
+            case BinaryType::equ:
+                return Builder.CreateICmpEQ(L,R,"equ");
             default:
                 return LogErrorV(("invalid binary operator"));
         }
@@ -64,6 +66,8 @@ llvm::Value *BinaryExprAST::codegen() {
                 return Builder.CreateFRem(L, R, "mod");
             case BinaryType::less:
                 return Builder.CreateFCmpOLT(L,R,"less_than");
+            case BinaryType::equ:
+                return Builder.CreateFCmpOEQ(L,R,"ordered_fequ");
             default:
                 return LogErrorV(("invalid binary operator"));
         }
@@ -195,18 +199,23 @@ Value *ForExprAST::codegen() {
         return LogErrorV("for(x;;){}中x有误");
     }
     Builder.CreateBr(bbCond);
+    theFuntion->getBasicBlockList().push_back(bbCond);
     Builder.SetInsertPoint(bbCond);
     auto condV = Cond->codegen();
     if (condV == nullptr){
         return LogErrorV("for(;x;){}中x有误");
     }
+
     condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"),0), "neuq_jintao_ifcond");
     Builder.CreateCondBr(condV,bbBody,bbEndFor);
+
+    theFuntion->getBasicBlockList().push_back(bbBody);
     Builder.SetInsertPoint(bbBody);
     auto body = Body->codegen();
     if (body == nullptr){
         return LogErrorV("for执行内容有误");
     }
+
     Builder.CreateBr(bbStep);
     Builder.SetInsertPoint(bbStep);
     auto stepV = Step->codegen();
@@ -216,8 +225,6 @@ Value *ForExprAST::codegen() {
     Builder.CreateBr(bbCond);
     Builder.SetInsertPoint(bbEndFor);
     // 推入函数体
-    theFuntion->getBasicBlockList().push_back(bbCond);
-    theFuntion->getBasicBlockList().push_back(bbBody);
     theFuntion->getBasicBlockList().push_back(bbStep);
     theFuntion->getBasicBlockList().push_back(bbEndFor);
     return bbEndFor;
