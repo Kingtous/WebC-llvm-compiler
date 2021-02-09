@@ -33,15 +33,15 @@ llvm::Value *BinaryExprAST::codegen() {
                 return Builder.CreateSub(L, R, "sub");
             case BinaryType::mul:
                 return Builder.CreateMul(L, R, "mul");
-            case BinaryType::div:
-                return Builder.CreateSDiv(L, R, "div");
+            case BinaryType::divide:
+                return Builder.CreateSDiv(L, R, "divide");
             case BinaryType::mod:
                 return Builder.CreateSRem(L, R,
                                           "mod");
             case BinaryType::less:
-                return Builder.CreateICmpSLT(L,R,"less_than");
+                return Builder.CreateICmpSLT(L, R, "less_than");
             case BinaryType::equ:
-                return Builder.CreateICmpEQ(L,R,"equ");
+                return Builder.CreateICmpEQ(L, R, "equ");
             default:
                 return LogErrorV(("invalid binary operator"));
         }
@@ -60,14 +60,14 @@ llvm::Value *BinaryExprAST::codegen() {
                 return Builder.CreateFSub(L, R, "sub");
             case BinaryType::mul:
                 return Builder.CreateFMul(L, R, "mul");
-            case BinaryType::div:
-                return Builder.CreateFDiv(L, R, "div");
+            case BinaryType::divide:
+                return Builder.CreateFDiv(L, R, "divide");
             case BinaryType::mod:
                 return Builder.CreateFRem(L, R, "mod");
             case BinaryType::less:
-                return Builder.CreateFCmpOLT(L,R,"less_than");
+                return Builder.CreateFCmpOLT(L, R, "less_than");
             case BinaryType::equ:
-                return Builder.CreateFCmpOEQ(L,R,"ordered_fequ");
+                return Builder.CreateFCmpOEQ(L, R, "ordered_fequ");
             default:
                 return LogErrorV(("invalid binary operator"));
         }
@@ -179,27 +179,27 @@ ConditionAST::ConditionAST(ExpressionAST *ifCond, BlockAST *ifStmt, BlockAST *el
 
 Value *ForExprAST::codegen() {
     Function *theFuntion = Builder.GetInsertBlock()->getParent();
-    if (theFuntion == nullptr){
+    if (theFuntion == nullptr) {
         return nullptr;
     }
     // 先执行for(xxx;;)
-    auto tmpForBlock = BasicBlock::Create(TheContext,"bb_for_start",theFuntion);
+    auto tmpForBlock = BasicBlock::Create(TheContext, "bb_for_start", theFuntion);
     TheCodeGenContext.push_block(tmpForBlock);
 
     auto bbStart = tmpForBlock;
-    auto bbCond = BasicBlock::Create(TheContext,"bb_cond");
-    auto bbStep = BasicBlock::Create(TheContext,"bb_step");
-    auto bbBody = BasicBlock::Create(TheContext,"bb_body");
-    auto bbEndFor = BasicBlock::Create(TheContext,"bb_end");
+    auto bbCond = BasicBlock::Create(TheContext, "bb_cond", theFuntion);
+    auto bbStep = BasicBlock::Create(TheContext, "bb_step", theFuntion);
+    auto bbBody = BasicBlock::Create(TheContext, "bb_body", theFuntion);
+    auto bbEndFor = BasicBlock::Create(TheContext, "bb_end", theFuntion);
 
     Builder.CreateBr(bbStart);
     Builder.SetInsertPoint(bbStart);
     auto startV = Start->codegen();
-    if (startV == nullptr){
+    if (startV == nullptr) {
         return LogErrorV("for(x;;){}中x有误");
     }
     Builder.CreateBr(bbCond);
-    theFuntion->getBasicBlockList().push_back(bbCond);
+
     Builder.SetInsertPoint(bbCond);
     auto condV = Cond->codegen();
     if (condV == nullptr){
@@ -209,7 +209,6 @@ Value *ForExprAST::codegen() {
     condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"),0), "neuq_jintao_ifcond");
     Builder.CreateCondBr(condV,bbBody,bbEndFor);
 
-    theFuntion->getBasicBlockList().push_back(bbBody);
     Builder.SetInsertPoint(bbBody);
     auto body = Body->codegen();
     if (body == nullptr){
@@ -224,9 +223,6 @@ Value *ForExprAST::codegen() {
     }
     Builder.CreateBr(bbCond);
     Builder.SetInsertPoint(bbEndFor);
-    // 推入函数体
-    theFuntion->getBasicBlockList().push_back(bbStep);
-    theFuntion->getBasicBlockList().push_back(bbEndFor);
     return bbEndFor;
 }
 

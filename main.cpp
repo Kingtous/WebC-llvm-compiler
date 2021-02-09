@@ -7,7 +7,7 @@ Lexer *m_lexer;
 
 int main() {
     // Open a new module.
-    TheModule = llvm::make_unique<Module>("Kingtous' jit", TheContext);
+    TheModule = std::make_unique<Module>("Kingtous' jit", TheContext);
 //    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
     // Do simple "peephole" optimizations and bit-twiddling optzns.
 //    TheFPM->addPass(createInstructionCombiningPass());
@@ -18,7 +18,7 @@ int main() {
 //    // Simplify the control flow graph (deleting unreachable blocks, etc).
 //    TheFPM->addPass(createCFGSimplificationPass());
     //
-    FileReader reader("test/test.sy");
+    FileReader reader("../test/test.sy");
     m_lexer = new Lexer(reader);
     TheLexer = m_lexer;
     int result = yyparse();
@@ -71,7 +71,7 @@ int main() {
     }
 
     legacy::PassManager pass;
-    auto FileType = TargetMachine::CGFT_ObjectFile;
+    auto FileType = CodeGenFileType::CGFT_ObjectFile;
 
     if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
         errs() << "TheTargetMachine can't emit a file of this type";

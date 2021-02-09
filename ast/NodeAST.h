@@ -28,7 +28,7 @@ enum BinaryType {
     add,
     sub,
     mul,
-    div,
+    divide,
     mod,
     less,
     less_equ,

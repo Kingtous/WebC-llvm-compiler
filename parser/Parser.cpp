@@ -1332,7 +1332,9 @@ yyreduce:
 
   case 24: /* expr: expr T_DIV expr  */
 #line 131 "Parser.y"
-                          {(yyval.expr) = new BinaryExprAST(BinaryType::div,(yyvsp[-2].expr),(yyvsp[0].expr));}
+                          {
+                              (yyval.expr) = new BinaryExprAST(BinaryType::divide, (yyvsp[-2].expr), (yyvsp[0].expr));
+                          }
 #line 1337 "Parser.cpp"
     break;
 
