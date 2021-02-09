@@ -174,57 +174,59 @@ ConditionAST::ConditionAST(ExpressionAST *ifCond, BlockAST *ifStmt, BlockAST *el
                                                                                           else_stmt(elseStmt) {}
 
 Value *ForExprAST::codegen() {
-    // 先执行for(xxx;;)
-    Value *StartV = Start->codegen();
-    if (!StartV) {
-        return LogErrorV("for的初始语句有误");
-    }
     Function *theFuntion = Builder.GetInsertBlock()->getParent();
-    // 拿到当前Start生成的那个BasicBlock
-    BasicBlock *bbStart = Builder.GetInsertBlock();
-    // 在当前的函数末尾创建个循环体
-    BasicBlock *bbLoop = BasicBlock::Create(TheContext, "kingtous_loop", theFuntion);
-    Builder.CreateBr(bbLoop);
-    // insert code into bbLoop
-    Builder.SetInsertPoint(bbLoop);
-    PHINode *phi = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, VarName.c_str());
-    phi->addIncoming(StartV, bbStart);
-    // SSA特性+防止shadow
-    Value *oldV = NamedValues[VarName];
-    NamedValues[VarName] = phi;
-    if (!Body->codegen()) {
+    if (theFuntion == nullptr){
         return nullptr;
     }
+    // 先执行for(xxx;;)
+    auto tmpForBlock = BasicBlock::Create(TheContext,"bb_for_start",theFuntion);
+    TheCodeGenContext.push_block(tmpForBlock);
 
-    // 开始解析for(;;xxx)
-    Value *StepV = nullptr;
-    if (Step) {
-        StepV = Step->codegen();
-        if (!StepV) {
-            return LogErrorV("for(xx;xx;here) 解析错误");
-        }
+    auto bbStart = tmpForBlock;
+    auto bbCond = BasicBlock::Create(TheContext,"bb_cond");
+    auto bbStep = BasicBlock::Create(TheContext,"bb_step");
+    auto bbBody = BasicBlock::Create(TheContext,"bb_body");
+    auto bbEndFor = BasicBlock::Create(TheContext,"bb_end");
+
+    Builder.CreateBr(bbStart);
+    Builder.SetInsertPoint(bbStart);
+    auto startV = Start->codegen();
+    if (startV == nullptr){
+        return LogErrorV("for(x;;){}中x有误");
     }
-
-    Value *endV = End->codegen();
-    if (!endV) {
-        return LogErrorV("解析for终止条件失败");
+    Builder.CreateBr(bbCond);
+    Builder.SetInsertPoint(bbCond);
+    auto condV = Cond->codegen();
+    if (condV == nullptr){
+        return LogErrorV("for(;x;){}中x有误");
     }
-    endV = Builder.CreateFCmpONE(endV, ConstantFP::get(TheContext, APFloat(0.0)), "jintao_compare");
-    BasicBlock *bbEnd = Builder.GetInsertBlock();
-
-    BasicBlock *bbAfterFor = BasicBlock::Create(TheContext, "after_for", theFuntion);
-    Builder.CreateCondBr(endV, bbLoop, bbAfterFor);
-    Builder.SetInsertPoint(bbEnd);
-
-    phi->addIncoming(StepV, bbEnd);
-    if (oldV) {
-        NamedValues[VarName] = oldV;
-    } else {
-        NamedValues.erase(VarName);
+    condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"),0), "neuq_jintao_ifcond");
+    Builder.CreateCondBr(condV,bbBody,bbEndFor);
+    Builder.SetInsertPoint(bbBody);
+    auto body = Body->codegen();
+    if (body == nullptr){
+        return LogErrorV("for执行内容有误");
     }
-    // 对于循环，永远都返回0.0
-    return Constant::getNullValue(Type::getDoublePtrTy(TheContext));
+    Builder.CreateBr(bbStep);
+    Builder.SetInsertPoint(bbStep);
+    auto stepV = Step->codegen();
+    if (stepV == nullptr){
+        return LogErrorV("for(;;x){}中x有误");
+    }
+    Builder.CreateBr(bbCond);
+    Builder.SetInsertPoint(bbEndFor);
+    // 推入函数体
+    theFuntion->getBasicBlockList().push_back(bbCond);
+    theFuntion->getBasicBlockList().push_back(bbBody);
+    theFuntion->getBasicBlockList().push_back(bbStep);
+    theFuntion->getBasicBlockList().push_back(bbEndFor);
+    return bbEndFor;
 }
+
+ForExprAST::ForExprAST(NodeAST *start, NodeAST *end, NodeAST *step, BlockAST *body) : Start(start),
+                                                                                                        Cond(end),
+                                                                                                        Step(step),
+                                                                                                        Body(body) {}
 
 
 const std::string &PrototypeAST::getName() const {
@@ -307,16 +309,16 @@ VariableAssignmentAST::VariableAssignmentAST(const string &identifier, Expressio
 
 llvm::Value *VariableAssignmentAST::codegen() {
     Value *result = nullptr;
-    auto idx = LOCALS.find(identifier);
-    if (idx != LOCALS.end()) {
+    auto ori_v = FINDLOCAL(identifier);
+    if (ori_v != nullptr) {
         auto v = expr == nullptr ? nullptr :expr->codegen();
-        result = Builder.CreateStore(v,idx->second);
+        result = Builder.CreateStore(v,ori_v);
     } else {
         auto gv = TheModule->getNamedGlobal(identifier);
         if (gv) {
             result = Builder.CreateStore(expr->codegen(), gv);
         } else {
-            return LogErrorV((identifier + " redefined!").c_str());
+            return LogErrorV((identifier + " is not defined!").c_str());
         }
     }
     return result;
@@ -336,8 +338,7 @@ VariableDeclarationAST::VariableDeclarationAST(const string &type, const string 
 
 llvm::Value *VariableDeclarationAST::codegen() {
     Value *ret = nullptr;
-    auto vp = TheCodeGenContext.get_current_locals();
-    if (vp == nullptr) {
+    if (!HASLOCALS) {
         // 全局变量
         auto global_variable = TheModule->getNamedGlobal(identifier);
         if (global_variable) {
@@ -351,8 +352,11 @@ llvm::Value *VariableDeclarationAST::codegen() {
             ret = gv;
         }
     } else {
-        if (vp->localVars.find(identifier) == vp->localVars.end()) {
-            (vp->localVars)[identifier] = expr == nullptr ? nullptr : ret = expr->codegen();
+        if (LOCALS.find(identifier) == LOCALS.end()) {
+            auto v = expr->codegen();
+            auto mem = Builder.CreateAlloca(v->getType());
+            Builder.CreateStore(v,mem);
+            LOCALS[identifier] = expr == nullptr ? nullptr : ret = mem;
         }
     }
     return ret;
@@ -363,11 +367,10 @@ llvm::Value *IntegerExprAST::codegen() {
 }
 
 llvm::Value *IdentifierExprAST::codegen() {
-    auto locals = TheCodeGenContext.get_current_locals();
-    if (locals) {
-        auto idx = locals->localVars.find(identifier);
-        if (idx != locals->localVars.end()) {
-            return Builder.CreateLoad(idx->second);
+    if (HASLOCALS) {
+        auto local_mem = FINDLOCAL(identifier);
+        if (local_mem != nullptr) {
+            return Builder.CreateLoad(local_mem);
         }
     }
     // 可能是全局变量

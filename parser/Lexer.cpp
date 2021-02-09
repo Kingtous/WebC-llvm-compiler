@@ -35,6 +35,8 @@ int Lexer::_getNextToken() {
             return T_CONTINUE;
         } else if (identifierStr == "return") {
             return T_RETURN;
+        } else if (identifierStr == "for"){
+            return T_FOR;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;
@@ -196,6 +198,14 @@ char Lexer::getchar() {
 
 char Lexer::seek() {
     return reader.seek();
+}
+
+unsigned int Lexer::getCLineNumber() {
+    return reader.getLineNo();
+}
+
+unsigned int Lexer::getCCol() {
+    return reader.getCCol();
 }
 
 Lexer *TheLexer = nullptr;

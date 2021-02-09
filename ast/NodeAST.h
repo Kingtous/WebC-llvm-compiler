@@ -12,8 +12,6 @@
 
 #include "Global.h"
 
-#define LOCALS TheCodeGenContext.get_current_locals()->localVars
-
 using namespace std;
 using namespace llvm;
 
@@ -249,17 +247,14 @@ public:
 };
 
 /// For结点
-class ForExprAST : public NodeAST {
-    std::string VarName;
+class ForExprAST : public StatementAST {
     // 意思为：for (Start,End,Step){Body}
-    std::unique_ptr<NodeAST> Start, End, Step, Body;
+    NodeAST * Start,*Cond, *Step;
+    BlockAST* Body;
+    // start -> End? -> Body ->
 
 public:
-    ForExprAST(const std::string &VarName, std::unique_ptr<NodeAST> Start,
-               std::unique_ptr<NodeAST> End, std::unique_ptr<NodeAST> Step,
-               std::unique_ptr<NodeAST> Body)
-            : VarName(VarName), Start(std::move(Start)), End(std::move(End)),
-              Step(std::move(Step)), Body(std::move(Body)) {}
+    ForExprAST(NodeAST *start, NodeAST *end, NodeAST *step, BlockAST *body);
 
     llvm::Value *codegen() override;
 };

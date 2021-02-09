@@ -5,15 +5,17 @@
 
 %code requires {
 #include "Lexer.h"
-  #include "ast/NodeAST.h"
+ #include "ast/NodeAST.h"
 // 程序分析入口点
 extern BlockAST* program;
 using std::vector;
 }
 
 %{
+#include "Lexer.h"
 extern char *yytext;
-void yyerror(const char *s) { fprintf(stderr,"parser error:%s\n",s); }
+void yyerror(const char *s)
+{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCLineNumber()); }
 %}
 
 // 声明变量可能有的类型
@@ -25,6 +27,7 @@ void yyerror(const char *s) { fprintf(stderr,"parser error:%s\n",s); }
 	IdentifierExprAST* ident;
 	VariableDeclarationAST* vdeclar;
 	ConditionAST* cond;
+	ForExprAST* forexpr;
 	std::vector<VariableDeclarationAST*> *varvec;
 	std::vector<ExpressionAST*> *exprvec;
 	std::string *string;
@@ -55,6 +58,8 @@ void yyerror(const char *s) { fprintf(stderr,"parser error:%s\n",s); }
 %type <ident> ident
 %type <expr> number expr
 %type <cond> if_condition
+%type <forexpr> for_stmt
+%type <node> for_args
 %type <stmt> stmt var_decl func_decl
 %type <varvec> func_args
 %type <exprvec> call_args
@@ -91,6 +96,7 @@ stmt : var_decl ';' {printf("build var decl stmt\n");}
 	| ident T_ASSIGN expr ';' {$$ = new VariableAssignmentAST($1->identifier,$3);}
 	| T_RETURN ';'{$$ = new ReturnStmtAST();}
 	| T_RETURN expr ';'{$$ = new ReturnStmtAST($2);}
+	| for_stmt {$$ = $1;}
 	| ';' {}
 	;
 
@@ -166,6 +172,16 @@ func_args : { $$ = new std::vector<VariableDeclarationAST*>(); }
 
 if_condition : T_IF T_L_SPAR expr T_R_SPAR block {$$ = new ConditionAST($3,$5,nullptr);}
 	| T_IF T_L_SPAR expr T_R_SPAR block T_ELSE block {$$ = new ConditionAST($3,$5,$7);}
+	;
+
+for_stmt : T_FOR T_L_SPAR for_args ';' for_args ';' for_args T_R_SPAR block
+	{
+		$$ = new ForExprAST($3,$5,$7,$9);
+	}
+
+for_args : var_decl {$$ = $1;}
+	| ident T_ASSIGN expr {$$ = new VariableAssignmentAST($1->identifier,$3);}
+	| expr {$$ = $1;}
 	;
 
 %%

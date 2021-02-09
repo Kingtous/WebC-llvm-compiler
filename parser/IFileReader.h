@@ -11,6 +11,10 @@ public:
 
     virtual char seek() = 0;
 
+    virtual unsigned int getLineNo() = 0;
+
+    virtual unsigned int getCCol() = 0;
+
 };
 
 

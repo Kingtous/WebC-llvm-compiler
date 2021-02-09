@@ -48,7 +48,7 @@ extern int yydebug;
 #line 6 "Parser.y"
 
 #include "Lexer.h"
-  #include "ast/NodeAST.h"
+ #include "ast/NodeAST.h"
 // 程序分析入口点
 extern BlockAST* program;
 using std::vector;
@@ -109,7 +109,7 @@ using std::vector;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 20 "Parser.y"
+#line 22 "Parser.y"
 
 	NodeAST* node;
 	ExpressionAST* expr;
@@ -118,6 +118,7 @@ union YYSTYPE
 	IdentifierExprAST* ident;
 	VariableDeclarationAST* vdeclar;
 	ConditionAST* cond;
+	ForExprAST* forexpr;
 	std::vector<VariableDeclarationAST*> *varvec;
 	std::vector<ExpressionAST*> *exprvec;
 	std::string *string;
@@ -125,7 +126,7 @@ union YYSTYPE
 	int int_value;
 	int token;
 
-#line 129 "Parser.hpp"
+#line 130 "Parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

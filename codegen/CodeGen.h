@@ -12,6 +12,8 @@
 
 using namespace llvm;
 
+extern std::unique_ptr<llvm::Module> TheModule;
+
 class CodeGenBlock {
 public:
     BasicBlock *block; // BasicBlock
@@ -19,7 +21,7 @@ public:
 };
 
 class CodeGenContext {
-    std::stack<CodeGenBlock *> blocks;
+    std::vector<CodeGenBlock *> blocks;
     Function *function;
 public:
     void push_block(BasicBlock *block);
@@ -31,6 +33,7 @@ public:
     void setFunction(Function* func);
     Function* getFunc();
     void removeFunction();
+    Value* findValue(std::string& name);
 };
 
 #endif //LLVM_KALEIDOSCOPE_CODEGEN_H

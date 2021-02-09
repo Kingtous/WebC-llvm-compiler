@@ -22,7 +22,14 @@ FileReader::FileReader(const std::string &path) {
 
 char FileReader::getchar() {
     if (index < content_length) {
-        return content[index++];
+        char ch = content[index++];
+        if (ch == '\n'){
+            lineno++;
+            colno = 0;
+        } else {
+            colno++;
+        }
+        return ch;
     } else {
         return EOF;
     }
@@ -36,4 +43,12 @@ char FileReader::seek() {
     }
 }
 
+
+unsigned int FileReader::getLineNo() {
+    return lineno;
+}
+
+unsigned int FileReader::getCCol() {
+    return colno;
+}
 

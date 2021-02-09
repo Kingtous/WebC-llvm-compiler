@@ -1,9 +1,10 @@
 // this is a comment。这是个注释xxx
-int param = 9999;
-int getNum(int param2){
+int param = 100;
+int getNum(int param){
 //    param = 1;
-    if (param<0){
-        param = param + 5;
+    int cnt = 0;
+    for(int i=0;i<param;i=i+1){
+        cnt = cnt + 1;
     }
-    return param;
+    return cnt;
 }

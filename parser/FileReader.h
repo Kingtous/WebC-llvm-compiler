@@ -13,6 +13,8 @@ class FileReader : public IFileReader {
 
     std::string content;
     unsigned int index = 0;
+    unsigned int lineno = 0;
+    unsigned int colno = 0;
 
 public:
     explicit FileReader(const std::string &path);
@@ -22,6 +24,10 @@ public:
     char seek() override;
 
     unsigned long content_length;
+
+    unsigned int getLineNo() override;
+
+    unsigned int getCCol() override;
 };
 
 

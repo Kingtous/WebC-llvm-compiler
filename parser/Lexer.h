@@ -21,8 +21,6 @@ public:
     double NumVal = INIT_NUM; //如果是tok_number则表示数字
     int currToken; //当前的token
 
-    /// 当前的Token
-    FileReader reader;
 
     /// lexer构造函数：传入代码
     /// params: rawStr 代码全文
@@ -31,15 +29,23 @@ public:
     /// 获取下一个token
     int getNextToken();
 
+    unsigned int getCLineNumber();
+
+    unsigned int getCCol();
+
 private:
+    /// 当前的Token
+    FileReader reader;
+
     int _getNextToken();
 
     char getchar();
 
     char seek();
+
 };
 
-extern Lexer* TheLexer;
+extern Lexer *TheLexer;
 
 int yylex();
 

@@ -8,5 +8,5 @@ extern "C" {
 }
 
 int main(){
-    std::cout<<getNum(-1);
+    std::cout<<getNum(100);
 }
