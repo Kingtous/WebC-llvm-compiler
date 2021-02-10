@@ -459,22 +459,42 @@ Type *getArrayElemType(Value *value) {
     return tmp;
 }
 
+Type *getArrayType(Value *value) {
+    if (value == nullptr ||
+        (!value->getType()->isPointerTy() && !value->getType()->isArrayTy())) {
+        return nullptr;
+    }
+    Type *tmp = value->getType();
+    while (tmp->isPointerTy()) {
+        tmp = tmp->getContainedType(0);
+    }
+    if (tmp->isArrayTy()) {
+        return tmp;
+    } else {
+        return nullptr;
+    }
+}
+
 
 llvm::Value *IdentifierArrExprAST::codegen() {
     auto local = FINDLOCAL(identifier);
     if (local == nullptr) {
         return LogErrorV(("未找到" + identifier + "\n").c_str());
     }
-    auto arr_elem_type = getArrayElemType(local);
+    auto arr_elem_type = getArrayType(local);
     auto it = arrIndex->rbegin();
     Value *ret = local;
+    auto v_vec = vector<Value *>();
+    // 添加0取指针地址
+    v_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
     for (; it < arrIndex->rend(); it++) {
         auto v = (*it)->codegen();
         if (v == nullptr) {
             return LogErrorV("数组解析失败");
         }
-        ret = Builder.CreateGEP(arr_elem_type, ret, v);
+        v_vec.push_back(v);
     }
+    ret = Builder.CreateInBoundsGEP(ret, ArrayRef<Value *>(v_vec));
     return Builder.CreateLoad(ret);
 }
 
@@ -531,11 +551,15 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     }
     auto st = identifier->arrIndex->rbegin();
     Value *ret = arr_addr;
-    auto elem_type = getArrayElemType(ret);
+    Type *elem_type = getArrayElemType(ret);
+    vector<Value *> vec;
+    // 0取地址
+    vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
     for (; st != identifier->arrIndex->rend(); st++) {
         auto v = (*st)->codegen();
-        ret = Builder.CreateGEP(elem_type, ret, v);
+        vec.push_back(v);
     }
+    ret = Builder.CreateInBoundsGEP(arr_addr, ArrayRef(vec));
     auto newV = expr->codegen();
     ret = Builder.CreateStore(newV, ret);
     return ret;

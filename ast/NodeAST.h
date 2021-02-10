@@ -324,4 +324,6 @@ Type *buildArrayType(vector<ExpressionAST *> *v, Type *type);
  */
 Type *getArrayElemType(Value *type);
 
+Type *getArrayType(Value *value);
+
 #endif //LLVM_KALEIDOSCOPE_NODEAST_H
