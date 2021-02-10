@@ -28,7 +28,7 @@ enum BinaryType {
     add,
     sub,
     mul,
-    divide,
+    divi,
     mod,
     less,
     less_equ,
@@ -89,7 +89,23 @@ class IdentifierExprAST : public ExpressionAST {
 public:
     std::string identifier;
 
+    IdentifierExprAST();
+
     explicit IdentifierExprAST(std::string identifier) : identifier(std::move(identifier)) {}
+
+    /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
+    /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
+    /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
+    /// 换句话说，没有办法“改变”SSA值。
+    llvm::Value *codegen() override;
+};
+
+// 标识符
+class IdentifierArrExprAST : public IdentifierExprAST {
+public:
+    vector<ExpressionAST *> *arrIndex;
+
+    IdentifierArrExprAST(const string &identifier, vector<ExpressionAST *> *arrIndex);
 
     /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
     /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
@@ -104,13 +120,35 @@ public:
     // 变量类型
     std::string type;
     // 变量名
-    std::string identifier;
+    IdentifierExprAST *identifier;
     // 可能有赋值
     ExpressionAST *expr;
     bool isConst = false;
 
-    VariableDeclarationAST(const std::string& type, const std::string& identifier);
-    VariableDeclarationAST(const std::string& type, const std::string& identifier,ExpressionAST* expr);
+    VariableDeclarationAST(const string &type, IdentifierExprAST *identifier, ExpressionAST *expr = nullptr,
+                           bool isConst = false);
+
+    /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
+    /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
+    /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
+    /// 换句话说，没有办法“改变”SSA值。
+    llvm::Value *codegen() override;
+};
+
+// 变量声明语句
+class VariableArrDeclarationAST : public StatementAST {
+public:
+    // 变量类型
+    std::string type;
+    // 变量名
+    IdentifierArrExprAST *identifier;
+    // 可能有赋值
+    ExpressionAST *expr;
+    bool isConst = false;
+
+    VariableArrDeclarationAST(const string &type, IdentifierArrExprAST *identifier, ExpressionAST *expr = nullptr,
+                              bool isConst = false);
+
     /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
     /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
@@ -127,6 +165,22 @@ public:
     ExpressionAST *expr;
 
     VariableAssignmentAST(const string &identifier, ExpressionAST *expr);
+
+    /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
+    /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
+    /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
+    /// 换句话说，没有办法“改变”SSA值。
+    llvm::Value *codegen() override;
+};
+
+class VariableArrAssignmentAST : public StatementAST {
+public:
+    // 变量名
+    IdentifierArrExprAST *identifier;
+    // 可能有赋值
+    ExpressionAST *expr;
+
+    VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr);
 
     /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
     /// “Value”是用于表示 LLVM中的“ 静态单一分配（SSA）寄存器”或“SSA值”的类。
@@ -250,7 +304,7 @@ public:
 class ForExprAST : public StatementAST {
     // 意思为：for (Start,End,Step){Body}
     NodeAST * Start,*Cond, *Step;
-    BlockAST* Body;
+    BlockAST *Body;
     // start -> End? -> Body ->
 
 public:
@@ -260,5 +314,14 @@ public:
 };
 
 Type *getTypeFromStr(const std::string &type);
+
+Type *buildArrayType(vector<ExpressionAST *> *v, Type *type);
+
+/**
+ * 获取数组（支持多维）
+ * @param type 数组类型
+ * @return 数组元素类型
+ */
+Type *getArrayElemType(Value *type);
 
 #endif //LLVM_KALEIDOSCOPE_NODEAST_H

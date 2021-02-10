@@ -25,11 +25,13 @@ void yyerror(const char *s)
 	StatementAST* stmt;
 	BlockAST* block;
 	IdentifierExprAST* ident;
+	IdentifierArrExprAST* identarr;
 	VariableDeclarationAST* vdeclar;
 	ConditionAST* cond;
 	ForExprAST* forexpr;
 	std::vector<VariableDeclarationAST*> *varvec;
 	std::vector<ExpressionAST*> *exprvec;
+	std::vector<ExpressionAST*> *aivec; // array index vector
 	std::string *string;
 	double double_value;
 	int int_value;
@@ -45,17 +47,18 @@ void yyerror(const char *s)
 // 比较符
 %token <token> T_EQU T_N_EQU T_LESS T_GREATER T_REVERSE T_LESS_EQU T_GREATER_EQU
 // , ; () [] {}
-%token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR
+%token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR T_CONST
 // 循环
 %token <token> T_FOR T_WHILE T_BREAK T_CONTINUE
 %token <token> T_IF T_ELSE
 %token <token> T_RETURN
 %token <token> T_VOID T_INT
-%token END 0 "END OF FILE"
+%token END 0 "END OF FILE BY SYSYPLUS COMPILER BY KINGTOUS"
 /// 非终结符
 // type 类型 为此类型的名称
 %type <block> program block stmts
 %type <ident> ident
+%type <identarr> ident_arr
 %type <expr> number expr
 %type <cond> if_condition
 %type <forexpr> for_stmt
@@ -63,6 +66,7 @@ void yyerror(const char *s)
 %type <stmt> stmt var_decl func_decl
 %type <varvec> func_args
 %type <exprvec> call_args
+%type <aivec> array_index "array index vector"
 // 标识 or 优先级 > and
 %left T_OR
 %left T_AND
@@ -94,6 +98,7 @@ stmt : var_decl ';' {printf("build var decl stmt\n");}
 	| func_decl {$$ = $1;}
 	| if_condition {$$ = $1;}
 	| ident T_ASSIGN expr ';' {$$ = new VariableAssignmentAST($1->identifier,$3);}
+	| ident_arr T_ASSIGN expr ';' {$$ = new VariableArrAssignmentAST($1,$3);}
 	| T_RETURN ';'{$$ = new ReturnStmtAST();}
 	| T_RETURN expr ';'{$$ = new ReturnStmtAST($2);}
 	| for_stmt {$$ = $1;}
@@ -101,19 +106,27 @@ stmt : var_decl ';' {printf("build var decl stmt\n");}
 	;
 
 ident : T_IDENTIFIER {
-//std::fprintf(stderr,"build identifier: %s\n", $1->c_str());
  $$ = new IdentifierExprAST(*$1);}
       ;
+// a[xx][xx]...
+ident_arr : ident array_index { $$ = new IdentifierArrExprAST($1->identifier,$2);}
 
 // int a
 // int a = 123
 var_decl : ident ident {
 		$$ = new VariableDeclarationAST(
 		$1->identifier,
-		$2->identifier
+		$2
 		);
 		}
-	| ident ident T_ASSIGN expr {$$ = new VariableDeclarationAST($1->identifier,$2->identifier,$4);}
+	| ident ident T_ASSIGN expr {$$ = new VariableDeclarationAST($1->identifier,$2,$4);}
+	| ident ident_arr {
+          		$$ = new VariableArrDeclarationAST(
+          		$1->identifier,
+          		$2
+          		);
+          		}
+         | ident ident_arr T_ASSIGN expr {$$ = new VariableArrDeclarationAST($1->identifier,$2,$4);}
 	;
 
 
@@ -122,13 +135,14 @@ var_decl : ident ident {
 // a<b
 expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$3); }
 	| ident {$<ident>$ = $1;}
+	| ident_arr {$<ident>$ = $1;}
 	| T_SUB ident {$$ = new BinaryExprAST(BinaryType::sub,new IntegerExprAST(0),$2);}
 	| number
 	| T_L_SPAR expr T_R_SPAR {$$ = $2; fprintf(stderr,"build (expr).\n");}
 	| expr T_ADD expr {$$ = new BinaryExprAST(BinaryType::add,$1,$3);}
 	| expr T_SUB expr {$$ = new BinaryExprAST(BinaryType::sub,$1,$3);}
 	| expr T_MUL expr {$$ = new BinaryExprAST(BinaryType::mul,$1,$3);}
-	| expr T_DIV expr {$$ = new BinaryExprAST(BinaryType::div,$1,$3);}
+	| expr T_DIV expr {$$ = new BinaryExprAST(BinaryType::divi,$1,$3);}
 	| expr T_MOD expr {$$ = new BinaryExprAST(BinaryType::mod,$1,$3);}
 	| expr T_LESS expr {$$ = new BinaryExprAST(BinaryType::less,$1,$3);}
 	| expr T_GREATER expr {$$ = new BinaryExprAST(BinaryType::greater,$1,$3);}
@@ -137,11 +151,14 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| expr T_EQU expr {$$ = new BinaryExprAST(BinaryType::equ,$1,$3);}
 	;
 
+//aivec
+array_index : T_L_MPAR expr T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back($2);}
+	| T_L_MPAR expr T_R_MPAR array_index {$4->push_back($2); $$ = $4;}
+
 call_args :  {$$ = new std::vector<ExpressionAST*>();}
 	| expr {$$ = new std::vector<ExpressionAST*>();$$->push_back($1);}
 	| call_args T_COMMA expr {$1->push_back($3);}
 	;
-
 
 number : T_DOUBLE
                 {

@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.4.  */
+/* A Bison parser, made by GNU Bison 3.7.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -58,10 +58,9 @@ using std::vector;
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-  enum yytokentype
-  {
+enum yytokentype {
     YYEMPTY = -2,
-    END = 0,                       /* "END OF FILE"  */
+    END = 0,                       /* "END OF FILE BY SYSYPLUS COMPILER BY KINGTOUS"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     T_IDENTIFIER = 258,            /* T_IDENTIFIER  */
@@ -88,45 +87,47 @@ using std::vector;
     T_R_MPAR = 279,                /* T_R_MPAR  */
     T_L_LPAR = 280,                /* T_L_LPAR  */
     T_R_LPAR = 281,                /* T_R_LPAR  */
-    T_FOR = 282,                   /* T_FOR  */
-    T_WHILE = 283,                 /* T_WHILE  */
-    T_BREAK = 284,                 /* T_BREAK  */
-    T_CONTINUE = 285,              /* T_CONTINUE  */
-    T_IF = 286,                    /* T_IF  */
-    T_ELSE = 287,                  /* T_ELSE  */
-    T_RETURN = 288,                /* T_RETURN  */
-    T_VOID = 289,                  /* T_VOID  */
-    T_INT = 290,                   /* T_INT  */
-    T_OR = 291,                    /* T_OR  */
-    T_AND = 292,                   /* T_AND  */
-    T_MINUS = 293,                 /* T_MINUS  */
-    T_POS = 294                    /* T_POS  */
-  };
+    T_CONST = 282,                 /* T_CONST  */
+    T_FOR = 283,                   /* T_FOR  */
+    T_WHILE = 284,                 /* T_WHILE  */
+    T_BREAK = 285,                 /* T_BREAK  */
+    T_CONTINUE = 286,              /* T_CONTINUE  */
+    T_IF = 287,                    /* T_IF  */
+    T_ELSE = 288,                  /* T_ELSE  */
+    T_RETURN = 289,                /* T_RETURN  */
+    T_VOID = 290,                  /* T_VOID  */
+    T_INT = 291,                   /* T_INT  */
+    T_OR = 293,                    /* T_OR  */
+    T_AND = 294,                   /* T_AND  */
+    T_MINUS = 295,                 /* T_MINUS  */
+    T_POS = 296                    /* T_POS  */
+};
   typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-union YYSTYPE
-{
+union YYSTYPE {
 #line 22 "Parser.y"
 
-	NodeAST* node;
-	ExpressionAST* expr;
-	StatementAST* stmt;
-	BlockAST* block;
-	IdentifierExprAST* ident;
-	VariableDeclarationAST* vdeclar;
-	ConditionAST* cond;
-	ForExprAST* forexpr;
-	std::vector<VariableDeclarationAST*> *varvec;
-	std::vector<ExpressionAST*> *exprvec;
-	std::string *string;
-	double double_value;
-	int int_value;
-	int token;
+    NodeAST *node;
+    ExpressionAST *expr;
+    StatementAST *stmt;
+    BlockAST *block;
+    IdentifierExprAST *ident;
+    IdentifierArrExprAST *identarr;
+    VariableDeclarationAST *vdeclar;
+    ConditionAST *cond;
+    ForExprAST *forexpr;
+    std::vector<VariableDeclarationAST *> *varvec;
+    std::vector<ExpressionAST *> *exprvec;
+    std::vector<ExpressionAST *> *aivec; // array index vector
+    std::string *string;
+    double double_value;
+    int int_value;
+    int token;
 
-#line 130 "Parser.hpp"
+#line 133 "Parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

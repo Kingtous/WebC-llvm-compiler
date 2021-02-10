@@ -33,8 +33,8 @@ llvm::Value *BinaryExprAST::codegen() {
                 return Builder.CreateSub(L, R, "sub");
             case BinaryType::mul:
                 return Builder.CreateMul(L, R, "mul");
-            case BinaryType::divide:
-                return Builder.CreateSDiv(L, R, "divide");
+            case BinaryType::divi:
+                return Builder.CreateSDiv(L, R, "divi");
             case BinaryType::mod:
                 return Builder.CreateSRem(L, R,
                                           "mod");
@@ -60,8 +60,8 @@ llvm::Value *BinaryExprAST::codegen() {
                 return Builder.CreateFSub(L, R, "sub");
             case BinaryType::mul:
                 return Builder.CreateFMul(L, R, "mul");
-            case BinaryType::divide:
-                return Builder.CreateFDiv(L, R, "divide");
+            case BinaryType::divi:
+                return Builder.CreateFDiv(L, R, "divi");
             case BinaryType::mod:
                 return Builder.CreateFRem(L, R, "mod");
             case BinaryType::less:
@@ -111,7 +111,7 @@ llvm::Function *PrototypeAST::codegen() {
     // Set names for all arguments.
     unsigned Idx = 0;
     for (auto &Arg : F->args()) {
-        Arg.setName(args[Idx++]->identifier);
+        Arg.setName(args[Idx++]->identifier->identifier);
     }
     return F;
 }
@@ -327,43 +327,41 @@ llvm::Value *VariableAssignmentAST::codegen() {
     return result;
 }
 
-VariableDeclarationAST::VariableDeclarationAST(const std::string &type, const std::string &identifier) {
-    this->type = type;
-    this->identifier = identifier;
-    this->expr = nullptr;
-}
-
-VariableDeclarationAST::VariableDeclarationAST(const string &type, const string &identifier, ExpressionAST *expr) {
-    this->type = type;
-    this->identifier = identifier;
-    this->expr = expr;
-}
-
 llvm::Value *VariableDeclarationAST::codegen() {
     Value *ret = nullptr;
     if (!HASLOCALS) {
         // 全局变量
-        auto global_variable = TheModule->getNamedGlobal(identifier);
+        auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
         if (global_variable) {
-            fprintf(stderr, "variable %s redefined", identifier.c_str());
+            fprintf(stderr, "variable %s redefined", identifier->identifier.c_str());
             return nullptr;
         } else {
             auto *gv = new GlobalVariable(*TheModule, getTypeFromStr(type), isConst,
                                           GlobalVariable::LinkageTypes::ExternalLinkage,
-                                          Constant::getNullValue(getTypeFromStr(type)), identifier);
-            gv->setInitializer(dyn_cast<Constant>(expr->codegen()));
+                                          Constant::getNullValue(getTypeFromStr(type)), identifier->identifier);
+            if (expr != nullptr) {
+                gv->setInitializer(dyn_cast<Constant>(expr->codegen()));
+            }
             ret = gv;
         }
     } else {
-        if (LOCALS.find(identifier) == LOCALS.end()) {
-            auto v = expr->codegen();
-            auto mem = Builder.CreateAlloca(v->getType());
-            Builder.CreateStore(v,mem);
-            LOCALS[identifier] = expr == nullptr ? nullptr : ret = mem;
+        if (LOCALS.find(identifier->identifier) == LOCALS.end()) {
+            auto mem = Builder.CreateAlloca(getTypeFromStr(type));
+//            identifier.
+//            auto mem = Builder.CreateAlloca(getTypeFromStr(type),)
+            if (expr != nullptr) {
+                auto v = expr->codegen();
+                Builder.CreateStore(v, mem);
+            }
+            INSERTLOCAL(identifier->identifier, mem);
         }
     }
     return ret;
 }
+
+VariableDeclarationAST::VariableDeclarationAST(const string &type, IdentifierExprAST *identifier, ExpressionAST *expr,
+                                               bool isConst) : type(type), identifier(identifier), expr(expr),
+                                                               isConst(isConst) {}
 
 llvm::Value *IntegerExprAST::codegen() {
     return ConstantInt::get(Type::getInt32Ty(TheContext), Val, true);
@@ -383,6 +381,10 @@ llvm::Value *IdentifierExprAST::codegen() {
     } else {
         return LogErrorV((identifier + " is not defined!!!").c_str());
     }
+}
+
+IdentifierExprAST::IdentifierExprAST() {
+
 }
 
 ReturnStmtAST::ReturnStmtAST(ExpressionAST *expr) : expr(expr) {}
@@ -418,4 +420,123 @@ Type *getTypeFromStr(const std::string &type) {
     } else {
         return nullptr;
     }
+}
+
+// int a[5][6][7] -> vector<Expr>(7,6,5)
+Type *buildArrayType(vector<ExpressionAST *> *vec, Type *arrayElemType) {
+    Type *arr_type = nullptr;
+    auto it = vec->rbegin();
+    for (; it < vec->rend(); it++) {
+        auto v = (*it)->codegen();
+        if (isa<ConstantInt>(v)) {
+            auto constant_int = dyn_cast<ConstantInt>(v);
+            uint64_t size = 0;
+            if (constant_int->getBitWidth() <= 32) {
+                size = constant_int->getZExtValue();
+            } else {
+                size = constant_int->getSExtValue();
+            }
+            arr_type = arr_type == nullptr ? ArrayType::get(arrayElemType, size) : ArrayType::get(arr_type, size);
+        } else {
+            LogError("数组声明[]内必须为常量，请检查");
+        }
+    }
+    return arr_type;
+}
+
+Type *getArrayElemType(Value *value) {
+    if (value == nullptr ||
+        (!value->getType()->isPointerTy() && !value->getType()->isArrayTy())) {
+        return nullptr;
+    }
+    Type *tmp = value->getType();
+    while (tmp->isPointerTy()) {
+        tmp = tmp->getContainedType(0);
+    }
+    while (tmp->isArrayTy()) {
+        tmp = tmp->getArrayElementType();
+    }
+    return tmp;
+}
+
+
+llvm::Value *IdentifierArrExprAST::codegen() {
+    auto local = FINDLOCAL(identifier);
+    if (local == nullptr) {
+        return LogErrorV(("未找到" + identifier + "\n").c_str());
+    }
+    auto arr_elem_type = getArrayElemType(local);
+    auto it = arrIndex->rbegin();
+    Value *ret = local;
+    for (; it < arrIndex->rend(); it++) {
+        auto v = (*it)->codegen();
+        if (v == nullptr) {
+            return LogErrorV("数组解析失败");
+        }
+        ret = Builder.CreateGEP(arr_elem_type, ret, v);
+    }
+    return Builder.CreateLoad(ret);
+}
+
+IdentifierArrExprAST::IdentifierArrExprAST(const string &identifier, vector<ExpressionAST *> *arrIndex)
+        : IdentifierExprAST(identifier), arrIndex(arrIndex) {}
+
+VariableArrDeclarationAST::VariableArrDeclarationAST(const string &type, IdentifierArrExprAST *identifier,
+                                                     ExpressionAST *expr, bool isConst) : type(type),
+                                                                                          identifier(identifier),
+                                                                                          expr(expr),
+                                                                                          isConst(isConst) {}
+
+llvm::Value *VariableArrDeclarationAST::codegen() {
+    Value *ret = nullptr;
+    Type *arr_type = buildArrayType(identifier->arrIndex, getTypeFromStr(type));
+    if (!HASLOCALS) {
+        // 全局变量
+        auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
+        if (global_variable) {
+            fprintf(stderr, "variable %s redefined", identifier->identifier.c_str());
+            return nullptr;
+        } else {
+            auto gv = new GlobalVariable(*TheModule, arr_type, isConst,
+                                         GlobalVariable::LinkageTypes::ExternalLinkage,
+                                         Constant::getNullValue(arr_type), identifier->identifier);
+            if (expr != nullptr) {
+                gv->setInitializer(dyn_cast<Constant>(expr->codegen()));
+            }
+            gv->print(outs(), true);
+            ret = gv;
+        }
+    } else {
+        auto at = identifier->arrIndex->rbegin();
+        if (LOCALS.find(identifier->identifier) == LOCALS.end()) {
+            auto mem = Builder.CreateAlloca(arr_type);
+            // TODO
+//            if (expr != nullptr){
+//                auto v = expr->codegen();
+//                Builder.CreateStore(v,mem);
+//            }
+            INSERTLOCAL(identifier->identifier, mem);
+        }
+    }
+    return ret;
+}
+
+VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(
+        identifier), expr(expr) {}
+
+llvm::Value *VariableArrAssignmentAST::codegen() {
+    auto arr_addr = FINDLOCAL(identifier->identifier);
+    if (arr_addr == nullptr) {
+        return LogErrorV((identifier->identifier + "is not defined").c_str());
+    }
+    auto st = identifier->arrIndex->rbegin();
+    Value *ret = arr_addr;
+    auto elem_type = getArrayElemType(ret);
+    for (; st != identifier->arrIndex->rend(); st++) {
+        auto v = (*st)->codegen();
+        ret = Builder.CreateGEP(elem_type, ret, v);
+    }
+    auto newV = expr->codegen();
+    ret = Builder.CreateStore(newV, ret);
+    return ret;
 }

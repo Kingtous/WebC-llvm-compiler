@@ -18,7 +18,7 @@ int main() {
 //    // Simplify the control flow graph (deleting unreachable blocks, etc).
 //    TheFPM->addPass(createCFGSimplificationPass());
     //
-    FileReader reader("../test/test.sy");
+    FileReader reader("../test/case/section1/functional_test/test.c");
     m_lexer = new Lexer(reader);
     TheLexer = m_lexer;
     int result = yyparse();
@@ -61,7 +61,7 @@ int main() {
 
     TheModule->setDataLayout(TheTargetMachine->createDataLayout());
 
-    auto Filename = "test/output.o";
+    auto Filename = "../test/output.o";
     std::error_code EC;
     raw_fd_ostream dest(Filename, EC, sys::fs::F_None);
 
@@ -82,8 +82,8 @@ int main() {
     dest.flush();
 
     outs() << "Wrote " << Filename << "\n";
-    popen("objdump -S test/output.o > test/output.txt","r");
-    popen("g++ test/output.o -o test/output","r");
+    popen("objdump -S ../test/output.o > ../test/output.txt", "r");
+    popen("g++ ../test/output.o -o ../test/output", "r");
 
 
 //    delete[] m_lexer;

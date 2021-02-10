@@ -10,6 +10,7 @@ int Lexer::_getNextToken() {
         LastChar = getchar();
     }
     if (LastChar == ',') {
+        LastChar = getchar();
         return T_COMMA;
     }
     if (LastChar == ';') {
