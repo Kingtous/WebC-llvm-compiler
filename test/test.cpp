@@ -4,9 +4,9 @@
 #include <iostream>
 
 extern "C" {
-    int func();
+    int getNum(int);
 }
 
 int main(){
-    std::cout << func();
+    getNum(8);
 }

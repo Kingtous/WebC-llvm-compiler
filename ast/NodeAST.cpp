@@ -346,14 +346,14 @@ llvm::Value *VariableDeclarationAST::codegen() {
         }
     } else {
         if (LOCALS.find(identifier->identifier) == LOCALS.end()) {
-            auto mem = Builder.CreateAlloca(getTypeFromStr(type));
+            ret = Builder.CreateAlloca(getTypeFromStr(type));
 //            identifier.
 //            auto mem = Builder.CreateAlloca(getTypeFromStr(type),)
             if (expr != nullptr) {
                 auto v = expr->codegen();
-                Builder.CreateStore(v, mem);
+                Builder.CreateStore(v, ret);
             }
-            INSERTLOCAL(identifier->identifier, mem);
+            INSERTLOCAL(identifier->identifier, ret);
         }
     }
     return ret;

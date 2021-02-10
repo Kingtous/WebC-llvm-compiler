@@ -1,8 +1,8 @@
 // this is a comment。这是个注释xxx
 int param = 100;
+int nums[10][10][10][10];
 // 求[1,param)整数和
 int getNum(int param){
-//    param = 1;
     int cnt = 0;
     for(int index=0; index<param; index=index+1){
         if (index % 2 == 0){
@@ -11,6 +11,8 @@ int getNum(int param){
             }
         }
         cnt = cnt + index;
+        nums[6][2][0][1] = cnt;
+        nums[6][2][0][1] = nums[6][2][0][2] + nums[6][1][0][2];
     }
     return cnt;
 }
