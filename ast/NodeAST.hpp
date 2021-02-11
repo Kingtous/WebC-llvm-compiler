@@ -276,23 +276,28 @@ public:
     llvm::Function *codegen() override;
 };
 
-/// 一元结点 - Expression class for a unary operator.
-/// 从JIT弄来的代码，目前不需要
-class UnaryExprAST : public NodeAST {
-    char Opcode;
-    std::unique_ptr<NodeAST> Operand;
-
+/// Break结点
+class BreakStmtAST : public StatementAST {
 public:
-    UnaryExprAST(char Opcode, std::unique_ptr<NodeAST> Operand)
-            : Opcode(Opcode), Operand(std::move(Operand)) {}
+    BreakStmtAST();
+
+    Value *codegen() override;
+};
+
+/// Break结点
+class ContinueStmtAST : public StatementAST {
+public:
+    ContinueStmtAST();
+
+    Value *codegen() override;
 };
 
 
 /// 条件结点 TODO 加入一个exit，可以退出条件结点
 class ConditionAST : public StatementAST {
-    ExpressionAST* if_cond;
-    BlockAST* if_stmt;
-    BlockAST* else_stmt;
+    ExpressionAST *if_cond;
+    BlockAST *if_stmt;
+    BlockAST *else_stmt;
 public:
 
     ConditionAST(ExpressionAST *ifCond, BlockAST *ifStmt, BlockAST *elseStmt);

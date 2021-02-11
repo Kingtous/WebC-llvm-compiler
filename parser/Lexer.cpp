@@ -36,8 +36,12 @@ int Lexer::_getNextToken() {
             return T_CONTINUE;
         } else if (identifierStr == "return") {
             return T_RETURN;
-        } else if (identifierStr == "for"){
+        } else if (identifierStr == "for") {
             return T_FOR;
+        } else if (identifierStr == "break") {
+            return T_BREAK;
+        } else if (identifierStr == "continue") {
+            return T_CONTINUE;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;

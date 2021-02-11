@@ -19,8 +19,8 @@ LLVM框架语言：LLVM 11.1.0
 - 循环关键字
     - for
     - ~~While~~
-    - ~~break~~
-    - ~~continue~~
+    - break
+    - continue
 - 函数返回 return
 - 全局、局部变量
 - 数组

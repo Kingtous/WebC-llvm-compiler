@@ -18,7 +18,7 @@ int main() {
 //    // Simplify the control flow graph (deleting unreachable blocks, etc).
 //    TheFPM->addPass(createCFGSimplificationPass());
     //
-    FileReader reader("../test/test.sy");
+    FileReader reader("../test/test.c");
     m_lexer = new Lexer(reader);
     TheLexer = m_lexer;
     int result = yyparse();

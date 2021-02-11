@@ -45,12 +45,13 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 6 "Parser.y"
+#line 5 "Parser.y"
 
 #include "Lexer.h"
- #include "ast/NodeAST.h"
+#include "ast/NodeAST.hpp"
+
 // 程序分析入口点
-extern BlockAST* program;
+extern BlockAST *program;
 using std::vector;
 
 #line 57 "Parser.hpp"
@@ -102,13 +103,13 @@ enum yytokentype {
     T_MINUS = 295,                 /* T_MINUS  */
     T_POS = 296                    /* T_POS  */
 };
-  typedef enum yytokentype yytoken_kind_t;
+typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE {
-#line 22 "Parser.y"
+#line 21 "Parser.y"
 
     NodeAST *node;
     ExpressionAST *expr;

@@ -1,11 +1,10 @@
 %code top {
-  #define _GNU_SOURCE
   #include <stdio.h>
 }
 
 %code requires {
 #include "Lexer.h"
- #include "ast/NodeAST.h"
+ #include "ast/NodeAST.hpp"
 // 程序分析入口点
 extern BlockAST* program;
 using std::vector;
@@ -86,7 +85,9 @@ void yyerror(const char *s)
 
 program : stmts{
 			program = $1;
+			#ifdef DEBUG_FLAG
 			fprintf(stdout,"parse success\n");
+			#endif
 		}
 	;
 
@@ -102,6 +103,8 @@ stmt : var_decl ';' {printf("build var decl stmt\n");}
 	| T_RETURN ';'{$$ = new ReturnStmtAST();}
 	| T_RETURN expr ';'{$$ = new ReturnStmtAST($2);}
 	| for_stmt {$$ = $1;}
+	| T_BREAK ';' {$$ = new BreakStmtAST();}
+	| T_CONTINUE ';' {$$ = new ContinueStmtAST();}
 	| ';' {}
 	;
 
@@ -138,7 +141,7 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| ident_arr {$<ident>$ = $1;}
 	| T_SUB ident {$$ = new BinaryExprAST(BinaryType::sub,new IntegerExprAST(0),$2);}
 	| number
-	| T_L_SPAR expr T_R_SPAR {$$ = $2; fprintf(stderr,"build (expr).\n");}
+	| T_L_SPAR expr T_R_SPAR {$$ = $2;}
 	| expr T_ADD expr {$$ = new BinaryExprAST(BinaryType::add,$1,$3);}
 	| expr T_SUB expr {$$ = new BinaryExprAST(BinaryType::sub,$1,$3);}
 	| expr T_MUL expr {$$ = new BinaryExprAST(BinaryType::mul,$1,$3);}
@@ -178,7 +181,7 @@ func_decl : ident ident T_L_SPAR func_args T_R_SPAR block
 	PrototypeAST* proto = new PrototypeAST($1->identifier,$2->identifier,*$4);
 	BlockAST* body = $6;
 	$$ = new FunctionAST(proto,body);
-	printf("build function %s \n",$2->identifier.c_str());
+	// printf("build function %s \n",$2->identifier.c_str());
 }
 
 func_args : { $$ = new std::vector<VariableDeclarationAST*>(); }

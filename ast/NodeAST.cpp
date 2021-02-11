@@ -2,7 +2,7 @@
 // Created by 金韬 on 2020/9/21.
 //
 
-#include "NodeAST.h"
+#include "NodeAST.hpp"
 
 #include <utility>
 #include "ErrHelper.h"
@@ -40,6 +40,8 @@ llvm::Value *BinaryExprAST::codegen() {
                                           "mod");
             case BinaryType::less:
                 return Builder.CreateICmpSLT(L, R, "less_than");
+            case BinaryType::greater:
+                return Builder.CreateICmpSGT(L, R, "greater_than");
             case BinaryType::equ:
                 return Builder.CreateICmpEQ(L, R, "equ");
             default:
@@ -68,6 +70,8 @@ llvm::Value *BinaryExprAST::codegen() {
                 return Builder.CreateFCmpOLT(L, R, "less_than");
             case BinaryType::equ:
                 return Builder.CreateFCmpOEQ(L, R, "ordered_fequ");
+            case BinaryType::greater:
+                return Builder.CreateFCmpOGT(L, R, "greater_than");
             default:
                 return LogErrorV(("invalid binary operator"));
         }
@@ -142,20 +146,24 @@ Value *ConditionAST::codegen() {
         return LogErrorV("if里面的内容有误");
     }
     // if 中为true的代码写完了，将if跳转到else后面，也就是IfEnd结点。这符合逻辑，同时也是LLVM的强制要求，每个Basic Block必须以跳转结尾
-    Builder.CreateBr(bbIfEnd);
+    if (Builder.GetInsertBlock()->empty() || !(*Builder.GetInsertBlock()->rbegin()).isTerminator()) {
+        Builder.CreateBr(bbIfEnd);
+    }
     // 将插入if内容时，可能会有循环嵌套，需要更新嵌套最底层的insertBlock
     bbIfTrue = Builder.GetInsertBlock();
     // 塞入else
     theFunction->getBasicBlockList().push_back(bbElse);
     Builder.SetInsertPoint(bbElse);
     Value *elseV = nullptr;
-    if (else_stmt){
+    if (else_stmt) {
         elseV = else_stmt->codegen();
         if (!elseV) {
             return LogErrorV("else里面内容有误");
         }
     }
-    Builder.CreateBr(bbIfEnd);
+    if (Builder.GetInsertBlock()->empty() || !(*Builder.GetInsertBlock()->rbegin()).isTerminator()) {
+        Builder.CreateBr(bbIfEnd);
+    }
     bbElse = Builder.GetInsertBlock();
     // 创建末尾结点
     theFunction->getBasicBlockList().push_back(bbIfEnd);
@@ -187,11 +195,12 @@ Value *ForExprAST::codegen() {
     TheCodeGenContext.push_block(tmpForBlock);
 
     auto bbStart = tmpForBlock;
-    auto bbCond = BasicBlock::Create(TheContext, "bb_cond", theFuntion);
-    auto bbStep = BasicBlock::Create(TheContext, "bb_step", theFuntion);
-    auto bbBody = BasicBlock::Create(TheContext, "bb_body", theFuntion);
-    auto bbEndFor = BasicBlock::Create(TheContext, "bb_end", theFuntion);
-
+    auto bbCond = BasicBlock::Create(TheContext, "bb_for_cond", theFuntion);
+    auto bbStep = BasicBlock::Create(TheContext, "bb_for_step", theFuntion);
+    auto bbBody = BasicBlock::Create(TheContext, "bb_for_body", theFuntion);
+    auto bbEndFor = BasicBlock::Create(TheContext, "bb_for_end");
+    LOCALS->setContextType(CodeGenBlockContextType::FOR);
+    LOCALS->context.forCodeGenBlockContext = new ForCodeGenBlockContext(bbStart, bbCond, bbStep, bbBody, bbEndFor);
     Builder.CreateBr(bbStart);
     Builder.SetInsertPoint(bbStart);
     auto startV = Start->codegen();
@@ -206,23 +215,27 @@ Value *ForExprAST::codegen() {
         return LogErrorV("for(;x;){}中x有误");
     }
 
-    condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"),0), "neuq_jintao_ifcond");
-    Builder.CreateCondBr(condV,bbBody,bbEndFor);
+    condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"), 0), "neuq_jintao_ifcond");
+    Builder.CreateCondBr(condV, bbBody, bbEndFor);
 
     Builder.SetInsertPoint(bbBody);
     auto body = Body->codegen();
-    if (body == nullptr){
+    if (body == nullptr) {
         return LogErrorV("for执行内容有误");
     }
-
-    Builder.CreateBr(bbStep);
+    auto ins = Builder.GetInsertBlock()->rbegin();
+    if (ins == Builder.GetInsertBlock()->rend() || !(*ins).isTerminator()) {
+        Builder.CreateBr(bbStep);
+    }
     Builder.SetInsertPoint(bbStep);
     auto stepV = Step->codegen();
-    if (stepV == nullptr){
+    if (stepV == nullptr) {
         return LogErrorV("for(;;x){}中x有误");
     }
     Builder.CreateBr(bbCond);
+    theFuntion->getBasicBlockList().push_back(bbEndFor);
     Builder.SetInsertPoint(bbEndFor);
+    LOCALS->setContextType(CodeGenBlockContextType::NONE);
     return bbEndFor;
 }
 
@@ -259,11 +272,11 @@ llvm::Function *FunctionAST::codegen() {
 
     // Record the function arguments in the NamedValues map.
 //    auto funcVars = TheCodeGenContext.get_current_locals()->localVars;
-    for (auto &Arg : function->args()){
+    for (auto &Arg : function->args()) {
         // 分配一片内存
         auto mem = Builder.CreateAlloca(Arg.getType());
-        Builder.CreateStore(&Arg,mem);
-        LOCALS.insert(make_pair(Arg.getName().data(),mem));
+        Builder.CreateStore(&Arg, mem);
+        LOCALSVARS.insert(make_pair(Arg.getName().data(), mem));
     }
 
     if (Body->codegen()) {
@@ -293,12 +306,50 @@ llvm::Function *FunctionAST::codegen() {
 FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {}
 
 Value *BlockAST::codegen() {
-    auto iterator = statements.begin();
-    Value *lastStatementValue;
-    for (; iterator != statements.end(); iterator++) {
-        lastStatementValue = (*iterator)->codegen();
+    auto func = TheCodeGenContext.getFunc();
+    if (func == NIL) {
+        auto iterator = statements.begin();
+        Value *lastStatementValue;
+        for (; iterator != statements.end(); iterator++) {
+            auto it = (*iterator);
+            if (typeid(*it) == typeid(BreakStmtAST)) {
+                if (iterator + 1 != statements.end()) {
+                    LogWarn("警告：作用域内break后方的语句无法到达");
+                }
+                break;
+            } else if (typeid(*it) == typeid(ContinueStmtAST)) {
+                if (iterator + 1 != statements.end()) {
+                    LogWarn("警告：作用域内continue后方的语句无法到达");
+                }
+                break;
+            }
+            lastStatementValue = it->codegen();
+        }
+        return lastStatementValue;
+    } else {
+        auto bb = BasicBlock::Create(TheContext, "blk");
+        Builder.CreateBr(bb);
+        func->getBasicBlockList().push_back(bb);
+        Builder.SetInsertPoint(bb);
+        auto iterator = statements.begin();
+        Value *lastStatementValue;
+        for (; iterator != statements.end(); iterator++) {
+            auto it = (*iterator);
+            lastStatementValue = (*iterator)->codegen();
+            if (typeid(*it) == typeid(BreakStmtAST)) {
+                if (iterator + 1 != statements.end()) {
+                    LogWarn("警告：作用域内break后方的语句无法到达");
+                }
+                break;
+            } else if (typeid(*it) == typeid(ContinueStmtAST)) {
+                if (iterator + 1 != statements.end()) {
+                    LogWarn("警告：作用域内continue后方的语句无法到达");
+                }
+                break;
+            }
+        }
+        return lastStatementValue;
     }
-    return lastStatementValue;
 }
 
 Value *ExpressionStatementAST::codegen() {
@@ -345,7 +396,7 @@ llvm::Value *VariableDeclarationAST::codegen() {
             ret = gv;
         }
     } else {
-        if (LOCALS.find(identifier->identifier) == LOCALS.end()) {
+        if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
             ret = Builder.CreateAlloca(getTypeFromStr(type));
 //            identifier.
 //            auto mem = Builder.CreateAlloca(getTypeFromStr(type),)
@@ -528,7 +579,7 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
         }
     } else {
         auto at = identifier->arrIndex->rbegin();
-        if (LOCALS.find(identifier->identifier) == LOCALS.end()) {
+        if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
             auto mem = Builder.CreateAlloca(arr_type);
             // TODO
 //            if (expr != nullptr){
@@ -551,7 +602,6 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     }
     auto st = identifier->arrIndex->rbegin();
     Value *ret = arr_addr;
-    Type *elem_type = getArrayElemType(ret);
     vector<Value *> vec;
     // 0取地址
     vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
@@ -563,4 +613,48 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     auto newV = expr->codegen();
     ret = Builder.CreateStore(newV, ret);
     return ret;
+}
+
+BreakStmtAST::BreakStmtAST() = default;
+
+Value *BreakStmtAST::codegen() {
+    auto blk = TheCodeGenContext.findTopLoopCodeGenBlockTypeBlock();
+    if (blk == NIL) {
+        return LogErrorV("break 不能用作于当前的代码上下文中，请检查");
+    }
+    switch (blk->contextType) {
+        case NONE:
+            return LogErrorV("程序匹配的break环境与当前域不符(NONE)，请联系作者");
+        case FOR:
+            if (blk->context.forCodeGenBlockContext == NIL
+                || blk->context.forCodeGenBlockContext->bbEndFor == NIL) {
+                return LogErrorV("程序匹配的上下文context为NULL，请联系作者");
+            }
+            return Builder.CreateBr(blk->context.forCodeGenBlockContext->bbEndFor);
+        case IF:
+            return LogErrorV("程序匹配的break环境与当前域不符(IF)，请联系作者");
+    }
+    return NIL;
+}
+
+ContinueStmtAST::ContinueStmtAST() = default;
+
+Value *ContinueStmtAST::codegen() {
+    auto blk = TheCodeGenContext.findTopLoopCodeGenBlockTypeBlock();
+    if (blk == NIL) {
+        return LogErrorV("break 不能用作于当前的代码上下文中，请检查");
+    }
+    switch (blk->contextType) {
+        case NONE:
+            return LogErrorV("程序匹配的break环境与当前域不符(NONE)，请联系作者");
+        case FOR:
+            if (blk->context.forCodeGenBlockContext == NIL
+                || blk->context.forCodeGenBlockContext->bbEndFor == NIL) {
+                return LogErrorV("程序匹配的上下文context为NULL，请联系作者");
+            }
+            return Builder.CreateBr(blk->context.forCodeGenBlockContext->bbStep);
+        case IF:
+            return LogErrorV("程序匹配的break环境与当前域不符(IF)，请联系作者");
+    }
+    return NIL;
 }

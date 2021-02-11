@@ -18,3 +18,8 @@ llvm::Value *LogErrorV(const char *Str) {
     LogError(Str);
     return nullptr;
 }
+
+llvm::Value *LogWarn(const char *Str) {
+    LogError(Str);
+    return nullptr;
+}

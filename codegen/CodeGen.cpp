@@ -44,10 +44,54 @@ Value *CodeGenContext::findValue(std::string &name) {
     auto it = blocks.rbegin();
     for (; it != blocks.rend(); it++) {
         auto itt = (*it)->localVars.find(name);
-        if (itt != (*it)->localVars.end()){
+        if (itt != (*it)->localVars.end()) {
             return (*itt).second;
         }
     }
     auto gv = TheModule->getGlobalVariable(name);
     return gv;
 }
+
+CodeGenBlock *CodeGenContext::findTopCodeGenBlockTypeBlock(CodeGenBlockContextType type) {
+    if (blocks.empty()) {
+        return nullptr;
+    }
+    for (auto i = blocks.rbegin(); i != blocks.rend(); ++i) {
+        if ((*i)->contextType == type) {
+            return (*i);
+        }
+    }
+    return nullptr;
+}
+
+CodeGenBlock *CodeGenContext::findTopLoopCodeGenBlockTypeBlock() {
+    if (blocks.empty()) {
+        return nullptr;
+    }
+    for (auto i = blocks.rbegin(); i != blocks.rend(); ++i) {
+        if (isLoopCodeGenBlockContextType((*i)->contextType)) {
+            return (*i);
+        }
+    }
+    return nullptr;
+}
+
+bool isLoopCodeGenBlockContextType(CodeGenBlockContextType type) {
+    return (type == CodeGenBlockContextType::FOR);
+}
+
+void CodeGenBlock::setContextType(CodeGenBlockContextType contextType) {
+    CodeGenBlock::contextType = contextType;
+}
+
+IfCodeGenBlockContext::IfCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbEnd, BasicBlock *bbStep,
+                                             BasicBlock *bbBody, BasicBlock *bbEndFor) : bbCond(bbCond), bbEnd(bbEnd),
+                                                                                         bbStep(bbStep), bbBody(bbBody),
+                                                                                         bbEndFor(bbEndFor) {}
+
+ForCodeGenBlockContext::ForCodeGenBlockContext(BasicBlock *bbStart, BasicBlock *bbCond, BasicBlock *bbStep,
+                                               BasicBlock *bbBody, BasicBlock *bbEndFor) : bbStart(bbStart),
+                                                                                           bbCond(bbCond),
+                                                                                           bbStep(bbStep),
+                                                                                           bbBody(bbBody),
+                                                                                           bbEndFor(bbEndFor) {}

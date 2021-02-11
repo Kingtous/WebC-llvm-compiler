@@ -8,11 +8,15 @@ int getNum(int param){
         if (index % 2 == 0){
             if (index % 3 == 0){
                 cnt = cnt + index;
+                if (cnt > 0) {
+                    break;
+                    cnt = cnt + 1;
+                } else {
+                    cnt = cnt - 1;
+                }
             }
         }
-        cnt = cnt + index;
-        nums[6][2][0][1] = cnt;
-        nums[6][2][0][1] = nums[6][2][0][2] + nums[6][1][0][2];
+        continue;
     }
     return cnt;
 }

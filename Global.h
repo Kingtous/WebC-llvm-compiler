@@ -43,9 +43,12 @@
 #define LabelPrefix "neuq_kingtous_"
 /// 全局变量
 #define HASLOCALS (TheCodeGenContext.get_current_locals() != nullptr)
-#define LOCALS TheCodeGenContext.get_current_locals()->localVars
+#define LOCALS TheCodeGenContext.get_current_locals()
+#define LOCALSVARS TheCodeGenContext.get_current_locals()->localVars
 #define INSERTLOCAL(identifier, llvmValue) TheCodeGenContext.get_current_locals()->localVars.insert(std::make_pair(identifier,llvmValue))
 #define FINDLOCAL(x) TheCodeGenContext.findValue(x)
+#define NIL nullptr
+
 extern void yyerror(const char *s);
 
 /// 全局变量
