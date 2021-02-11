@@ -308,12 +308,24 @@ public:
 /// For结点
 class ForExprAST : public StatementAST {
     // 意思为：for (Start,End,Step){Body}
-    NodeAST * Start,*Cond, *Step;
+    NodeAST *Start, *Cond, *Step;
     BlockAST *Body;
     // start -> End? -> Body ->
 
 public:
     ForExprAST(NodeAST *start, NodeAST *end, NodeAST *step, BlockAST *body);
+
+    llvm::Value *codegen() override;
+};
+
+/// While结点
+class WhileStmtAST : public StatementAST {
+    // 意思为：for (Start,End,Step){Body}
+    NodeAST *Cond;
+    BlockAST *Body;
+
+public:
+    WhileStmtAST(NodeAST *cond, BlockAST *body);
 
     llvm::Value *codegen() override;
 };

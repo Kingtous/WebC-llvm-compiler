@@ -107,7 +107,7 @@ typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+#if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
 union YYSTYPE {
 #line 21 "Parser.y"
 
@@ -120,6 +120,7 @@ union YYSTYPE {
     VariableDeclarationAST *vdeclar;
     ConditionAST *cond;
     ForExprAST *forexpr;
+    WhileStmtAST *whilestmt;
     std::vector<VariableDeclarationAST *> *varvec;
     std::vector<ExpressionAST *> *exprvec;
     std::vector<ExpressionAST *> *aivec; // array index vector
@@ -128,7 +129,7 @@ union YYSTYPE {
     int int_value;
     int token;
 
-#line 133 "Parser.hpp"
+#line 134 "Parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

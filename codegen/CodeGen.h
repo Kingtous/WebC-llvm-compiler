@@ -17,7 +17,8 @@ extern std::unique_ptr<llvm::Module> TheModule;
 enum CodeGenBlockContextType {
     NONE, //无
     FOR, //for环境
-    IF  // if环境
+    IF,  // if环境
+    WHILE
 };
 
 bool isLoopCodeGenBlockContextType(CodeGenBlockContextType type);
@@ -45,9 +46,19 @@ typedef struct IfCodeGenBlockContext {
                           BasicBlock *bbEndFor);
 } IfCodeGenBlockContext;
 
+typedef struct WhileCodeGenBlockContext {
+    BasicBlock *bbCond;
+    BasicBlock *bbBody;
+    BasicBlock *bbEndWhile;
+
+    WhileCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbBody, BasicBlock *bbEndWhile);
+
+} WhileCodeGenBlockContext;
+
 union CodeGenBlockContext {
     ForCodeGenBlockContext *forCodeGenBlockContext;
     IfCodeGenBlockContext *ifCodeGenBlockContext;
+    WhileCodeGenBlockContext *whileCodeGenBlockContext;
 };
 typedef union CodeGenBlockContext CodeGenBlockContext;
 

@@ -28,6 +28,7 @@ void yyerror(const char *s)
 	VariableDeclarationAST* vdeclar;
 	ConditionAST* cond;
 	ForExprAST* forexpr;
+	WhileStmtAST* whilestmt;
 	std::vector<VariableDeclarationAST*> *varvec;
 	std::vector<ExpressionAST*> *exprvec;
 	std::vector<ExpressionAST*> *aivec; // array index vector
@@ -61,6 +62,7 @@ void yyerror(const char *s)
 %type <expr> number expr
 %type <cond> if_condition
 %type <forexpr> for_stmt
+%type <whilestmt> while_stmt
 %type <node> for_args
 %type <stmt> stmt var_decl func_decl
 %type <varvec> func_args
@@ -98,6 +100,7 @@ stmts : stmt {$$ = new BlockAST(); $$->statements.push_back($<stmt>1);}
 stmt : var_decl ';' {printf("build var decl stmt\n");}
 	| func_decl {$$ = $1;}
 	| if_condition {$$ = $1;}
+	| while_stmt {$$ = $1;}
 	| ident T_ASSIGN expr ';' {$$ = new VariableAssignmentAST($1->identifier,$3);}
 	| ident_arr T_ASSIGN expr ';' {$$ = new VariableArrAssignmentAST($1,$3);}
 	| T_RETURN ';'{$$ = new ReturnStmtAST();}
@@ -203,6 +206,8 @@ for_args : var_decl {$$ = $1;}
 	| ident T_ASSIGN expr {$$ = new VariableAssignmentAST($1->identifier,$3);}
 	| expr {$$ = $1;}
 	;
+
+while_stmt : T_WHILE T_L_SPAR expr T_R_SPAR block {$$ = new WhileStmtAST($3,$5);}
 
 %%
 

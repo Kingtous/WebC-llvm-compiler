@@ -633,6 +633,14 @@ Value *BreakStmtAST::codegen() {
             return Builder.CreateBr(blk->context.forCodeGenBlockContext->bbEndFor);
         case IF:
             return LogErrorV("程序匹配的break环境与当前域不符(IF)，请联系作者");
+        case WHILE:
+            if (blk->context.whileCodeGenBlockContext == NIL
+                || blk->context.whileCodeGenBlockContext->bbEndWhile == NIL) {
+                return LogErrorV("程序匹配的上下文context为NULL(while continue;)，请联系作者");
+            }
+            return Builder.CreateBr(blk->context.whileCodeGenBlockContext->bbEndWhile);
+        default:
+            return LogErrorV("Break在未知的代码域中，或编译器目前无法处理的关键字");
     }
     return NIL;
 }
@@ -654,7 +662,50 @@ Value *ContinueStmtAST::codegen() {
             }
             return Builder.CreateBr(blk->context.forCodeGenBlockContext->bbStep);
         case IF:
-            return LogErrorV("程序匹配的break环境与当前域不符(IF)，请联系作者");
+            return LogErrorV("程序匹配的break环境与当前域不符(IF)，这可能是个bug，请联系作者");
+        case WHILE:
+            if (blk->context.whileCodeGenBlockContext == NIL
+                || blk->context.whileCodeGenBlockContext->bbCond == NIL) {
+                return LogErrorV("程序匹配的上下文context为NULL(while continue;)，请联系作者");
+            }
+            return Builder.CreateBr(blk->context.whileCodeGenBlockContext->bbCond);
+        default:
+            return LogErrorV("Break在未知的代码域中，或编译器目前无法处理的关键字");
     }
     return NIL;
+}
+
+WhileStmtAST::WhileStmtAST(NodeAST *cond, BlockAST *body) : Cond(cond), Body(body) {}
+
+llvm::Value *WhileStmtAST::codegen() {
+    auto function = Builder.GetInsertBlock()->getParent();
+    if (function == NIL) {
+        return LogErrorV("while 不能用在非函数体中");
+    }
+    BasicBlock *bbCond = BasicBlock::Create(TheContext, "while_cond", function);
+    BasicBlock *bbBody = BasicBlock::Create(TheContext, "while_body");
+    BasicBlock *bbEndWhile = BasicBlock::Create(TheContext, "while_end");
+    LOCALS->setContextType(CodeGenBlockContextType::WHILE);
+    LOCALS->context.whileCodeGenBlockContext = new WhileCodeGenBlockContext(bbCond, bbBody, bbEndWhile);
+    // 创建条件分支
+    Builder.CreateBr(bbCond);
+    Builder.SetInsertPoint(bbCond);
+    auto condV = Cond->codegen();
+    if (condV == NIL) {
+        return LogErrorV("while中的判断语句解析失败");
+    }
+    condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"), 0));
+    Builder.CreateCondBr(condV, bbBody, bbEndWhile);
+    function->getBasicBlockList().push_back(bbBody);
+    Builder.SetInsertPoint(bbBody);
+    auto bodyV = Body->codegen();
+    if (bodyV == NIL) {
+        return LogErrorV("while中的判断语句解析失败");
+    }
+    if (Builder.GetInsertBlock()->empty() || !Builder.GetInsertBlock()->rbegin()->isTerminator()) {
+        Builder.CreateBr(bbCond);
+    }
+    function->getBasicBlockList().push_back(bbEndWhile);
+    Builder.SetInsertPoint(bbEndWhile);
+    return bbEndWhile;
 }

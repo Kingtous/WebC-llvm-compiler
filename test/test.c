@@ -8,11 +8,12 @@ int getNum(int param){
         if (index % 2 == 0){
             if (index % 3 == 0){
                 cnt = cnt + index;
-                if (cnt > 0) {
-                    break;
-                    cnt = cnt + 1;
-                } else {
+                while (cnt > 0) {
                     cnt = cnt - 1;
+                    while (cnt < 0) {
+                        return 0;
+                    }
+                    break;
                 }
             }
         }

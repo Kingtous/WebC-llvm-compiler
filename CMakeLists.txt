@@ -4,6 +4,13 @@ project(sysyplus_compiler)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(LLVM REQUIRED CONFIG)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+include_directories(${GTK3_INCLUDE_DIRS})
+link_directories(${GTK3_LIBRARY_DIRS})
+
+add_definitions(${GTK3_CFLAGS_OTHER})
 # 处理语法分析器
 #find_package(BISON)
 #BISON_TARGET(Parser parser/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser/Parser.cpp

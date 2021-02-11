@@ -77,7 +77,8 @@ CodeGenBlock *CodeGenContext::findTopLoopCodeGenBlockTypeBlock() {
 }
 
 bool isLoopCodeGenBlockContextType(CodeGenBlockContextType type) {
-    return (type == CodeGenBlockContextType::FOR);
+    return (type == CodeGenBlockContextType::FOR)
+           || type == CodeGenBlockContextType::WHILE;
 }
 
 void CodeGenBlock::setContextType(CodeGenBlockContextType contextType) {
@@ -95,3 +96,6 @@ ForCodeGenBlockContext::ForCodeGenBlockContext(BasicBlock *bbStart, BasicBlock *
                                                                                            bbStep(bbStep),
                                                                                            bbBody(bbBody),
                                                                                            bbEndFor(bbEndFor) {}
+
+WhileCodeGenBlockContext::WhileCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbBody, BasicBlock *bbEndWhile)
+        : bbCond(bbCond), bbBody(bbBody), bbEndWhile(bbEndWhile) {}
