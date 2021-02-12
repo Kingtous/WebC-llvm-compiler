@@ -85,11 +85,6 @@ void CodeGenBlock::setContextType(CodeGenBlockContextType contextType) {
     CodeGenBlock::contextType = contextType;
 }
 
-IfCodeGenBlockContext::IfCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbEnd, BasicBlock *bbStep,
-                                             BasicBlock *bbBody, BasicBlock *bbEndFor) : bbCond(bbCond), bbEnd(bbEnd),
-                                                                                         bbStep(bbStep), bbBody(bbBody),
-                                                                                         bbEndFor(bbEndFor) {}
-
 ForCodeGenBlockContext::ForCodeGenBlockContext(BasicBlock *bbStart, BasicBlock *bbCond, BasicBlock *bbStep,
                                                BasicBlock *bbBody, BasicBlock *bbEndFor) : bbStart(bbStart),
                                                                                            bbCond(bbCond),
@@ -99,3 +94,7 @@ ForCodeGenBlockContext::ForCodeGenBlockContext(BasicBlock *bbStart, BasicBlock *
 
 WhileCodeGenBlockContext::WhileCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbBody, BasicBlock *bbEndWhile)
         : bbCond(bbCond), bbBody(bbBody), bbEndWhile(bbEndWhile) {}
+
+IfCodeGenBlockContext::IfCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbEndIf, BasicBlock *bbTrue,
+                                             BasicBlock *bbElse) : bbCond(bbCond), bbEndIf(bbEndIf), bbTrue(bbTrue),
+                                                                   bbElse(bbElse) {}

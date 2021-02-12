@@ -37,13 +37,11 @@ typedef struct ForCodeGenBlockContext {
 
 typedef struct IfCodeGenBlockContext {
     BasicBlock *bbCond;
-    BasicBlock *bbEnd;
-    BasicBlock *bbStep;
-    BasicBlock *bbBody;
-    BasicBlock *bbEndFor;
+    BasicBlock *bbEndIf;
+    BasicBlock *bbTrue;
+    BasicBlock *bbElse;
 
-    IfCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbEnd, BasicBlock *bbStep, BasicBlock *bbBody,
-                          BasicBlock *bbEndFor);
+    IfCodeGenBlockContext(BasicBlock *bbCond, BasicBlock *bbEndIf, BasicBlock *bbTrue, BasicBlock *bbElse);
 } IfCodeGenBlockContext;
 
 typedef struct WhileCodeGenBlockContext {

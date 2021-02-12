@@ -24,9 +24,10 @@ llvm::Value *BinaryExprAST::codegen() {
     // 逻辑值bool
     if (type == BinaryType::AND) {
         // 与
-
+        return this->codeGenAnd(LEA, REA);
     } else if (type == BinaryType::OR) {
-        //
+        // 或
+        return this->codeGenOr(LEA, REA);
     } else {
         llvm::Value *L = LEA->codegen();
         llvm::Value *R = REA->codegen();
@@ -113,18 +114,83 @@ Value *BinaryExprAST::codeGenAnd(NodeAST *l, NodeAST *r) {
     }
     auto func = Builder.GetInsertBlock()->getParent();
     if (func == NIL) {
-        return LogErrorV("&&需要在函数环境下使用");
+        return LogErrorV("&&需要在函数环境下使用，建议在函数中使用");
     }
-    auto bbCond1 = BasicBlock::Create(TheContext, "and_1", func);
-    auto bbCond2 = BasicBlock::Create(TheContext, "and_2", func);
-    auto bbEndCond = BasicBlock::Create(TheContext, "and_end", func);
-    // TODO
-
-    return nullptr;
+//    BasicBlock* condTrue = NIL;
+//    BasicBlock* condEnd = NIL;
+//    if (LOCALS->contextType == CodeGenBlockContextType::IF){
+//        condTrue = LOCALS->context.ifCodeGenBlockContext->bbTrue;
+//        condEnd = LOCALS->context.ifCodeGenBlockContext->bbElse == NIL ? LOCALS->context.ifCodeGenBlockContext->bbEndIf : LOCALS->context.ifCodeGenBlockContext->bbElse;
+//    } else if (LOCALS->contextType == CodeGenBlockContextType::FOR){
+//        condTrue = LOCALS->context.forCodeGenBlockContext->bbBody;
+//        condEnd = LOCALS->context.forCodeGenBlockContext->bbEndFor;
+//    } else {
+//        return LogErrorV("不能将二元操作符应用于");
+//    }
+    auto bbCond1 = Builder.GetInsertBlock();
+    auto bbCond2 = BasicBlock::Create(TheContext, "and_right");
+    auto bbCondEnd = BasicBlock::Create(TheContext, "and_end");
+    auto cond1V = l->codegen();
+    cond1V = Builder.CreateICmpSGT(cond1V, ConstantInt::get(cond1V->getType(), 0));
+    bbCond1 = Builder.GetInsertBlock();
+    Builder.CreateCondBr(cond1V, bbCond2, bbCondEnd); // 如果为true的话接着判断cond2，
+    func->getBasicBlockList().push_back(bbCond2);
+    Builder.SetInsertPoint(bbCond2);
+    auto cond2V = r->codegen();
+    cond2V = Builder.CreateICmpSGT(cond2V, ConstantInt::get(cond2V->getType(), 0));
+    // 要考虑嵌套
+    bbCond2 = Builder.GetInsertBlock();
+    Builder.CreateBr(bbCondEnd);
+    func->getBasicBlockList().push_back(bbCondEnd);
+    Builder.SetInsertPoint(bbCondEnd);
+    auto phi = Builder.CreatePHI(getTypeFromStr("bool"), 2);
+    phi->addIncoming(cond1V, bbCond1);
+    phi->addIncoming(cond2V, bbCond2);
+    return phi;
 }
 
 Value *BinaryExprAST::codeGenOr(NodeAST *l, NodeAST *r) {
-    return nullptr;
+    if (Builder.GetInsertBlock() == NIL) {
+        return LogErrorV("当前需要一个Basic Block来开始or环境");
+    }
+    auto func = Builder.GetInsertBlock()->getParent();
+    if (func == NIL) {
+        return LogErrorV("||需要在函数环境下使用");
+    }
+//    BasicBlock* condTrue = NIL;
+//    BasicBlock* condEnd = NIL;
+//    if (LOCALS->contextType == CodeGenBlockContextType::IF){
+//        condTrue = LOCALS->context.ifCodeGenBlockContext->bbTrue;
+//        condEnd = LOCALS->context.ifCodeGenBlockContext->bbElse == NIL ? LOCALS->context.ifCodeGenBlockContext->bbEndIf : LOCALS->context.ifCodeGenBlockContext->bbElse;
+//    } else if (LOCALS->contextType == CodeGenBlockContextType::FOR){
+//        condTrue = LOCALS->context.forCodeGenBlockContext->bbBody;
+//        condEnd = LOCALS->context.forCodeGenBlockContext->bbEndFor;
+//    } else {
+//        return LogErrorV("不能将二元操作符应用于");
+//    }
+    auto bbCond1 = Builder.GetInsertBlock();
+    auto bbCond2 = BasicBlock::Create(TheContext, "or_right");
+    auto bbCondEnd = BasicBlock::Create(TheContext, "or_end");
+    // TODO
+    Builder.SetInsertPoint(bbCond1);
+    auto cond1V = l->codegen();
+    cond1V = Builder.CreateICmpNE(cond1V, ConstantInt::get(cond1V->getType(), 0));
+    bbCond1 = Builder.GetInsertBlock();
+    Builder.CreateCondBr(cond1V, bbCondEnd, bbCond2);
+
+    func->getBasicBlockList().push_back(bbCond2);
+    Builder.SetInsertPoint(bbCond2);
+    auto cond2V = r->codegen();
+    cond2V = Builder.CreateICmpNE(cond2V, ConstantInt::get(cond2V->getType(), 0));
+    // 要考虑嵌套，更新当前bb
+    bbCond2 = Builder.GetInsertBlock();
+    Builder.CreateBr(bbCondEnd);
+    func->getBasicBlockList().push_back(bbCondEnd);
+    Builder.SetInsertPoint(bbCondEnd);
+    auto phi = Builder.CreatePHI(getTypeFromStr("bool"), 2);
+    phi->addIncoming(cond1V, bbCond1);
+    phi->addIncoming(cond2V, bbCond2);
+    return phi;
 }
 
 llvm::Value *CallExprAST::codegen() {
@@ -172,7 +238,7 @@ Value *ConditionAST::codegen() {
         return LogErrorV("if parse error");
     }
     // 创建一条 icnp ne指令，用于if的比较，由于是bool比较，此处直接与0比较。
-    ifCondV = Builder.CreateICmpNE(ifCondV, ConstantInt::get(getTypeFromStr("bool"),0), "neuq_jintao_ifcond");
+    ifCondV = Builder.CreateICmpNE(ifCondV, ConstantInt::get(getTypeFromStr("bool"), 0), "neuq_jintao_ifcond");
     // 获取if里面的函数体，准备创建基础块
     auto theFunction = Builder.GetInsertBlock()->getParent();
     if (!theFunction) {
@@ -180,10 +246,17 @@ Value *ConditionAST::codegen() {
     }
     // 创建三个basic block，先添加IfTrue至函数体里面
     BasicBlock *bbIfTrue = BasicBlock::Create(TheContext, "neuq_jintao_if_true", theFunction);
-    BasicBlock *bbElse = BasicBlock::Create(TheContext, "neuq_jintao_else");
+    BasicBlock *bbElse = else_stmt == NIL ? NIL : BasicBlock::Create(TheContext, "neuq_jintao_else");
     BasicBlock *bbIfEnd = BasicBlock::Create(TheContext, "neuq_jintao_if_end");
+    LOCALS->setContextType(CodeGenBlockContextType::IF);
+    LOCALS->context.ifCodeGenBlockContext = new IfCodeGenBlockContext(Builder.GetInsertBlock(), bbIfEnd, bbIfTrue,
+                                                                      bbElse);
     // 创建条件分支,createCondBr(条件结果，为true的basic block，为false的basic block)
-    Builder.CreateCondBr(ifCondV, bbIfTrue, bbElse);
+    if (bbElse == NIL) {
+        Builder.CreateCondBr(ifCondV, bbIfTrue, bbIfEnd);
+    } else {
+        Builder.CreateCondBr(ifCondV, bbIfTrue, bbElse);
+    }
     // 开启往Basic Block中塞入代码
     Builder.SetInsertPoint(bbIfTrue);
     Value *ifTrueV = if_stmt->codegen();
@@ -197,19 +270,21 @@ Value *ConditionAST::codegen() {
     // 将插入if内容时，可能会有循环嵌套，需要更新嵌套最底层的insertBlock
     bbIfTrue = Builder.GetInsertBlock();
     // 塞入else
-    theFunction->getBasicBlockList().push_back(bbElse);
-    Builder.SetInsertPoint(bbElse);
-    Value *elseV = nullptr;
-    if (else_stmt) {
-        elseV = else_stmt->codegen();
-        if (!elseV) {
-            return LogErrorV("else里面内容有误");
+    if (bbElse != NIL) {
+        theFunction->getBasicBlockList().push_back(bbElse);
+        Builder.SetInsertPoint(bbElse);
+        Value *elseV = nullptr;
+        if (else_stmt) {
+            elseV = else_stmt->codegen();
+            if (!elseV) {
+                return LogErrorV("else里面内容有误");
+            }
         }
+        if (Builder.GetInsertBlock()->empty() || !(*Builder.GetInsertBlock()->rbegin()).isTerminator()) {
+            Builder.CreateBr(bbIfEnd);
+        }
+        bbElse = Builder.GetInsertBlock();
     }
-    if (Builder.GetInsertBlock()->empty() || !(*Builder.GetInsertBlock()->rbegin()).isTerminator()) {
-        Builder.CreateBr(bbIfEnd);
-    }
-    bbElse = Builder.GetInsertBlock();
     // 创建末尾结点
     theFunction->getBasicBlockList().push_back(bbIfEnd);
     Builder.SetInsertPoint(bbIfEnd);
@@ -447,6 +522,10 @@ llvm::Value *VariableDeclarationAST::codegen() {
 //            auto mem = Builder.CreateAlloca(getTypeFromStr(type),)
             if (expr != nullptr) {
                 auto v = expr->codegen();
+                if (v->getType()->isIntegerTy() && v->getType() != getTypeFromStr(type)) {
+                    // 不同，尝试进行修剪
+                    v = Builder.CreateZExtOrTrunc(v, getTypeFromStr(type));
+                }
                 Builder.CreateStore(v, ret);
             }
             INSERTLOCAL(identifier->identifier, ret);
