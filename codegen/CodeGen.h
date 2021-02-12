@@ -72,7 +72,10 @@ public:
 
 class CodeGenContext {
     std::vector<CodeGenBlock *> blocks;
+    // 目前设计为单例模式
     Function *function;
+    BasicBlock *retBB;
+    Value *retV;
 public:
     void push_block(BasicBlock *block);
 
@@ -87,6 +90,14 @@ public:
     void removeFunction();
 
     Value *findValue(std::string &name);
+
+    BasicBlock *getRetBb() const;
+
+    Value *getRetV() const;
+
+    void setRetV(Value *retV);
+
+    void setRetBb(BasicBlock *retBb);
 
     /**
      * 获取顶部符合type的block

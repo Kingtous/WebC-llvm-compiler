@@ -278,10 +278,15 @@ public:
 
 /// 函数结点
 class FunctionAST : public StatementAST {
-    PrototypeAST* Proto;
-    BlockAST* Body;
+    PrototypeAST *Proto;
+    BlockAST *Body;
 public:
     FunctionAST(PrototypeAST *proto, BlockAST *body);
+
+    /**
+     * 清除CodeGenContext
+     */
+    void cleanCodeGenContext();
 
     llvm::Function *codegen() override;
 };

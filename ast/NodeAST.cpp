@@ -360,9 +360,9 @@ Value *ForExprAST::codegen() {
 }
 
 ForExprAST::ForExprAST(NodeAST *start, NodeAST *end, NodeAST *step, BlockAST *body) : Start(start),
-                                                                                                        Cond(end),
-                                                                                                        Step(step),
-                                                                                                        Body(body) {}
+                                                                                      Cond(end),
+                                                                                      Step(step),
+                                                                                      Body(body) {}
 
 
 const std::string &PrototypeAST::getName() const {
@@ -372,8 +372,19 @@ const std::string &PrototypeAST::getName() const {
 PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args)
         : returnType(returnType), name(name), args(args) {}
 
+void FunctionAST::cleanCodeGenContext() {
+    // 清除
+    TheCodeGenContext.setRetBb(NIL);
+    TheCodeGenContext.pop_block();
+    TheCodeGenContext.removeFunction();
+}
+
 llvm::Function *FunctionAST::codegen() {
     llvm::Function *function = TheModule->getFunction(Proto->getName());
+    TheCodeGenContext.setFunction(function);
+    // 设置返回值block
+    auto retBB = BasicBlock::Create(TheContext, "function_ret");
+    TheCodeGenContext.setRetBb(retBB);
 
     if (!function)
         function = Proto->codegen();
@@ -398,28 +409,40 @@ llvm::Function *FunctionAST::codegen() {
         Builder.CreateStore(&Arg, mem);
         LOCALSVARS.insert(make_pair(Arg.getName().data(), mem));
     }
-
+    // 把return值alloc一下，如果不是void
+    if (!function->getReturnType()->isVoidTy()) {
+        Value *ret = Builder.CreateAlloca(function->getReturnType());
+        Builder.CreateStore(Constant::getNullValue(function->getReturnType()), ret);
+        TheCodeGenContext.setRetV(ret);
+    }
     if (Body->codegen()) {
-        // Finish off the function.
-        // TODO 后期自动匹配return，自动追加
-        // Validate the generated code, checking for consistency.
+        // 结束函数，创建return结点
+        if (Builder.GetInsertBlock()->empty() || !Builder.GetInsertBlock()->rbegin()->isTerminator()) {
+            Builder.CreateBr(retBB);
+        }
+        function->getBasicBlockList().push_back(retBB);
+        Builder.SetInsertPoint(retBB);
+        if (function->getReturnType()->isVoidTy()) {
+            Builder.CreateRetVoid();
+        } else {
+            Builder.CreateRet(Builder.CreateLoad(TheCodeGenContext.getRetV()));
+        }
         auto isNotValid = verifyFunction(*function, &errs());
         if (isNotValid) {
             LogError(("function '" + Proto->getName() + "' not valid\n").c_str());
-            errs()<<"function ll codes:\n";
+            errs() << "function ll codes:\n";
             function->print(errs());
-            return nullptr;
+            goto clean;
         } else {
             function->print(outs());
+            cleanCodeGenContext();
         }
-        TheCodeGenContext.pop_block();
         return function;
     }
-    TheCodeGenContext.pop_block();
-    TheCodeGenContext.removeFunction();
+    clean:
+    cleanCodeGenContext();
     // Error reading body, remove function.
     function->eraseFromParent();
-
     return nullptr;
 }
 
@@ -573,11 +596,25 @@ ReturnStmtAST::ReturnStmtAST() {
 }
 
 llvm::Value *ReturnStmtAST::codegen() {
+    auto ret_bb = TheCodeGenContext.getRetBb();
+    if (ret_bb == NIL) {
+        return LogErrorV("return是否用在了非函数环境下？");
+    }
     if (expr == nullptr) {
-        return Builder.CreateRetVoid();
+        return Builder.CreateBr(ret_bb);
     } else {
+        auto ret_addr = TheCodeGenContext.getRetV();
+        if (ret_addr == NIL) {
+            return LogErrorV("无返回值分配域？请联系作者");
+        }
         auto v = expr->codegen();
-        return Builder.CreateRet(v);
+        if (v == NIL) {
+            return LogErrorV("函数返回的值为空，可能是值解析失败，或变量不存在");
+        } else {
+            Builder.CreateStore(v, ret_addr);
+            Builder.CreateBr(ret_bb);
+            return v;
+        }
     }
 }
 

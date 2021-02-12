@@ -76,6 +76,22 @@ CodeGenBlock *CodeGenContext::findTopLoopCodeGenBlockTypeBlock() {
     return nullptr;
 }
 
+BasicBlock *CodeGenContext::getRetBb() const {
+    return retBB;
+}
+
+void CodeGenContext::setRetBb(BasicBlock *retBb) {
+    retBB = retBb;
+}
+
+Value *CodeGenContext::getRetV() const {
+    return retV;
+}
+
+void CodeGenContext::setRetV(Value *retV) {
+    CodeGenContext::retV = retV;
+}
+
 bool isLoopCodeGenBlockContextType(CodeGenBlockContextType type) {
     return (type == CodeGenBlockContextType::FOR)
            || type == CodeGenBlockContextType::WHILE;
