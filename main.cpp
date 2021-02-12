@@ -5,7 +5,7 @@
 using namespace llvm;
 Lexer *m_lexer;
 
-int main() {
+int main(int argc, char **argv) {
     // Open a new module.
     TheModule = std::make_unique<Module>("Kingtous' jit", TheContext);
 //    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
@@ -19,6 +19,7 @@ int main() {
 //    TheFPM->addPass(createCFGSimplificationPass());
     //
     FileReader reader("../test/test.c");
+//    FileReader reader("../test/case/section1/functional_test/12_array_traverse.sy");
     m_lexer = new Lexer(reader);
     TheLexer = m_lexer;
     int result = yyparse();

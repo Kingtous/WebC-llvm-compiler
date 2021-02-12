@@ -64,7 +64,8 @@ void yyerror(const char *s)
 %type <forexpr> for_stmt
 %type <whilestmt> while_stmt
 %type <node> for_args
-%type <stmt> stmt var_decl func_decl
+%type <stmt> stmt func_decl
+%type <vdeclar> var_decl
 %type <varvec> func_args
 %type <exprvec> call_args
 %type <aivec> array_index "array index vector"
@@ -97,7 +98,12 @@ stmts : stmt {$$ = new BlockAST(); $$->statements.push_back($<stmt>1);}
 	| stmts stmt {$1->statements.push_back($<stmt>2);}
 	;
 
-stmt : var_decl ';' {printf("build var decl stmt\n");}
+stmt : var_decl ';' {
+#ifdef DEBUG_FLAG
+fprintf(stderr,"build var decl stmt\n");
+#endif
+}
+	| T_CONST var_decl ';' {$2->setIsConst(true);$$=$2;}
 	| func_decl {$$ = $1;}
 	| if_condition {$$ = $1;}
 	| while_stmt {$$ = $1;}
@@ -155,6 +161,8 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| expr T_LESS_EQU expr {$$ = new BinaryExprAST(BinaryType::less_equ,$1,$3);}
 	| expr T_GREATER_EQU expr {$$ = new BinaryExprAST(BinaryType::greater_equ,$1,$3);}
 	| expr T_EQU expr {$$ = new BinaryExprAST(BinaryType::equ,$1,$3);}
+	| expr T_AND expr {$$ = new BinaryExprAST(BinaryType::AND,$1,$3);}
+	| expr T_OR expr {$$ = new BinaryExprAST(BinaryType::OR,$1,$3);}
 	;
 
 //aivec

@@ -126,9 +126,15 @@ int Lexer::_getNextToken() {
             LastChar = getchar();
             return _getNextToken();
         }
+        if (identifierStr == "&&") {
+            return T_AND;
+        }
+        if (identifierStr == "||") {
+            return T_OR;
+        }
         if (identifierStr == "-") {
             // 负数
-            if (isdigit(seek())){
+            if (isdigit(seek())) {
                 int token = _getNextToken();
                 if (token == T_INTEGER) {
                     yylval.int_value = -yylval.int_value;

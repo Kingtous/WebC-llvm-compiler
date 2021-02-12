@@ -21,66 +21,111 @@ llvm::Value *VariableExprAST::codegen() {
 }
 
 llvm::Value *BinaryExprAST::codegen() {
-    llvm::Value *L = LEA->codegen();
-    llvm::Value *R = REA->codegen();
-    if (!L || !R)
-        return nullptr;
-    if (L->getType() == getTypeFromStr("int") && R->getType() == getTypeFromStr("int")) {
-        switch (type) {
-            case BinaryType::add:
-                return Builder.CreateAdd(L, R, "add");
-            case BinaryType::sub:
-                return Builder.CreateSub(L, R, "sub");
-            case BinaryType::mul:
-                return Builder.CreateMul(L, R, "mul");
-            case BinaryType::divi:
-                return Builder.CreateSDiv(L, R, "divi");
-            case BinaryType::mod:
-                return Builder.CreateSRem(L, R,
-                                          "mod");
-            case BinaryType::less:
-                return Builder.CreateICmpSLT(L, R, "less_than");
-            case BinaryType::greater:
-                return Builder.CreateICmpSGT(L, R, "greater_than");
-            case BinaryType::equ:
-                return Builder.CreateICmpEQ(L, R, "equ");
-            default:
-                return LogErrorV(("invalid binary operator"));
-        }
+    // 逻辑值bool
+    if (type == BinaryType::AND) {
+        // 与
+
+    } else if (type == BinaryType::OR) {
+        //
     } else {
-        // 类型不相同，做类型转换
-        if (L->getType()->isIntegerTy()) {
-            L = Builder.CreateSIToFP(L, R->getType());
-        }
-        if (R->getType()->isIntegerTy()) {
-            R = Builder.CreateSIToFP(R, L->getType());
-        }
-        switch (type) {
-            case BinaryType::add:
-                return Builder.CreateFAdd(L, R, "add");
-            case BinaryType::sub:
-                return Builder.CreateFSub(L, R, "sub");
-            case BinaryType::mul:
-                return Builder.CreateFMul(L, R, "mul");
-            case BinaryType::divi:
-                return Builder.CreateFDiv(L, R, "divi");
-            case BinaryType::mod:
-                return Builder.CreateFRem(L, R, "mod");
-            case BinaryType::less:
-                return Builder.CreateFCmpOLT(L, R, "less_than");
-            case BinaryType::equ:
-                return Builder.CreateFCmpOEQ(L, R, "ordered_fequ");
-            case BinaryType::greater:
-                return Builder.CreateFCmpOGT(L, R, "greater_than");
-            default:
-                return LogErrorV(("invalid binary operator"));
+        llvm::Value *L = LEA->codegen();
+        llvm::Value *R = REA->codegen();
+        if (!L || !R)
+            return nullptr;
+        // 数值计算
+        if (L->getType() == getTypeFromStr("int") && R->getType() == getTypeFromStr("int")) {
+            switch (type) {
+                case BinaryType::add:
+                    return Builder.CreateAdd(L, R, "add");
+                case BinaryType::sub:
+                    return Builder.CreateSub(L, R, "sub");
+                case BinaryType::mul:
+                    return Builder.CreateMul(L, R, "mul");
+                case BinaryType::divi:
+                    return Builder.CreateSDiv(L, R, "divi");
+                case BinaryType::mod:
+                    return Builder.CreateSRem(L, R,
+                                              "mod");
+                case BinaryType::less:
+                    return Builder.CreateICmpSLT(L, R, "less_than");
+                case BinaryType::greater:
+                    return Builder.CreateICmpSGT(L, R, "greater_than");
+                case BinaryType::equ:
+                    return Builder.CreateICmpEQ(L, R, "equ");
+                case BinaryType::greater_equ:
+                    return Builder.CreateICmpSGE(L, R, "greater_equ");
+                case BinaryType::less_equ:
+                    return Builder.CreateICmpSLE(L, R, "less_equ");
+//            case BinaryType::AND:
+//                auto boolL = Builder.CreateICmpNE(L,ConstantInt::get(getTypeFromStr("bool"),0));
+//                auto boolR = Builder.CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
+//                return Builder.CreateICmpSLE(boolL, boolR, "less_equ");
+//            case BinaryType::AND:
+//                auto boolL = Builder.CreateICmpNE(L,ConstantInt::get(getTypeFromStr("bool"),0));
+//                auto boolR = Builder.CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
+//                Builder.
+//                return Builder.CreateICmpSLE(boolL, boolR, "less_equ");
+//            default:
+//                return LogErrorV(("invalid binary operator"));
+            }
+        } else {
+            // 类型不相同，做类型转换
+            if (L->getType()->isIntegerTy()) {
+                L = Builder.CreateSIToFP(L, R->getType());
+            }
+            if (R->getType()->isIntegerTy()) {
+                R = Builder.CreateSIToFP(R, L->getType());
+            }
+            switch (type) {
+                case BinaryType::add:
+                    return Builder.CreateFAdd(L, R, "add");
+                case BinaryType::sub:
+                    return Builder.CreateFSub(L, R, "sub");
+                case BinaryType::mul:
+                    return Builder.CreateFMul(L, R, "mul");
+                case BinaryType::divi:
+                    return Builder.CreateFDiv(L, R, "divi");
+                case BinaryType::mod:
+                    return Builder.CreateFRem(L, R, "mod");
+                case BinaryType::less:
+                    return Builder.CreateFCmpOLT(L, R, "less_than");
+                case BinaryType::equ:
+                    return Builder.CreateFCmpOEQ(L, R, "ordered_fequ");
+                case BinaryType::greater:
+                    return Builder.CreateFCmpOGT(L, R, "greater_than");
+                case BinaryType::greater_equ:
+                    return Builder.CreateFCmpOGE(L, R, "greater_equ");
+                case BinaryType::less_equ:
+                    return Builder.CreateFCmpOLE(L, R, "less_equ");
+                default:
+                    return LogErrorV(("invalid binary operator"));
+            }
         }
     }
-
 }
 
 BinaryExprAST::BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST *rea) : type(type), LEA(lea),
                                                                                         REA(rea) {}
+
+Value *BinaryExprAST::codeGenAnd(NodeAST *l, NodeAST *r) {
+    if (Builder.GetInsertBlock() == NIL) {
+        return LogErrorV("当前需要一个Basic Block来开始and环境");
+    }
+    auto func = Builder.GetInsertBlock()->getParent();
+    if (func == NIL) {
+        return LogErrorV("&&需要在函数环境下使用");
+    }
+    auto bbCond1 = BasicBlock::Create(TheContext, "and_1", func);
+    auto bbCond2 = BasicBlock::Create(TheContext, "and_2", func);
+    auto bbEndCond = BasicBlock::Create(TheContext, "and_end", func);
+    // TODO
+
+    return nullptr;
+}
+
+Value *BinaryExprAST::codeGenOr(NodeAST *l, NodeAST *r) {
+    return nullptr;
+}
 
 llvm::Value *CallExprAST::codegen() {
     // Look up the name in the global module table.
@@ -413,6 +458,10 @@ llvm::Value *VariableDeclarationAST::codegen() {
 VariableDeclarationAST::VariableDeclarationAST(const string &type, IdentifierExprAST *identifier, ExpressionAST *expr,
                                                bool isConst) : type(type), identifier(identifier), expr(expr),
                                                                isConst(isConst) {}
+
+void VariableDeclarationAST::setIsConst(bool isConst) {
+    VariableDeclarationAST::isConst = isConst;
+}
 
 llvm::Value *IntegerExprAST::codegen() {
     return ConstantInt::get(Type::getInt32Ty(TheContext), Val, true);

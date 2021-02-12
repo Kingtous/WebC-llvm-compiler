@@ -34,7 +34,9 @@ enum BinaryType {
     less_equ,
     greater,
     greater_equ,
-    equ
+    equ,
+    AND,
+    OR
 };
 
 //////////////////// 基类结点 ///////////////////////
@@ -125,6 +127,10 @@ public:
     ExpressionAST *expr;
     bool isConst = false;
 
+    void setIsConst(bool isConst);
+
+    VariableDeclarationAST() = default;
+
     VariableDeclarationAST(const string &type, IdentifierExprAST *identifier, ExpressionAST *expr = nullptr,
                            bool isConst = false);
 
@@ -136,7 +142,7 @@ public:
 };
 
 // 变量声明语句
-class VariableArrDeclarationAST : public StatementAST {
+class VariableArrDeclarationAST : public VariableDeclarationAST {
 public:
     // 变量类型
     std::string type;
@@ -231,12 +237,16 @@ public:
 class BinaryExprAST : public ExpressionAST {
     // 操作符
     BinaryType type;
-    ExpressionAST* LEA;
-    ExpressionAST* REA;
+    ExpressionAST *LEA;
+    ExpressionAST *REA;
 public:
     BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST *rea);
 
     llvm::Value *codegen() override;
+
+    Value *codeGenAnd(NodeAST *l, NodeAST *r);
+
+    Value *codeGenOr(NodeAST *l, NodeAST *r);
 };
 
 /// 函数调用结点
