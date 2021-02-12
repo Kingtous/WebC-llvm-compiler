@@ -103,6 +103,7 @@ llvm::Value *BinaryExprAST::codegen() {
             }
         }
     }
+    return NIL;
 }
 
 BinaryExprAST::BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST *rea) : type(type), LEA(lea),

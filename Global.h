@@ -41,6 +41,7 @@
 
 /// 特性前缀
 #define LabelPrefix "neuq_kingtous_"
+#define APPNAME "cn.kingtous.sysycompiler"
 /// 全局变量
 #define HASLOCALS (TheCodeGenContext.get_current_locals() != nullptr)
 #define LOCALS TheCodeGenContext.get_current_locals()

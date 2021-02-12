@@ -17,6 +17,9 @@ add_definitions(${GTK3_CFLAGS_OTHER})
 #        DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser/Parser.h)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+#message(STATUS "GTK3_INCLUDE_DIRS: ${GTK3_INCLUDE_DIRS}")
+#message(STATUS "GKT3_LIBRARIES: ${GTK3_LIBRARIES}")
+#message(STATUS "GTK3_LINK_LIBRARIES: ${GTK3_LINK_LIBRARIES}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 message(STATUS "Using defs in: ${LLVM_DEFINITIONS}")
 message(STATUS "CMAKE_CURRENT_BINARY_DIR = ${CMAKE_CURRENT_BINARY_DIR}")
@@ -24,6 +27,15 @@ message(STATUS "CMAKE_CURRENT_BINARY_DIR = ${CMAKE_CURRENT_BINARY_DIR}")
 # import LLVM
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
+
+# import gtk
+#include_directories(${GTK3_INCLUDE_DIRS})
+#link_directories(${GTK3_LIBRARY_DIRS})
+
+# import gtkmm
+pkg_check_modules(GTKMM gtkmm-3.0)
+link_directories(${GTKMM_LIBRARY_DIRS})
+include_directories(${GTKMM_INCLUDE_DIRS})
 
 # 导入头文件
 include_directories(
@@ -40,11 +52,13 @@ aux_source_directory(ast AST)
 message(STATUS "语法树定义：${AST}")
 aux_source_directory(codegen CodeGen)
 message(STATUS "代码生成：${CodeGen}")
+aux_source_directory(ui UI)
+message(STATUS "窗口实现：${UI}")
 
 add_executable(sysyplus_compiler
         ${ROOT} ${AST} ${PARSER}
         #        ${BISON_Parser_OUTPUTS}
-        ${CodeGen})
+        ${CodeGen} ${UI})
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
@@ -53,4 +67,9 @@ add_executable(sysyplus_compiler
 #message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
-target_link_libraries(sysyplus_compiler LLVM)
+target_link_libraries(sysyplus_compiler LLVM ${GTKMM_LIBRARIES})
+
+message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
+add_custom_command(TARGET sysyplus_compiler PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/ui/ui ${CMAKE_CURRENT_BINARY_DIR}/ui)

@@ -1,11 +1,32 @@
 #include <iostream>
+#include <gtkmm.h>
+
 #include "parser/Parser.hpp"
 #include "parser/FileReader.h"
+#include "Global.h"
+#include "ui/widgets.h"
+#include "ErrHelper.h"
 
 using namespace llvm;
 Lexer *m_lexer;
 
+static void activate(GtkApplication *app, gpointer data);
+
+int startAnalyze(char *path);
+
 int main(int argc, char **argv) {
+    auto app = Gtk::Application::create(argc, argv, APPNAME, Gio::APPLICATION_FLAGS_NONE);
+    auto builder = Gtk::Builder::create_from_file("../ui/ui/main.glade");
+    Gtk::Window *window = NIL;
+    builder->get_widget("main_window", window);
+    if (window == NIL) {
+        LogError("main_window 未找到");
+        return -1;
+    }
+    return app->run(*window);
+}
+
+int startAnalyze(char *path) {
     // Open a new module.
     TheModule = std::make_unique<Module>("Kingtous' jit", TheContext);
 //    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
@@ -18,7 +39,7 @@ int main(int argc, char **argv) {
 //    // Simplify the control flow graph (deleting unreachable blocks, etc).
 //    TheFPM->addPass(createCFGSimplificationPass());
     //
-    FileReader reader("../test/test.c");
+    FileReader reader(path);
 //    FileReader reader("../test/case/section1/functional_test/12_array_traverse.sy");
     m_lexer = new Lexer(reader);
     TheLexer = m_lexer;
@@ -85,8 +106,5 @@ int main(int argc, char **argv) {
     outs() << "Wrote " << Filename << "\n";
     popen("objdump -S ../test/output.o > ../test/output.txt", "r");
     popen("g++ ../test/output.o -o ../test/output", "r");
-
-
-//    delete[] m_lexer;
     return 0;
 }
