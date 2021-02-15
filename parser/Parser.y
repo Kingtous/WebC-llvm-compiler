@@ -32,6 +32,7 @@ void yyerror(const char *s)
 	std::vector<VariableDeclarationAST*> *varvec;
 	std::vector<ExpressionAST*> *exprvec;
 	std::vector<ExpressionAST*> *aivec; // array index vector
+	vector<NodeAST*>* arrayvalvec;
 	std::string *string;
 	double double_value;
 	int int_value;
@@ -68,6 +69,7 @@ void yyerror(const char *s)
 %type <vdeclar> var_decl
 %type <varvec> func_args
 %type <exprvec> call_args
+%type <arrayvalvec> array_init_val array_init_list
 %type <aivec> array_index "array index vector"
 // 标识 or 优先级 > and
 %left T_OR
@@ -138,7 +140,7 @@ var_decl : ident ident {
           		$2
           		);
           		}
-         | ident ident_arr T_ASSIGN expr {$$ = new VariableArrDeclarationAST($1->identifier,$2,$4);}
+         | ident ident_arr T_ASSIGN array_init_val {$$ = new VariableArrDeclarationAST($1->identifier,$2,$4);}
 	;
 
 
@@ -166,10 +168,11 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	;
 
 //aivec
-array_index : T_L_MPAR expr T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back($2);}
+array_index : T_L_MPAR T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back(NIL);}
+	| T_L_MPAR expr T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back($2);}
 	| T_L_MPAR expr T_R_MPAR array_index {$4->push_back($2); $$ = $4;}
 
-call_args :  {$$ = new std::vector<ExpressionAST*>();}
+call_args : %empty  {$$ = new std::vector<ExpressionAST*>();}
 	| expr {$$ = new std::vector<ExpressionAST*>();$$->push_back($1);}
 	| call_args T_COMMA expr {$1->push_back($3);}
 	;
@@ -195,7 +198,7 @@ func_decl : ident ident T_L_SPAR func_args T_R_SPAR block
 	// printf("build function %s \n",$2->identifier.c_str());
 }
 
-func_args : { $$ = new std::vector<VariableDeclarationAST*>(); }
+func_args : %empty { $$ = new std::vector<VariableDeclarationAST*>(); }
       | var_decl { $$ = new std::vector<VariableDeclarationAST*>();
                    $$->push_back($<vdeclar>1); } //$1为stmt类型，但是我们要取子类vdeclar类型
       | func_args T_COMMA var_decl { $1->push_back($<vdeclar>3); }
@@ -217,6 +220,14 @@ for_args : var_decl {$$ = $1;}
 
 while_stmt : T_WHILE T_L_SPAR expr T_R_SPAR block {$$ = new WhileStmtAST($3,$5);}
 
+// {{1,2,3,4},{1,123,23,3}};
+array_init_val :  expr {$$ = new vector<NodeAST*>(); $$->push_back($1);}
+	| T_L_LPAR array_init_list T_R_LPAR {$$ = $2;}
+	| T_L_LPAR T_R_LPAR {$$ = new vector<NodeAST*>(); $$->push_back(NIL);}
+	;
+
+array_init_list : array_init_list T_COMMA array_init_val {$$ = $1; $1->insert($1->end(),$3->begin(),$3->end());}
+	| array_init_val {$$ = $1;}
 %%
 
 BlockAST* program = nullptr;

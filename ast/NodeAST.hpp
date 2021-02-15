@@ -149,10 +149,10 @@ public:
     // 变量名
     IdentifierArrExprAST *identifier;
     // 可能有赋值
-    ExpressionAST *expr;
+    vector<NodeAST *> *exprs;
     bool isConst = false;
 
-    VariableArrDeclarationAST(const string &type, IdentifierArrExprAST *identifier, ExpressionAST *expr = nullptr,
+    VariableArrDeclarationAST(const string &type, IdentifierArrExprAST *identifier, vector<NodeAST *> *exprs = NIL,
                               bool isConst = false);
 
     /// codegen（）方法表示为该AST节点发出IR及其依赖的所有内容，并且它们都返回一个LLVM Value对象。
@@ -160,6 +160,12 @@ public:
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
     /// 换句话说，没有办法“改变”SSA值。
     llvm::Value *codegen() override;
+
+    /**
+     * 生成数组expressions
+     * @return llvm::ConstantArray*
+     */
+    [[nodiscard]] vector<Constant *> *genExprs() const;
 };
 
 // 变量赋值句
@@ -347,7 +353,7 @@ public:
 
 Type *getTypeFromStr(const std::string &type);
 
-Type *buildArrayType(vector<ExpressionAST *> *v, Type *type);
+ArrayType *buildArrayType(vector<ExpressionAST *> *v, Type *type);
 
 /**
  * 获取数组（支持多维）

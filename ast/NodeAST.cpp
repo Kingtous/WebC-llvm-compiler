@@ -640,8 +640,8 @@ Type *getTypeFromStr(const std::string &type) {
 }
 
 // int a[5][6][7] -> vector<Expr>(7,6,5)
-Type *buildArrayType(vector<ExpressionAST *> *vec, Type *arrayElemType) {
-    Type *arr_type = nullptr;
+ArrayType *buildArrayType(vector<ExpressionAST *> *vec, Type *arrayElemType) {
+    ArrayType *arr_type = NIL;
     auto it = vec->rbegin();
     for (; it < vec->rend(); it++) {
         auto v = (*it)->codegen();
@@ -718,15 +718,12 @@ llvm::Value *IdentifierArrExprAST::codegen() {
 IdentifierArrExprAST::IdentifierArrExprAST(const string &identifier, vector<ExpressionAST *> *arrIndex)
         : IdentifierExprAST(identifier), arrIndex(arrIndex) {}
 
-VariableArrDeclarationAST::VariableArrDeclarationAST(const string &type, IdentifierArrExprAST *identifier,
-                                                     ExpressionAST *expr, bool isConst) : type(type),
-                                                                                          identifier(identifier),
-                                                                                          expr(expr),
-                                                                                          isConst(isConst) {}
 
 llvm::Value *VariableArrDeclarationAST::codegen() {
     Value *ret = nullptr;
-    Type *arr_type = buildArrayType(identifier->arrIndex, getTypeFromStr(type));
+    ArrayType *arr_type = buildArrayType(identifier->arrIndex, getTypeFromStr(type));
+    vector<Constant *> *ca = genExprs();
+    auto constant_arr_value = ConstantArray::get(arr_type, ArrayRef(*ca));
     if (!HASLOCALS) {
         // 全局变量
         auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
@@ -737,25 +734,45 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
             auto gv = new GlobalVariable(*TheModule, arr_type, isConst,
                                          GlobalVariable::LinkageTypes::ExternalLinkage,
                                          Constant::getNullValue(arr_type), identifier->identifier);
-            if (expr != nullptr) {
-                gv->setInitializer(dyn_cast<Constant>(expr->codegen()));
-            }
+            auto vs = ArrayRef(*ca);
+            gv->setInitializer(constant_arr_value);
             gv->print(outs(), true);
             ret = gv;
         }
     } else {
-        auto at = identifier->arrIndex->rbegin();
+        uint64_t bitsize = 0;
+        // 计算Constant字节数
+        for_each(ca->begin(), ca->end(), [&](Constant *constant) {
+            bitsize += constant->getType()->getIntegerBitWidth() / 8;
+        });
         if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
             auto mem = Builder.CreateAlloca(arr_type);
-            // TODO
-//            if (expr != nullptr){
-//                auto v = expr->codegen();
-//                Builder.CreateStore(v,mem);
-//            }
+            Builder.CreateMemCpy(mem, MaybeAlign(0), constant_arr_value, MaybeAlign(0), bitsize);
             INSERTLOCAL(identifier->identifier, mem);
         }
     }
     return ret;
+}
+
+VariableArrDeclarationAST::VariableArrDeclarationAST(const string &type, IdentifierArrExprAST *identifier,
+                                                     vector<NodeAST *> *exprs, bool isConst) : type(type),
+                                                                                               identifier(identifier),
+                                                                                               exprs(exprs),
+                                                                                               isConst(isConst) {}
+
+vector<Constant *> *VariableArrDeclarationAST::genExprs() const {
+    if (exprs == NIL && exprs->empty()) {
+        return NIL;
+    }
+    auto arr_index_value_vector = new vector<Constant *>();
+    for_each(exprs->begin(), exprs->end(), [&](NodeAST *e) {
+        auto v = e->codegen();
+        if (!isa<Constant>(v)) {
+            return LogErrorV("数组初始化必须为常量声明");
+        }
+        arr_index_value_vector->push_back(dyn_cast<Constant>(v));
+    });
+    return arr_index_value_vector;
 }
 
 VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(

@@ -124,12 +124,13 @@ union YYSTYPE {
     std::vector<VariableDeclarationAST *> *varvec;
     std::vector<ExpressionAST *> *exprvec;
     std::vector<ExpressionAST *> *aivec; // array index vector
+    vector<NodeAST *> *arrayvalvec;
     std::string *string;
     double double_value;
     int int_value;
     int token;
 
-#line 134 "Parser.hpp"
+#line 135 "Parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

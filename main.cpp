@@ -12,9 +12,10 @@ Lexer *m_lexer;
 
 static void activate(GtkApplication *app, gpointer data);
 
-int startAnalyze(char *path);
+int startAnalyze(const char *path);
 
 int main(int argc, char **argv) {
+#ifdef CGUI
     auto app = Gtk::Application::create(argc, argv, APPNAME, Gio::APPLICATION_FLAGS_NONE);
     auto builder = Gtk::Builder::create_from_file("../ui/ui/main.glade");
     Gtk::Window *window = NIL;
@@ -23,10 +24,14 @@ int main(int argc, char **argv) {
         LogError("main_window 未找到");
         return -1;
     }
+    window->set_size_request(1200,800);
     return app->run(*window);
+#else
+    return startAnalyze("../test/test.c");
+#endif
 }
 
-int startAnalyze(char *path) {
+int startAnalyze(const char *path) {
     // Open a new module.
     TheModule = std::make_unique<Module>("Kingtous' jit", TheContext);
 //    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
