@@ -642,8 +642,8 @@ Type *getTypeFromStr(const std::string &type) {
 // int a[5][6][7] -> vector<Expr>(7,6,5)
 ArrayType *buildArrayType(vector<ExpressionAST *> *vec, Type *arrayElemType) {
     ArrayType *arr_type = NIL;
-    auto it = vec->rbegin();
-    for (; it < vec->rend(); it++) {
+    auto it = vec->begin();
+    for (; it < vec->end(); it++) {
         auto v = (*it)->codegen();
         if (isa<ConstantInt>(v)) {
             auto constant_int = dyn_cast<ConstantInt>(v);
@@ -698,20 +698,19 @@ llvm::Value *IdentifierArrExprAST::codegen() {
     if (local == nullptr) {
         return LogErrorV(("未找到" + identifier + "\n").c_str());
     }
-    auto arr_elem_type = getArrayElemType(local);
-    auto it = arrIndex->rbegin();
+    auto it = arrIndex->begin();
     Value *ret = local;
     auto v_vec = vector<Value *>();
     // 添加0取指针地址
     v_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
-    for (; it < arrIndex->rend(); it++) {
+    for (; it < arrIndex->end(); it++) {
         auto v = (*it)->codegen();
         if (v == nullptr) {
             return LogErrorV("数组解析失败");
         }
         v_vec.push_back(v);
     }
-    ret = Builder.CreateGEP(ret, ArrayRef<Value *>(v_vec));
+    ret = Builder.CreateInBoundsGEP(ret, ArrayRef<Value *>(v_vec));
     return Builder.CreateLoad(ret);
 }
 
@@ -875,12 +874,12 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     if (arr_addr == nullptr) {
         return LogErrorV((identifier->identifier + "is not defined").c_str());
     }
-    auto st = identifier->arrIndex->rbegin();
+    auto st = identifier->arrIndex->begin();
     Value *ret = arr_addr;
     vector<Value *> vec;
     // 0取地址
     vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
-    for (; st != identifier->arrIndex->rend(); st++) {
+    for (; st != identifier->arrIndex->end(); st++) {
         auto v = (*st)->codegen();
         vec.push_back(v);
     }
