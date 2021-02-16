@@ -4,5 +4,8 @@ int param = 100;
 int getNum() {
     int test[2][3] = {9, 8, 7, 6, 5, 4};
     int a[2] = {test[0][1], test[1][1]};
-    return a[0];
+    while (test[0][0] > 0) {
+        test[0][0] = test[0][0];
+    }
+    return test[0][0];
 }

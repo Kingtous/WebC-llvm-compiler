@@ -18,9 +18,9 @@ LLVM框架语言：LLVM 12.0.0 编译环境：cmake 3.13 + clion 2020.2 + macOS 
 - 条件分支关键字
     - if
 - 循环关键字
-    - for
-    - ~~While~~
-    - break
+  - for
+  - While
+  - break
     - continue
 - 函数返回 return
   - 保持单入单出特性
