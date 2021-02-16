@@ -36,6 +36,7 @@ enum BinaryType {
     greater,
     greater_equ,
     equ,
+    n_equ,
     AND,
     OR
 };
@@ -78,7 +79,7 @@ public:
 };
 
 /// 块结点，一个块含有多种声明，也可作为一个程序的入口点
-class BlockAST : public NodeAST {
+class BlockAST : public StatementAST {
 public:
     vector<StatementAST *> statements;
 
@@ -171,7 +172,7 @@ public:
     /**
      * 对于函数内，初始化使用CreateGEP完成初始化
      */
-    void *genLocalStoreExprs(Value *mem);
+    void genLocalStoreExprs(Value *mem);
 
     /**
      * 递增index

@@ -111,6 +111,11 @@ int Lexer::_getNextToken() {
                 return T_GREATER;
             }
         } else if (LastChar == '!') {
+            if (seek() == '=') {
+                getchar();
+                LastChar = getchar();
+                return T_N_EQU;
+            }
             LastChar = getchar();
             return T_REVERSE;
         }
@@ -212,7 +217,7 @@ char Lexer::seek() {
 }
 
 unsigned int Lexer::getCLineNumber() {
-    return reader.getLineNo();
+    return reader.getLineNo() + 1;
 }
 
 unsigned int Lexer::getCCol() {

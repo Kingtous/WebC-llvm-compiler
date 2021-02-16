@@ -57,6 +57,8 @@ llvm::Value *BinaryExprAST::codegen() {
                     return Builder.CreateICmpSGE(L, R, "greater_equ");
                 case BinaryType::less_equ:
                     return Builder.CreateICmpSLE(L, R, "less_equ");
+                case BinaryType::n_equ:
+                    return Builder.CreateICmpNE(L, R, "not_equ");
 //            case BinaryType::AND:
 //                auto boolL = Builder.CreateICmpNE(L,ConstantInt::get(getTypeFromStr("bool"),0));
 //                auto boolR = Builder.CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
@@ -98,6 +100,8 @@ llvm::Value *BinaryExprAST::codegen() {
                     return Builder.CreateFCmpOGE(L, R, "greater_equ");
                 case BinaryType::less_equ:
                     return Builder.CreateFCmpOLE(L, R, "less_equ");
+                case BinaryType::n_equ:
+                    return Builder.CreateFCmpONE(L, R, "not_equ");
                 default:
                     return LogErrorV(("invalid binary operator"));
             }
@@ -787,9 +791,9 @@ vector<Constant *> *VariableArrDeclarationAST::genGlobalExprs() {
     return arr_index_value_vector;
 }
 
-void *VariableArrDeclarationAST::genLocalStoreExprs(Value *mem) {
+void VariableArrDeclarationAST::genLocalStoreExprs(Value *mem) {
     if (exprs == NIL && exprs->empty()) {
-        return NIL;
+        return;
     }
     vector<uint64_t> vmaxindex = getIndexVal();
     vector<uint64_t> vindex(vmaxindex.size(), 0);

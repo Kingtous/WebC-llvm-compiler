@@ -1,11 +1,23 @@
-// this is a comment。这是个注释xxx
-int param = 100;
-// 求[1,param)整数和
-int getNum() {
-    int test[2][3] = {9, 8, 7, 6, 5, 4};
-    int a[2] = {test[0][1], test[1][1]};
-    while (test[0][0] > 0) {
-        test[0][0] = test[0][0];
+int a;
+
+int myFunc(int a, int b, int c) {
+    a = 2;
+    {
+        int c;
+        c = 0;
+        if (c != 0) {
+            return 0;
+        }
     }
-    return test[0][0];
+    while (b > 0) {
+        b = b - 1;
+    }
+    return (a) + (b);
+}
+
+int main() {
+    a = (3);
+    int b;
+    b = myFunc(1, 2, 1);
+    return ((a + b));
 }

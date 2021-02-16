@@ -116,6 +116,7 @@ fprintf(stderr,"build var decl stmt\n");
 	| for_stmt {$$ = $1;}
 	| T_BREAK ';' {$$ = new BreakStmtAST();}
 	| T_CONTINUE ';' {$$ = new ContinueStmtAST();}
+	| block {$$ = $1;}
 	| ';' {}
 	;
 
@@ -163,6 +164,7 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| expr T_LESS_EQU expr {$$ = new BinaryExprAST(BinaryType::less_equ,$1,$3);}
 	| expr T_GREATER_EQU expr {$$ = new BinaryExprAST(BinaryType::greater_equ,$1,$3);}
 	| expr T_EQU expr {$$ = new BinaryExprAST(BinaryType::equ,$1,$3);}
+	| expr T_N_EQU expr {$$ = new BinaryExprAST(BinaryType::n_equ,$1,$3);}
 	| expr T_AND expr {$$ = new BinaryExprAST(BinaryType::AND,$1,$3);}
 	| expr T_OR expr {$$ = new BinaryExprAST(BinaryType::OR,$1,$3);}
 	;
