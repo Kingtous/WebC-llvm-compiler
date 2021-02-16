@@ -35,6 +35,7 @@
 #define OK 0
 #define ERR -1
 #define DEBUG_FLAG 1
+//#define CGUI 1
 
 /// 初始化数字
 #define INIT_NUM -1

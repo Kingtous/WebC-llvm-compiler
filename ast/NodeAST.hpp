@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <queue>
 #include <typeinfo>
 
 #include "Global.h"
@@ -165,7 +166,20 @@ public:
      * 生成数组expressions
      * @return llvm::ConstantArray*
      */
-    [[nodiscard]] vector<Constant *> *genExprs() const;
+    [[nodiscard]] vector<Constant *> *genGlobalExprs() const;
+
+    /**
+     * 对于函数内，初始化使用CreateGEP完成初始化
+     */
+    void *genLocalStoreExprs(Value *mem);
+
+    /**
+     * 递增index
+     * @param indexVec
+     * @param maxVec  每个参数最大的值，开区间
+     * @return carry=0为成功递增，1为未消费进位
+     */
+    int incrementVectorIndex(vector<uint64_t> &indexVec, vector<uint64_t> &maxVec);
 };
 
 // 变量赋值句

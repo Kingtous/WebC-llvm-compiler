@@ -698,7 +698,7 @@ llvm::Value *IdentifierArrExprAST::codegen() {
     if (local == nullptr) {
         return LogErrorV(("未找到" + identifier + "\n").c_str());
     }
-    auto arr_elem_type = getArrayType(local);
+    auto arr_elem_type = getArrayElemType(local);
     auto it = arrIndex->rbegin();
     Value *ret = local;
     auto v_vec = vector<Value *>();
@@ -711,7 +711,7 @@ llvm::Value *IdentifierArrExprAST::codegen() {
         }
         v_vec.push_back(v);
     }
-    ret = Builder.CreateInBoundsGEP(ret, ArrayRef<Value *>(v_vec));
+    ret = Builder.CreateGEP(ret, ArrayRef<Value *>(v_vec));
     return Builder.CreateLoad(ret);
 }
 
@@ -722,7 +722,7 @@ IdentifierArrExprAST::IdentifierArrExprAST(const string &identifier, vector<Expr
 llvm::Value *VariableArrDeclarationAST::codegen() {
     Value *ret = nullptr;
     ArrayType *arr_type = buildArrayType(identifier->arrIndex, getTypeFromStr(type));
-    vector<Constant *> *ca = genExprs();
+    vector<Constant *> *ca = genGlobalExprs();
     auto constant_arr_value = ConstantArray::get(arr_type, ArrayRef(*ca));
     if (!HASLOCALS) {
         // 全局变量
@@ -731,7 +731,7 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
             fprintf(stderr, "variable %s redefined", identifier->identifier.c_str());
             return nullptr;
         } else {
-            auto gv = new GlobalVariable(*TheModule, arr_type, isConst,
+            auto gv = new GlobalVariable(*TheModule, arr_type, true,
                                          GlobalVariable::LinkageTypes::ExternalLinkage,
                                          Constant::getNullValue(arr_type), identifier->identifier);
             auto vs = ArrayRef(*ca);
@@ -740,14 +740,10 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
             ret = gv;
         }
     } else {
-        uint64_t bitsize = 0;
-        // 计算Constant字节数
-        for_each(ca->begin(), ca->end(), [&](Constant *constant) {
-            bitsize += constant->getType()->getIntegerBitWidth() / 8;
-        });
+
         if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
             auto mem = Builder.CreateAlloca(arr_type);
-            Builder.CreateMemCpy(mem, MaybeAlign(0), constant_arr_value, MaybeAlign(0), bitsize);
+            genLocalStoreExprs(mem);
             INSERTLOCAL(identifier->identifier, mem);
         }
     }
@@ -760,7 +756,7 @@ VariableArrDeclarationAST::VariableArrDeclarationAST(const string &type, Identif
                                                                                                exprs(exprs),
                                                                                                isConst(isConst) {}
 
-vector<Constant *> *VariableArrDeclarationAST::genExprs() const {
+vector<Constant *> *VariableArrDeclarationAST::genGlobalExprs() const {
     if (exprs == NIL && exprs->empty()) {
         return NIL;
     }
@@ -768,11 +764,97 @@ vector<Constant *> *VariableArrDeclarationAST::genExprs() const {
     for_each(exprs->begin(), exprs->end(), [&](NodeAST *e) {
         auto v = e->codegen();
         if (!isa<Constant>(v)) {
-            return LogErrorV("数组初始化必须为常量声明");
+            if (v->getType()->isIntegerTy()) {
+//                auto id = typeid(v);
+                auto ty = dyn_cast<IntegerType>(v->getType());
+                if (ty == NIL) {
+                    return LogErrorV("全局数组初始化必须为常量声明");
+                } else {
+                    // TODO FixME!
+                    auto info = typeid(v).name();
+                    v = ConstantInt::get(getTypeFromStr("int"), 0);
+                }
+            } else {
+                return LogErrorV("全局数组初始化必须为常量声明");
+            }
         }
         arr_index_value_vector->push_back(dyn_cast<Constant>(v));
     });
     return arr_index_value_vector;
+}
+
+void *VariableArrDeclarationAST::genLocalStoreExprs(Value *mem) {
+    if (exprs == NIL && exprs->empty()) {
+        return NIL;
+    }
+    vector<uint64_t> vmaxindex;
+    // 获取index的vector
+    for_each(identifier->arrIndex->begin(), identifier->arrIndex->end(), [&](ExpressionAST *e) {
+        if (e == NIL) {
+            if (vmaxindex.empty()) {
+                vmaxindex.push_back(INT_MAX);
+            } else {
+                return LogErrorV("只允许数组index首部为空值，要不然无法编译");
+            }
+        } else {
+            auto value_index = dyn_cast<ConstantInt>(e->codegen());
+            if (value_index == NIL) {
+                return LogErrorV("声明一个数组长度不能使用非常量");
+            } else {
+                if (value_index->getBitWidth() <= 32) {
+                    vmaxindex.push_back(value_index->getSExtValue());
+                } else {
+                    vmaxindex.push_back(value_index->getZExtValue());
+                }
+            }
+        }
+    });
+    vector<uint64_t> vindex(vmaxindex.size(), 0);
+    for (auto e : *exprs) {
+        if (e != NIL) {
+            vector<Value *> gepindex_vec;
+            gepindex_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+            for (auto index : vindex) {
+                auto intv = ConstantInt::get(Type::getInt32Ty(TheContext), index);
+                gepindex_vec.push_back(intv);
+            }
+            auto ret = Builder.CreateInBoundsGEP(mem, ArrayRef(gepindex_vec));
+            Builder.CreateStore(e->codegen(), ret);
+            if (incrementVectorIndex(vindex, vmaxindex)) {
+                LogWarn("数组声明超过定义，超过定义的值将被忽略");
+                break;
+            }
+        } else {
+            // TODO Fixme
+        }
+    }
+}
+
+int VariableArrDeclarationAST::incrementVectorIndex(vector<uint64_t> &indexVec, vector<uint64_t> &maxVec) {
+    assert(indexVec.size() == maxVec.size());
+    int sz = indexVec.size() - 1;
+    bool is_max = true;
+    for (int tsz = 0; tsz <= sz; ++tsz) {
+        if (indexVec.at(tsz) != maxVec.at(tsz) - 1) {
+            is_max = false;
+            break;
+        }
+    }
+    int carry = 1;
+    if (is_max) {
+        return carry;
+    }
+    while (carry > 0 && sz >= 0) {
+        if (indexVec.at(sz) + 1 < maxVec.at(sz)) {
+            indexVec[sz]++;
+            carry = 0;
+            break;
+        } else {
+            indexVec[sz] = 0;
+            sz--;
+        }
+    }
+    return carry;
 }
 
 VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(
