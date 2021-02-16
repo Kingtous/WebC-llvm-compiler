@@ -722,9 +722,9 @@ IdentifierArrExprAST::IdentifierArrExprAST(const string &identifier, vector<Expr
 llvm::Value *VariableArrDeclarationAST::codegen() {
     Value *ret = nullptr;
     ArrayType *arr_type = buildArrayType(identifier->arrIndex, getTypeFromStr(type));
-    vector<Constant *> *ca = genGlobalExprs();
-    auto constant_arr_value = ConstantArray::get(arr_type, ArrayRef(*ca));
     if (!HASLOCALS) {
+        vector<Constant *> *ca = genGlobalExprs();
+        auto constant_arr_value = ConstantArray::get(arr_type, ArrayRef(*ca));
         // 全局变量
         auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
         if (global_variable) {
@@ -756,11 +756,16 @@ VariableArrDeclarationAST::VariableArrDeclarationAST(const string &type, Identif
                                                                                                exprs(exprs),
                                                                                                isConst(isConst) {}
 
-vector<Constant *> *VariableArrDeclarationAST::genGlobalExprs() const {
+vector<Constant *> *VariableArrDeclarationAST::genGlobalExprs() {
+//    vector<uint64_t> vmaxindex = getIndexVal();
+//    vector<uint64_t> vindex(vmaxindex.size(),0);
     if (exprs == NIL && exprs->empty()) {
         return NIL;
     }
     auto arr_index_value_vector = new vector<Constant *>();
+//    for (auto exp = exprs->begin(); exp != exprs->end() ; exp++) {
+//
+//    }
     for_each(exprs->begin(), exprs->end(), [&](NodeAST *e) {
         auto v = e->codegen();
         if (!isa<Constant>(v)) {
@@ -787,28 +792,7 @@ void *VariableArrDeclarationAST::genLocalStoreExprs(Value *mem) {
     if (exprs == NIL && exprs->empty()) {
         return NIL;
     }
-    vector<uint64_t> vmaxindex;
-    // 获取index的vector
-    for_each(identifier->arrIndex->begin(), identifier->arrIndex->end(), [&](ExpressionAST *e) {
-        if (e == NIL) {
-            if (vmaxindex.empty()) {
-                vmaxindex.push_back(INT_MAX);
-            } else {
-                return LogErrorV("只允许数组index首部为空值，要不然无法编译");
-            }
-        } else {
-            auto value_index = dyn_cast<ConstantInt>(e->codegen());
-            if (value_index == NIL) {
-                return LogErrorV("声明一个数组长度不能使用非常量");
-            } else {
-                if (value_index->getBitWidth() <= 32) {
-                    vmaxindex.push_back(value_index->getSExtValue());
-                } else {
-                    vmaxindex.push_back(value_index->getZExtValue());
-                }
-            }
-        }
-    });
+    vector<uint64_t> vmaxindex = getIndexVal();
     vector<uint64_t> vindex(vmaxindex.size(), 0);
     for (auto e : *exprs) {
         if (e != NIL) {
@@ -821,7 +805,7 @@ void *VariableArrDeclarationAST::genLocalStoreExprs(Value *mem) {
             auto ret = Builder.CreateInBoundsGEP(mem, ArrayRef(gepindex_vec));
             Builder.CreateStore(e->codegen(), ret);
             if (incrementVectorIndex(vindex, vmaxindex)) {
-                LogWarn("数组声明超过定义，超过定义的值将被忽略");
+//                LogWarn("数组声明超过定义，超过定义的值将被忽略");
                 break;
             }
         } else {
@@ -855,6 +839,32 @@ int VariableArrDeclarationAST::incrementVectorIndex(vector<uint64_t> &indexVec, 
         }
     }
     return carry;
+}
+
+vector<uint64_t> VariableArrDeclarationAST::getIndexVal() {
+    vector<uint64_t> vmaxindex;
+    // 获取index的vector
+    for_each(identifier->arrIndex->begin(), identifier->arrIndex->end(), [&](ExpressionAST *e) {
+        if (e == NIL) {
+            if (vmaxindex.empty()) {
+                vmaxindex.push_back(INT_MAX);
+            } else {
+                return LogErrorV("只允许数组index首部为空值，要不然无法编译");
+            }
+        } else {
+            auto value_index = dyn_cast<ConstantInt>(e->codegen());
+            if (value_index == NIL) {
+                return LogErrorV("声明一个数组长度不能使用非常量");
+            } else {
+                if (value_index->getBitWidth() <= 32) {
+                    vmaxindex.push_back(value_index->getSExtValue());
+                } else {
+                    vmaxindex.push_back(value_index->getZExtValue());
+                }
+            }
+        }
+    });
+    return vmaxindex;
 }
 
 VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(

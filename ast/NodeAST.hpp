@@ -166,7 +166,7 @@ public:
      * 生成数组expressions
      * @return llvm::ConstantArray*
      */
-    [[nodiscard]] vector<Constant *> *genGlobalExprs() const;
+    [[nodiscard]] vector<Constant *> *genGlobalExprs();
 
     /**
      * 对于函数内，初始化使用CreateGEP完成初始化
@@ -180,6 +180,8 @@ public:
      * @return carry=0为成功递增，1为未消费进位
      */
     int incrementVectorIndex(vector<uint64_t> &indexVec, vector<uint64_t> &maxVec);
+
+    vector<uint64_t> getIndexVal();
 };
 
 // 变量赋值句

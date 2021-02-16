@@ -170,7 +170,7 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 //aivec
 array_index : T_L_MPAR T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back(NIL);}
 	| T_L_MPAR expr T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back($2);}
-	| T_L_MPAR expr T_R_MPAR array_index {$4->push_back($2); $$ = $4;}
+	| T_L_MPAR expr T_R_MPAR array_index {$4->insert($4->begin(),$2); $$ = $4;}
 
 call_args : %empty  {$$ = new std::vector<ExpressionAST*>();}
 	| expr {$$ = new std::vector<ExpressionAST*>();$$->push_back($1);}
@@ -223,7 +223,7 @@ while_stmt : T_WHILE T_L_SPAR expr T_R_SPAR block {$$ = new WhileStmtAST($3,$5);
 // {{1,2,3,4},{1,123,23,3}};
 array_init_val :  expr {$$ = new vector<NodeAST*>(); $$->push_back($1);}
 	| T_L_LPAR array_init_list T_R_LPAR {$$ = $2;}
-	| T_L_LPAR T_R_LPAR {$$ = new vector<NodeAST*>(); $$->push_back(NIL);}
+	| T_L_LPAR T_R_LPAR {$$ = new vector<NodeAST*>();}
 	;
 
 array_init_list : array_init_list T_COMMA array_init_val {$$ = $1; $1->insert($1->end(),$3->begin(),$3->end());}

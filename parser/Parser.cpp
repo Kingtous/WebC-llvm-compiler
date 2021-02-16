@@ -1259,7 +1259,7 @@ yydefault:
         {
             program = (yyvsp[0].block);
 #ifdef DEBUG_FLAG
-            fprintf(stdout, "parse success\n");
+            fprintf(stdout,"parse success\n");
 #endif
         }
 #line 1268 "Parser.cpp"
@@ -1286,7 +1286,7 @@ yydefault:
 #line 103 "Parser.y"
         {
 #ifdef DEBUG_FLAG
-            fprintf(stderr, "build var decl stmt\n");
+            fprintf(stderr,"build var decl stmt\n");
 #endif
         }
 #line 1290 "Parser.cpp"
@@ -1601,7 +1601,7 @@ yydefault:
         case 44: /* array_index: T_L_MPAR expr T_R_MPAR array_index  */
 #line 173 "Parser.y"
         {
-            (yyvsp[0].aivec)->push_back((yyvsp[-2].expr));
+            (yyvsp[0].aivec)->insert((yyvsp[0].aivec)->begin(), (yyvsp[-2].expr));
             (yyval.aivec) = (yyvsp[0].aivec);
         }
 #line 1529 "Parser.cpp"
@@ -1778,7 +1778,6 @@ yydefault:
 #line 226 "Parser.y"
         {
             (yyval.arrayvalvec) = new vector<NodeAST *>();
-            (yyval.arrayvalvec)->push_back(NIL);
         }
 #line 1667 "Parser.cpp"
             break;
