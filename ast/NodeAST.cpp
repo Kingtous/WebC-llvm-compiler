@@ -445,7 +445,7 @@ llvm::Function *FunctionAST::codegen() {
             function->print(errs());
             goto clean;
         } else {
-//            function->print(outs());
+            function->print(outs());
             cleanCodeGenContext();
         }
         return function;
@@ -723,18 +723,23 @@ Type *getArrayType(Value *value) {
 
 llvm::Value *IdentifierArrExprAST::codegen() {
     auto local = FINDLOCAL(identifier);
-    local = Builder.CreateLoad(local, "read_array");
     if (local == NIL) {
         return LogErrorV(("未找到" + identifier + "\n").c_str());
     }
     auto it = arrIndex->begin();
-    Value *ret = local;
     auto v_vec = vector<Value *>();
     // 添加0取指针地址
-    if (!(local->getType()->isPointerTy())) {
-        // 兜底，目前放入local内的数组
+    // FIXME 此处特判了如果是连续的两个pointerType，则判断可能传入的是一个CreateStore后的值，此时进行Load（该方案拓展性差，后期改良方案）
+    if (local->getType()->isPointerTy() && local->getType()->getContainedType(0)->isPointerTy()) {
+        local = Builder.CreateLoad(local);
+    } else {
         v_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
     }
+    Value *ret = local;
+//    if (!(local->getType()->isPointerTy())) {
+//        v_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+//    }
+    // 兜底，目前放入local内的数组
     for (; it < arrIndex->end(); it++) {
         auto v = (*it)->codegen();
         if (v == nullptr) {
@@ -771,11 +776,11 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
             ret = gv;
         }
     } else {
-
         if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
             auto mem = Builder.CreateAlloca(arr_type);
             genLocalStoreExprs(mem);
             INSERTLOCAL(identifier->identifier, mem);
+            ret = mem;
         }
     }
     return ret;
@@ -880,7 +885,7 @@ vector<uint64_t> VariableArrDeclarationAST::getIndexVal() {
             if (vmaxindex.empty()) {
                 vmaxindex.push_back(INT_MAX);
             } else {
-                return LogErrorV("只允许数组index首部为空值，要不然无法编译");
+                return LogErrorV("只允许数组index首部为空值，要不然无法编译，我就罢工了");
             }
         } else {
             auto value_index = dyn_cast<ConstantInt>(e->codegen());

@@ -5,12 +5,10 @@
 
 LLVM框架语言：LLVM 12.0.0
 
-编译环境：cmake 3.13 + clion 2020.2 + macOS 10.15.7/Deepin 20.1 Beta
+编译环境：cmake 3.13 + Deepin 20.1 Beta
 > 编译时若出错请注意LLVM版本号
 
 #### 目前支持程度
-
-目前还不完善，支持：
 
 - 函数定义
   - 参数

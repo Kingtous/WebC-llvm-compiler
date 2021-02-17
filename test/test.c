@@ -27,3 +27,9 @@ int recursive_call(int cnt) {
     ctotal = ctotal + cnt;
     return recursive_call(cnt - 1);
 }
+
+int main() {
+    int a[5] = {1, 2, 3, 4, 5};
+    int cnt = a[0];
+    return cnt;
+}
