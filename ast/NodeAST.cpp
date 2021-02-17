@@ -324,7 +324,7 @@ Value *ForExprAST::codegen() {
     }
     // 先执行for(xxx;;)
     auto tmpForBlock = BasicBlock::Create(TheContext, "bb_for_start", theFuntion);
-    TheCodeGenContext.push_block(tmpForBlock);
+    TheCodeGenContext->push_block(tmpForBlock);
 
     auto bbStart = tmpForBlock;
     auto bbCond = BasicBlock::Create(TheContext, "bb_for_cond", theFuntion);
@@ -367,7 +367,7 @@ Value *ForExprAST::codegen() {
     Builder.CreateBr(bbCond);
     theFuntion->getBasicBlockList().push_back(bbEndFor);
     Builder.SetInsertPoint(bbEndFor);
-    LOCALS->setContextType(CodeGenBlockContextType::NONE);
+    TheCodeGenContext->pop_block();
     return bbEndFor;
 }
 
@@ -386,17 +386,16 @@ PrototypeAST::PrototypeAST(const string &returnType, const string &name, const v
 
 void FunctionAST::cleanCodeGenContext() {
     // 清除
-    TheCodeGenContext.setRetBb(NIL);
-    TheCodeGenContext.pop_block();
-    TheCodeGenContext.removeFunction();
+    TheCodeGenContext->setRetBb(NIL);
+    TheCodeGenContext->pop_block();
+    TheCodeGenContext->removeFunction();
 }
 
 llvm::Function *FunctionAST::codegen() {
     llvm::Function *function = TheModule->getFunction(Proto->getName());
-    TheCodeGenContext.setFunction(function);
     // 设置返回值block
     auto retBB = BasicBlock::Create(TheContext, "function_ret");
-    TheCodeGenContext.setRetBb(retBB);
+    TheCodeGenContext->setRetBb(retBB);
 
     if (!function)
         function = Proto->codegen();
@@ -410,11 +409,11 @@ llvm::Function *FunctionAST::codegen() {
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "jintao_entry", function);
     Builder.SetInsertPoint(BB);
-    TheCodeGenContext.push_block(BB);
-    TheCodeGenContext.setFunction(function);
+    TheCodeGenContext->push_block(BB);
+    TheCodeGenContext->setFunction(function);
 
     // Record the function arguments in the NamedValues map.
-//    auto funcVars = TheCodeGenContext.get_current_locals()->localVars;
+//    auto funcVars = TheCodeGenContext->get_current_locals()->localVars;
     for (auto &Arg : function->args()) {
         // 分配一片内存
         auto mem = Builder.CreateAlloca(Arg.getType());
@@ -425,7 +424,7 @@ llvm::Function *FunctionAST::codegen() {
     if (!function->getReturnType()->isVoidTy()) {
         Value *ret = Builder.CreateAlloca(function->getReturnType());
         Builder.CreateStore(Constant::getNullValue(function->getReturnType()), ret);
-        TheCodeGenContext.setRetV(ret);
+        TheCodeGenContext->setRetV(ret);
     }
     if (Body->codegen()) {
         // 结束函数，创建return结点
@@ -437,7 +436,7 @@ llvm::Function *FunctionAST::codegen() {
         if (function->getReturnType()->isVoidTy()) {
             Builder.CreateRetVoid();
         } else {
-            Builder.CreateRet(Builder.CreateLoad(TheCodeGenContext.getRetV()));
+            Builder.CreateRet(Builder.CreateLoad(TheCodeGenContext->getRetV()));
         }
         auto isNotValid = verifyFunction(*function, &errs());
         if (isNotValid) {
@@ -446,7 +445,7 @@ llvm::Function *FunctionAST::codegen() {
             function->print(errs());
             goto clean;
         } else {
-            function->print(outs());
+//            function->print(outs());
             cleanCodeGenContext();
         }
         return function;
@@ -461,7 +460,7 @@ llvm::Function *FunctionAST::codegen() {
 FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {}
 
 Value *BlockAST::codegen() {
-    auto func = TheCodeGenContext.getFunc();
+    auto func = TheCodeGenContext->getFunc();
     if (func == NIL) {
         auto iterator = statements.begin();
         Value *lastStatementValue;
@@ -535,6 +534,9 @@ llvm::Value *VariableAssignmentAST::codegen() {
 
 llvm::Value *VariableDeclarationAST::codegen() {
     Value *ret = nullptr;
+    if (this->getName() == "ctotal") {
+        ret = NIL;
+    }
     if (!HASLOCALS) {
         // 全局变量
         auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
@@ -621,14 +623,14 @@ ReturnStmtAST::ReturnStmtAST() {
 }
 
 llvm::Value *ReturnStmtAST::codegen() {
-    auto ret_bb = TheCodeGenContext.getRetBb();
+    auto ret_bb = TheCodeGenContext->getRetBb();
     if (ret_bb == NIL) {
         return LogErrorV("return是否用在了非函数环境下？");
     }
     if (expr == nullptr) {
         return Builder.CreateBr(ret_bb);
     } else {
-        auto ret_addr = TheCodeGenContext.getRetV();
+        auto ret_addr = TheCodeGenContext->getRetV();
         if (ret_addr == NIL) {
             return LogErrorV("无返回值分配域？请联系作者");
         }
@@ -636,7 +638,9 @@ llvm::Value *ReturnStmtAST::codegen() {
         if (v == NIL) {
             return LogErrorV("函数返回的值为空，可能是值解析失败，或变量不存在");
         } else {
-            Builder.CreateStore(v, ret_addr);
+            if (!v->getType()->isVoidTy()) {
+                Builder.CreateStore(v, ret_addr);
+            }
             Builder.CreateBr(ret_bb);
             return v;
         }
@@ -666,8 +670,8 @@ Type *getTypeFromStr(const std::string &type) {
 // int a[5][6][7] -> vector<Expr>(7,6,5)
 ArrayType *buildArrayType(vector<ExpressionAST *> *vec, Type *arrayElemType) {
     ArrayType *arr_type = NIL;
-    auto it = vec->begin();
-    for (; it < vec->end(); it++) {
+    auto it = vec->rbegin();
+    for (; it < vec->rend(); it++) {
         auto v = (*it)->codegen();
         if (isa<ConstantInt>(v)) {
             auto constant_int = dyn_cast<ConstantInt>(v);
@@ -763,7 +767,7 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
                                          Constant::getNullValue(arr_type), identifier->identifier);
             auto vs = ArrayRef(*ca);
             gv->setInitializer(constant_arr_value);
-            gv->print(outs(), true);
+//            gv->print(outs(), true);
             ret = gv;
         }
     } else {
@@ -899,19 +903,15 @@ Type *VariableArrDeclarationAST::buildPointerTy() {
     if (idx_nums.empty()) {
         return NIL;
     }
-    Type *type = NIL;
+    Type *type = getTypeFromStr(this->type);
     int length = idx_nums.size();
-    for (int i = length - 1; i >= 0; i--) {
-        if (idx_nums[i] == INT_MAX && i != 0) {
-            return LogErrorTy("数组索引值只有第一个可以为空");
+    for (int i = length - 1; i > 0; i--) {
+        if (idx_nums[i] == INT_MAX) {
+            return LogErrorTy("数组索引值只有第一个可以为空!(第一个索引我不管，你随便)");
         }
-        if (type == NIL && idx_nums[i] == INT_MAX) {
-            type = getTypeFromStr(this->type)->getPointerTo();
-        } else {
-            type = ArrayType::get(type, idx_nums[i]);
-        }
+        type = ArrayType::get(type, idx_nums[i]);
     }
-    return type;
+    return type->getPointerTo();
 }
 
 string VariableArrDeclarationAST::getName() {
@@ -944,7 +944,7 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
 BreakStmtAST::BreakStmtAST() = default;
 
 Value *BreakStmtAST::codegen() {
-    auto blk = TheCodeGenContext.findTopLoopCodeGenBlockTypeBlock();
+    auto blk = TheCodeGenContext->findTopLoopCodeGenBlockTypeBlock();
     if (blk == NIL) {
         return LogErrorV("break 不能用作于当前的代码上下文中，请检查");
     }
@@ -974,7 +974,7 @@ Value *BreakStmtAST::codegen() {
 ContinueStmtAST::ContinueStmtAST() = default;
 
 Value *ContinueStmtAST::codegen() {
-    auto blk = TheCodeGenContext.findTopLoopCodeGenBlockTypeBlock();
+    auto blk = TheCodeGenContext->findTopLoopCodeGenBlockTypeBlock();
     if (blk == NIL) {
         return LogErrorV("break 不能用作于当前的代码上下文中，请检查");
     }

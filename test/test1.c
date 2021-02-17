@@ -1,14 +1,14 @@
 //
-// Created by bytedance on 2021/2/1.
+// Created by 金韬 on 2021/2/1.
 //
 #include <stdio.h>
 
 extern "C" {
-    int sum(int *, int);
+int sum2d(int[][2], int);
+int sum(int a[], int length);
+int recursive_call(int cnt);
 }
 
 int main() {
-    int params = 5;
-    int a[5] = {1, 2, 3, 4, 5};
-    printf("num is %d", sum(a, params));
+    printf("num is %d", recursive_call(100));
 }

@@ -172,6 +172,7 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 //aivec
 array_index : T_L_MPAR T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back(NIL);}
 	| T_L_MPAR expr T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back($2);}
+	| T_L_MPAR T_R_MPAR array_index{$3->insert($3->begin(),NIL); $$ = $3;}
 	| T_L_MPAR expr T_R_MPAR array_index {$4->insert($4->begin(),$2); $$ = $4;}
 
 call_args : %empty  {$$ = new std::vector<ExpressionAST*>();}

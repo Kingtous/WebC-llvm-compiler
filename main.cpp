@@ -58,7 +58,7 @@ int startAnalyze(const char *path) {
             return 0;
         }
     }
-    outs() << "generating codes...\n";
+
     // 生成目标代码
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -68,7 +68,7 @@ int startAnalyze(const char *path) {
 
     auto TargetTriple = sys::getDefaultTargetTriple();
     TheModule->setTargetTriple(TargetTriple);
-
+    outs() << "正在生成目标代码(" << TargetTriple << ")...\n";
     std::string Error;
     auto Target = TargetRegistry::lookupTarget(TargetTriple, Error);
 
@@ -112,8 +112,8 @@ int startAnalyze(const char *path) {
     pass.run(*TheModule);
     dest.flush();
 
-    outs() << "Wrote " << Filename << "\n";
+    outs() << "已生成目标文件(.o/.dll)： " << Filename << "\n";
     popen("objdump -S ../test/output.o > ../test/output.txt", "r");
-    popen("g++ ../test/output.o -o ../test/output", "r");
+    popen("g++ ../test/output.o ../test/test1.c -o ../test/output", "r");
     return 0;
 }

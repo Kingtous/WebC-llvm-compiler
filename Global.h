@@ -34,7 +34,7 @@
 /// 状态字
 #define OK 0
 #define ERR -1
-#define DEBUG_FLAG 1
+//#define DEBUG_FLAG 1
 //#define CGUI 1
 
 /// 初始化数字
@@ -44,11 +44,11 @@
 #define LabelPrefix "neuq_kingtous_"
 #define APPNAME "cn.kingtous.sysycompiler"
 /// 全局变量
-#define HASLOCALS (TheCodeGenContext.get_current_locals() != nullptr)
-#define LOCALS TheCodeGenContext.get_current_locals()
-#define LOCALSVARS TheCodeGenContext.get_current_locals()->localVars
-#define INSERTLOCAL(identifier, llvmValue) TheCodeGenContext.get_current_locals()->localVars.insert(std::make_pair(identifier,llvmValue))
-#define FINDLOCAL(x) TheCodeGenContext.findValue(x)
+#define HASLOCALS (TheCodeGenContext->get_current_locals() != nullptr)
+#define LOCALS TheCodeGenContext->get_current_locals()
+#define LOCALSVARS TheCodeGenContext->get_current_locals()->localVars
+#define INSERTLOCAL(identifier, llvmValue) TheCodeGenContext->get_current_locals()->localVars.insert(std::make_pair(identifier,llvmValue))
+#define FINDLOCAL(x) TheCodeGenContext->findValue(x)
 #define NIL nullptr
 
 extern void yyerror(const char *s);
@@ -62,8 +62,6 @@ extern llvm::IRBuilder<> Builder;
 extern std::unique_ptr<llvm::Module> TheModule;
 /// 跟踪哪些值在当前范围以及他们LLVM表示被定义。（换句话说，它是代码的符号表）。
 extern std::map<std::string, llvm::Value *> NamedValues;
-/// 遍优化器
-extern std::unique_ptr<llvm::FunctionPassManager> TheFPM;
 /// 代码生成上下文
-extern CodeGenContext TheCodeGenContext;
+extern std::unique_ptr<CodeGenContext> TheCodeGenContext;
 #endif //LLVM_KALEIDOSCOPE_GLOBAL_H

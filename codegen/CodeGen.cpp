@@ -7,21 +7,24 @@
 void CodeGenContext::push_block(BasicBlock *block) {
     auto bb = new CodeGenBlock();
     bb->block = block;
-    this->blocks.push_back(bb);
+    if (blocks == nullptr) {
+        blocks = new std::vector<CodeGenBlock *>();
+    }
+    this->blocks->push_back(bb);
 
 }
 
 CodeGenBlock *CodeGenContext::pop_block() {
-    CodeGenBlock *top = this->blocks[this->blocks.size() - 1];
-    this->blocks.pop_back();
+    CodeGenBlock *top = (*this->blocks)[this->blocks->size() - 1];
+    this->blocks->pop_back();
     return top;
 }
 
 CodeGenBlock *CodeGenContext::get_current_locals() {
-    if (blocks.empty()) {
+    if (blocks == nullptr || blocks->empty()) {
         return nullptr;
     } else {
-        return this->blocks[this->blocks.size() - 1];
+        return (*this->blocks)[this->blocks->size() - 1];
     }
 }
 
@@ -38,11 +41,11 @@ void CodeGenContext::removeFunction() {
 }
 
 Value *CodeGenContext::findValue(std::string &name) {
-    if (blocks.empty()) {
+    if (blocks->empty()) {
         return nullptr;
     }
-    auto it = blocks.rbegin();
-    for (; it != blocks.rend(); it++) {
+    auto it = blocks->rbegin();
+    for (; it != blocks->rend(); it++) {
         auto itt = (*it)->localVars.find(name);
         if (itt != (*it)->localVars.end()) {
             return (*itt).second;
@@ -53,10 +56,10 @@ Value *CodeGenContext::findValue(std::string &name) {
 }
 
 CodeGenBlock *CodeGenContext::findTopCodeGenBlockTypeBlock(CodeGenBlockContextType type) {
-    if (blocks.empty()) {
+    if (blocks->empty()) {
         return nullptr;
     }
-    for (auto i = blocks.rbegin(); i != blocks.rend(); ++i) {
+    for (auto i = blocks->rbegin(); i != blocks->rend(); ++i) {
         if ((*i)->contextType == type) {
             return (*i);
         }
@@ -65,10 +68,10 @@ CodeGenBlock *CodeGenContext::findTopCodeGenBlockTypeBlock(CodeGenBlockContextTy
 }
 
 CodeGenBlock *CodeGenContext::findTopLoopCodeGenBlockTypeBlock() {
-    if (blocks.empty()) {
+    if (blocks->empty()) {
         return nullptr;
     }
-    for (auto i = blocks.rbegin(); i != blocks.rend(); ++i) {
+    for (auto i = blocks->rbegin(); i != blocks->rend(); ++i) {
         if (isLoopCodeGenBlockContextType((*i)->contextType)) {
             return (*i);
         }

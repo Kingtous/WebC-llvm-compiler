@@ -71,12 +71,13 @@ public:
 };
 
 class CodeGenContext {
-    std::vector<CodeGenBlock *> blocks;
+public:
+    std::vector<CodeGenBlock *> *blocks;
     // 目前设计为单例模式
     Function *function;
     BasicBlock *retBB;
     Value *retV;
-public:
+
     void push_block(BasicBlock *block);
 
     CodeGenBlock *pop_block();

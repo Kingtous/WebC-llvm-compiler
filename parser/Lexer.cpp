@@ -21,7 +21,7 @@ int Lexer::_getNextToken() {
     // 判断是否是标识符
     if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
         identifierStr = char(LastChar);
-        while (isalnum((LastChar = getchar())))
+        while (isalnum((LastChar = getchar())) || LastChar == '_')
             identifierStr += LastChar;
 
         if (identifierStr == "if") {

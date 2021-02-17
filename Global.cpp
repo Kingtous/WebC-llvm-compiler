@@ -2,9 +2,7 @@
 // Created by 金韬 on 2020/9/22.
 //
 
-#include <codegen/CodeGen.h>
-
-#include "Global.h"
+#include "codegen/CodeGen.h"
 
 /// 全局变量
 // TheContext 是一个不透明的对象，拥有许多核心LLVM数据结构，例如类型和常量值表。
@@ -15,7 +13,5 @@ llvm::IRBuilder<> Builder = llvm::IRBuilder<>(TheContext);
 std::unique_ptr<llvm::Module> TheModule = std::make_unique<llvm::Module>("Kingtous JIT", TheContext);
 /// 跟踪哪些值在当前范围以及他们LLVM表示被定义。（换句话说，它是代码的符号表）。
 std::map<std::string, llvm::Value *> NamedValues = std::map<std::string, llvm::Value *>();
-/// 遍优化器
-std::unique_ptr<llvm::FunctionPassManager> TheFPM = std::make_unique<llvm::FunctionPassManager>(TheModule.get());
 /// 代码生成上下文
-CodeGenContext TheCodeGenContext;
+std::unique_ptr<CodeGenContext> TheCodeGenContext = std::make_unique<CodeGenContext>();
