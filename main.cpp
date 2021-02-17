@@ -15,6 +15,7 @@ static void activate(GtkApplication *app, gpointer data);
 int startAnalyze(const char *path);
 
 int main(int argc, char **argv) {
+
 #ifdef CGUI
     auto app = Gtk::Application::create(argc, argv, APPNAME, Gio::APPLICATION_FLAGS_NONE);
     auto builder = Gtk::Builder::create_from_file("../ui/ui/main.glade");
@@ -35,14 +36,15 @@ int startAnalyze(const char *path) {
     // Open a new module.
     TheModule = std::make_unique<Module>("Kingtous' jit", TheContext);
 //    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
-    // Do simple "peephole" optimizations and bit-twiddling optzns.
-//    TheFPM->addPass(createInstructionCombiningPass());
-//    // Reassociate expressions.
+//     Do simple "peephole" optimizations and bit-twiddling optzns.
+    // Reassociate expressions.
+
 //    TheFPM->addPass(createReassociatePass());
 //    // Eliminate Common SubExpressions.
 //    TheFPM->addPass(createGVNPass());
 //    // Simplify the control flow graph (deleting unreachable blocks, etc).
-//    TheFPM->addPass(createCFGSimplificationPass());
+////    auto pass = createGVNPass();
+//    TheFPM->addPass(createGVNPass());
     //
     FileReader reader(path);
 //    FileReader reader("../test/case/section1/functional_test/12_array_traverse.sy");
@@ -98,13 +100,15 @@ int startAnalyze(const char *path) {
     }
 
     legacy::PassManager pass;
+    pass.add(createReassociatePass());
+    pass.add(createGVNPass());
+    pass.add(createCFGSimplificationPass());
     auto FileType = CodeGenFileType::CGFT_ObjectFile;
 
     if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
         errs() << "TheTargetMachine can't emit a file of this type";
         return 1;
     }
-
     pass.run(*TheModule);
     dest.flush();
 

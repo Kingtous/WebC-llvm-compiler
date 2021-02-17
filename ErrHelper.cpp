@@ -23,3 +23,8 @@ llvm::Value *LogWarn(const char *Str) {
     LogError(Str);
     return nullptr;
 }
+
+llvm::Type *LogErrorTy(const char *Str) {
+    LogError(Str);
+    return nullptr;
+}

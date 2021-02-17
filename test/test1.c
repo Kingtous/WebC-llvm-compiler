@@ -4,9 +4,11 @@
 #include <stdio.h>
 
 extern "C" {
-int getNum();
+    int sum(int *, int);
 }
 
 int main() {
-    printf("num is %d", getNum());
+    int params = 5;
+    int a[5] = {1, 2, 3, 4, 5};
+    printf("num is %d", sum(a, params));
 }

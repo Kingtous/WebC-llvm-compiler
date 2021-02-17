@@ -210,9 +210,11 @@ llvm::Value *CallExprAST::codegen() {
 
     std::vector<llvm::Value *> argsV;
     for (unsigned i = 0, e = args.size(); i != e; ++i) {
-        argsV.push_back(args[i]->codegen());
-        if (!argsV.back())
-            return nullptr;
+        Value *av = args[i]->codegen();
+        if (av == NIL) {
+            return LogErrorV(("函数形参解析失败：" + av->getName()).str().c_str());
+        }
+        argsV.push_back(av);
     }
 
     return Builder.CreateCall(CalleeF, argsV, "calltmp");
@@ -222,7 +224,12 @@ llvm::Function *PrototypeAST::codegen() {
     // Make the function type:  double(double,double) etc.
     std::vector<llvm::Type *> Args;
     for (auto arg : args) {
-        Args.push_back(getTypeFromStr(arg->type));
+        if (typeid(*arg) == typeid(VariableArrDeclarationAST)) {
+            auto arr_arg = dynamic_cast<VariableArrDeclarationAST *>(arg);
+            Args.push_back(arr_arg->buildPointerTy());
+        } else {
+            Args.push_back(getTypeFromStr(arg->type));
+        }
     }
     llvm::FunctionType *FT = llvm::FunctionType::get(getTypeFromStr(returnType), Args, false);;
     llvm::Function *F =
@@ -231,7 +238,7 @@ llvm::Function *PrototypeAST::codegen() {
     // Set names for all arguments.
     unsigned Idx = 0;
     for (auto &Arg : F->args()) {
-        Arg.setName(args[Idx++]->identifier->identifier);
+        Arg.setName(args[Idx++]->getName());
     }
     return F;
 }
@@ -570,6 +577,10 @@ void VariableDeclarationAST::setIsConst(bool isConst) {
     VariableDeclarationAST::isConst = isConst;
 }
 
+std::string VariableDeclarationAST::getName() {
+    return identifier->identifier;
+}
+
 llvm::Value *IntegerExprAST::codegen() {
     return ConstantInt::get(Type::getInt32Ty(TheContext), Val, true);
 }
@@ -578,7 +589,16 @@ llvm::Value *IdentifierExprAST::codegen() {
     if (HASLOCALS) {
         auto local_mem = FINDLOCAL(identifier);
         if (local_mem != nullptr) {
-            return Builder.CreateLoad(local_mem);
+            auto v = Builder.CreateLoad(local_mem);
+            if (v->getType()->isArrayTy()) {
+                // 数组兜底
+                v->eraseFromParent();
+                // 0取数组，后0为取第一个元素所在地址
+                return Builder.CreateInBoundsGEP(local_mem,
+                                                 {ConstantInt::get(getTypeFromStr("int"), 0),
+                                                  ConstantInt::get(getTypeFromStr("int"), 0)});
+            }
+            return v;
         }
     }
     // 可能是全局变量
@@ -699,14 +719,18 @@ Type *getArrayType(Value *value) {
 
 llvm::Value *IdentifierArrExprAST::codegen() {
     auto local = FINDLOCAL(identifier);
-    if (local == nullptr) {
+    local = Builder.CreateLoad(local, "read_array");
+    if (local == NIL) {
         return LogErrorV(("未找到" + identifier + "\n").c_str());
     }
     auto it = arrIndex->begin();
     Value *ret = local;
     auto v_vec = vector<Value *>();
     // 添加0取指针地址
-    v_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+    if (!(local->getType()->isPointerTy())) {
+        // 兜底，目前放入local内的数组
+        v_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+    }
     for (; it < arrIndex->end(); it++) {
         auto v = (*it)->codegen();
         if (v == nullptr) {
@@ -868,6 +892,30 @@ vector<uint64_t> VariableArrDeclarationAST::getIndexVal() {
         }
     });
     return vmaxindex;
+}
+
+Type *VariableArrDeclarationAST::buildPointerTy() {
+    auto idx_nums = getIndexVal();
+    if (idx_nums.empty()) {
+        return NIL;
+    }
+    Type *type = NIL;
+    int length = idx_nums.size();
+    for (int i = length - 1; i >= 0; i--) {
+        if (idx_nums[i] == INT_MAX && i != 0) {
+            return LogErrorTy("数组索引值只有第一个可以为空");
+        }
+        if (type == NIL && idx_nums[i] == INT_MAX) {
+            type = getTypeFromStr(this->type)->getPointerTo();
+        } else {
+            type = ArrayType::get(type, idx_nums[i]);
+        }
+    }
+    return type;
+}
+
+string VariableArrDeclarationAST::getName() {
+    return identifier->identifier;
 }
 
 VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(

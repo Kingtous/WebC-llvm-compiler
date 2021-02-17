@@ -1,23 +1,15 @@
-int a;
+int global[5] = {1, 2, 3, 4, 5};
 
-int myFunc(int a, int b, int c) {
-    a = 2;
-    {
-        int c;
-        c = 0;
-        if (c != 0) {
-            return 0;
-        }
+int sum(int a[], int length) {
+    int total = 0;
+    for (int i = 0; i < length; i = i + 1) {
+        total = total + a[i];
     }
-    while (b > 0) {
-        b = b - 1;
-    }
-    return (a) + (b);
+    return total;
 }
 
 int main() {
-    a = (3);
-    int b;
-    b = myFunc(1, 2, 1);
-    return ((a + b));
+    int params = 5;
+    int a[5] = {1, 2, 3, 4, 5};
+    return sum(a, params);
 }

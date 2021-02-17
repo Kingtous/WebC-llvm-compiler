@@ -18,4 +18,6 @@ llvm::Value *LogErrorV(const char *Str);
 
 llvm::Value *LogWarn(const char *Str);
 
+llvm::Type *LogErrorTy(const char *Str);
+
 #endif //LLVM_KALEIDOSCOPE_ERRHELPER_H
