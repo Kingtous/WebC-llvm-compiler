@@ -127,7 +127,7 @@ int Lexer::_getNextToken() {
             identifierStr += LastChar;
         // 注释
         if (identifierStr == "//") {
-            while ((LastChar = getchar()) != '\n');
+            while ((LastChar = getchar()) != '\n' && LastChar != EOF);
             LastChar = getchar();
             return _getNextToken();
         }
