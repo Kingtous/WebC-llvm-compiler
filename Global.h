@@ -34,6 +34,7 @@
 /// 状态字
 #define OK 0
 #define ERR -1
+#define INVALID -2
 //#define DEBUG_FLAG 1
 //#define CGUI 1
 

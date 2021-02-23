@@ -1,6 +1,7 @@
 #include <iostream>
 #include <gtkmm.h>
 
+#include "args_parser.h"
 #include "parser/Parser.hpp"
 #include "parser/FileReader.h"
 #include "Global.h"
@@ -12,10 +13,10 @@ Lexer *m_lexer;
 
 static void activate(GtkApplication *app, gpointer data);
 
-int startAnalyze(const char *path);
+int startAnalyze(ArgsParser* parser);
+int genCode(ArgsParser* parser);
 
 int main(int argc, char **argv) {
-
 #ifdef CGUI
     auto app = Gtk::Application::create(argc, argv, APPNAME, Gio::APPLICATION_FLAGS_NONE);
     auto builder = Gtk::Builder::create_from_file("../ui/ui/main.glade");
@@ -28,38 +29,26 @@ int main(int argc, char **argv) {
     window->set_size_request(1200,800);
     return app->run(*window);
 #else
-    return startAnalyze("test/test.c");
+    // Open a new module.
+    auto args = ArgsParser::inst(argc,argv);
+    if (args == NIL){
+        return INVALID;
+    }
+    if (startAnalyze(args) == OK){
+        if (genCode(args) == OK){
+            return OK;
+        } else {
+            errs() << "生成代码失败";
+        }
+    } else {
+        errs() << "分析失败";
+    }
 #endif
+    return OK;
 }
 
-int startAnalyze(const char *path) {
-    // Open a new module.
-    TheModule = std::make_unique<Module>("Kingtous' jit", TheContext);
-//    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
-//     Do simple "peephole" optimizations and bit-twiddling optzns.
-    // Reassociate expressions.
-
-//    TheFPM->addPass(createReassociatePass());
-//    // Eliminate Common SubExpressions.
-//    TheFPM->addPass(createGVNPass());
-//    // Simplify the control flow graph (deleting unreachable blocks, etc).
-////    auto pass = createGVNPass();
-//    TheFPM->addPass(createGVNPass());
-    //
-    FileReader reader(path);
-//    FileReader reader("../test/case/section1/functional_test/12_array_traverse.sy");
-    m_lexer = new Lexer(reader);
-    TheLexer = m_lexer;
-    int result = yyparse();
-    if (!result) {
-        auto ast = program;
-        std::cout << ast->toString();
-        auto val = ast->codegen();
-        if (val == nullptr) {
-            return 0;
-        }
-    }
-
+int genCode(ArgsParser* parser){
+    auto opts = parser->getOpts();
     // 生成目标代码
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -91,7 +80,7 @@ int startAnalyze(const char *path) {
 
     TheModule->setDataLayout(TheTargetMachine->createDataLayout());
 
-    auto Filename = "test/output.o";
+    const auto& Filename = parser->getOutputPath();
     std::error_code EC;
     raw_fd_ostream dest(Filename, EC, sys::fs::F_None);
 
@@ -104,9 +93,12 @@ int startAnalyze(const char *path) {
     pass.add(createReassociatePass());
     pass.add(createGVNPass());
     pass.add(createCFGSimplificationPass());
-    auto FileType = CodeGenFileType::CGFT_ObjectFile;
+    auto file_type = CodeGenFileType::CGFT_ObjectFile;
+    if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()){
+        file_type = CodeGenFileType::CGFT_AssemblyFile;
+    }
 
-    if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+    if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
         errs() << "TheTargetMachine can't emit a file of this type";
         return 1;
     }
@@ -114,7 +106,28 @@ int startAnalyze(const char *path) {
     dest.flush();
 
     outs() << "已生成目标文件(.o/.dll)： " << Filename << "\n";
-    popen("objdump -S ../test/output.o > ../test/output.txt", "r");
-    popen("g++ ../test/output.o ../test/test1.c -o ../test/output", "r");
-    return 0;
+    return OK;
+}
+
+int startAnalyze(ArgsParser* parser) {
+    for (const auto& file : parser->getFiles()){
+        outs() << "正在分析 " << file << "...\n";
+        FileReader reader(file);
+        m_lexer = new Lexer(reader);
+        TheLexer = m_lexer;
+        int result = yyparse();
+        if (!result) {
+            auto ast = program;
+            //std::cout << ast->toString();
+            auto val = ast->codegen();
+            if (val == nullptr) {
+                return ERR;
+            } else {
+                return OK;
+            }
+        } else {
+            return ERR;
+        }
+    }
+    return ERR;
 }

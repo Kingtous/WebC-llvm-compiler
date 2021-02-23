@@ -42,6 +42,7 @@ include_directories(
         .
         parser
         codegen
+        args
 )
 
 aux_source_directory(. ROOT)
@@ -52,13 +53,21 @@ aux_source_directory(ast AST)
 message(STATUS "语法树定义：${AST}")
 aux_source_directory(codegen CodeGen)
 message(STATUS "代码生成：${CodeGen}")
+aux_source_directory(args ARGS)
+message(STATUS "Console Parser：${ARGS}")
 aux_source_directory(ui UI)
 message(STATUS "窗口实现：${UI}")
 
 add_executable(sysyplus_compiler
         ${ROOT} ${AST} ${PARSER}
         #        ${BISON_Parser_OUTPUTS}
-        ${CodeGen} ${UI})
+        ${CodeGen} ${UI} ${ARGS}
+        args/all.hpp args/api.hpp args/arg.hpp args/arg_iface.hpp
+        args/cmd_line.hpp args/command.hpp args/context.hpp args/enums.hpp
+        args/exceptions.hpp args/group_iface.hpp args/groups.hpp args/help_printer.hpp
+        args/help_printer.hpp args/help_printer_iface.hpp args/multi_arg.hpp args/types.hpp
+        args/utils.hpp args/value_utils.hpp
+        )
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
