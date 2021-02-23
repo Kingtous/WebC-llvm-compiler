@@ -12,6 +12,10 @@ llvm::Value *DoubleExprAST::codegen() {
     return llvm::ConstantFP::get(TheContext, llvm::APFloat(Val));
 }
 
+string DoubleExprAST::toString() {
+    return to_string(Val);
+}
+
 llvm::Value *VariableExprAST::codegen() {
     // 从符号表中取出
     llvm::Value *v = NamedValues[Name];
@@ -198,6 +202,10 @@ Value *BinaryExprAST::codeGenOr(NodeAST *l, NodeAST *r) {
     return phi;
 }
 
+string BinaryExprAST::toString() {
+    return string("二元操作结点：") + LEA->toString() + "," + REA->toString();
+}
+
 llvm::Value *CallExprAST::codegen() {
     // Look up the name in the global module table.
     llvm::Function *CalleeF = TheModule->getFunction(callName);
@@ -218,6 +226,10 @@ llvm::Value *CallExprAST::codegen() {
     }
 
     return Builder.CreateCall(CalleeF, argsV, "calltmp");
+}
+
+string CallExprAST::toString() {
+    return "函数调用：" + callName;
 }
 
 llvm::Function *PrototypeAST::codegen() {
@@ -317,6 +329,10 @@ ConditionAST::ConditionAST(ExpressionAST *ifCond, BlockAST *ifStmt, BlockAST *el
                                                                                           if_stmt(ifStmt),
                                                                                           else_stmt(elseStmt) {}
 
+string ConditionAST::toString() {
+    return "条件结点";
+}
+
 Value *ForExprAST::codegen() {
     Function *theFuntion = Builder.GetInsertBlock()->getParent();
     if (theFuntion == nullptr) {
@@ -343,7 +359,7 @@ Value *ForExprAST::codegen() {
 
     Builder.SetInsertPoint(bbCond);
     auto condV = Cond->codegen();
-    if (condV == nullptr){
+    if (condV == nullptr) {
         return LogErrorV("for(;x;){}中x有误");
     }
 
@@ -376,6 +392,10 @@ ForExprAST::ForExprAST(NodeAST *start, NodeAST *end, NodeAST *step, BlockAST *bo
                                                                                       Step(step),
                                                                                       Body(body) {}
 
+string ForExprAST::toString() {
+    return "循环结点";
+}
+
 
 const std::string &PrototypeAST::getName() const {
     return name;
@@ -383,6 +403,10 @@ const std::string &PrototypeAST::getName() const {
 
 PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args)
         : returnType(returnType), name(name), args(args) {}
+
+string PrototypeAST::toString() {
+    return "函数描述结点：" + this->getName() + " ret:" + returnType + " params:" + to_string(args.size());
+}
 
 void FunctionAST::cleanCodeGenContext() {
     // 清除
@@ -459,6 +483,10 @@ llvm::Function *FunctionAST::codegen() {
 
 FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {}
 
+string FunctionAST::toString() {
+    return "函数结点：\n"+Proto->toString() + "\n" + Body->toString();
+}
+
 Value *BlockAST::codegen() {
     auto func = TheCodeGenContext->getFunc();
     if (func == NIL) {
@@ -466,7 +494,7 @@ Value *BlockAST::codegen() {
         Value *lastStatementValue;
         for (; iterator != statements.end(); iterator++) {
             auto it = (*iterator);
-            if (typeid(*it) == typeid(BreakStmtAST)) {
+            if (typeid(*it) == typeid(OutStmtAST)) {
                 if (iterator + 1 != statements.end()) {
                     LogWarn("警告：作用域内break后方的语句无法到达");
                 }
@@ -490,7 +518,7 @@ Value *BlockAST::codegen() {
         for (; iterator != statements.end(); iterator++) {
             auto it = (*iterator);
             lastStatementValue = (*iterator)->codegen();
-            if (typeid(*it) == typeid(BreakStmtAST)) {
+            if (typeid(*it) == typeid(OutStmtAST)) {
                 if (iterator + 1 != statements.end()) {
                     LogWarn("警告：作用域内break后方的语句无法到达");
                 }
@@ -519,8 +547,8 @@ llvm::Value *VariableAssignmentAST::codegen() {
     Value *result = nullptr;
     auto ori_v = FINDLOCAL(identifier);
     if (ori_v != nullptr) {
-        auto v = expr == nullptr ? nullptr :expr->codegen();
-        result = Builder.CreateStore(v,ori_v);
+        auto v = expr == nullptr ? nullptr : expr->codegen();
+        result = Builder.CreateStore(v, ori_v);
     } else {
         auto gv = TheModule->getNamedGlobal(identifier);
         if (gv) {
@@ -530,6 +558,10 @@ llvm::Value *VariableAssignmentAST::codegen() {
         }
     }
     return result;
+}
+
+string VariableAssignmentAST::toString() {
+    return StatementAST::toString();
 }
 
 llvm::Value *VariableDeclarationAST::codegen() {
@@ -583,8 +615,17 @@ std::string VariableDeclarationAST::getName() {
     return identifier->identifier;
 }
 
+string VariableDeclarationAST::toString() {
+    string s = "变量声明：";
+    return s + this->getName();
+}
+
 llvm::Value *IntegerExprAST::codegen() {
     return ConstantInt::get(Type::getInt32Ty(TheContext), Val, true);
+}
+
+string IntegerExprAST::toString() {
+    return string("整型：" + to_string(Val));
 }
 
 llvm::Value *IdentifierExprAST::codegen() {
@@ -647,14 +688,18 @@ llvm::Value *ReturnStmtAST::codegen() {
     }
 }
 
+string ReturnStmtAST::toString() {
+    return string("ret：" + string(expr == NIL ? "void" : expr->toString()));
+}
+
 Type *getTypeFromStr(const std::string &type) {
     if (type == "int") {
         return Type::getInt32Ty(TheContext);
     } else if (type == "long") {
         return Type::getInt64Ty(TheContext);
-    } else if (type == "short"){
+    } else if (type == "short") {
         return Type::getInt8Ty(TheContext);
-    } else if (type == "bool"){
+    } else if (type == "bool") {
         return Type::getInt1Ty(TheContext); // 本质上就是1字节的int
     } else if (type == "void") {
         return Type::getVoidTy(TheContext);
@@ -753,6 +798,10 @@ llvm::Value *IdentifierArrExprAST::codegen() {
 
 IdentifierArrExprAST::IdentifierArrExprAST(const string &identifier, vector<ExpressionAST *> *arrIndex)
         : IdentifierExprAST(identifier), arrIndex(arrIndex) {}
+
+string IdentifierArrExprAST::toString() {
+    return string("数组标识符：") + identifier;
+}
 
 
 llvm::Value *VariableArrDeclarationAST::codegen() {
@@ -923,6 +972,10 @@ string VariableArrDeclarationAST::getName() {
     return identifier->identifier;
 }
 
+string VariableArrDeclarationAST::toString() {
+    return identifier->identifier;
+}
+
 VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(
         identifier), expr(expr) {}
 
@@ -946,9 +999,13 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     return ret;
 }
 
-BreakStmtAST::BreakStmtAST() = default;
+string VariableArrAssignmentAST::toString() {
+    return string("数组变量赋值") + identifier->toString();
+}
 
-Value *BreakStmtAST::codegen() {
+OutStmtAST::OutStmtAST() = default;
+
+Value *OutStmtAST::codegen() {
     auto blk = TheCodeGenContext->findTopLoopCodeGenBlockTypeBlock();
     if (blk == NIL) {
         return LogErrorV("break 不能用作于当前的代码上下文中，请检查");
@@ -974,6 +1031,10 @@ Value *BreakStmtAST::codegen() {
             return LogErrorV("Break在未知的代码域中，或编译器目前无法处理的关键字");
     }
     return NIL;
+}
+
+string OutStmtAST::toString() {
+    return "跳出语句";
 }
 
 ContinueStmtAST::ContinueStmtAST() = default;
@@ -1004,6 +1065,10 @@ Value *ContinueStmtAST::codegen() {
             return LogErrorV("Break在未知的代码域中，或编译器目前无法处理的关键字");
     }
     return NIL;
+}
+
+string ContinueStmtAST::toString() {
+    return "继续";
 }
 
 WhileStmtAST::WhileStmtAST(NodeAST *cond, BlockAST *body) : Cond(cond), Body(body) {}
@@ -1039,4 +1104,35 @@ llvm::Value *WhileStmtAST::codegen() {
     function->getBasicBlockList().push_back(bbEndWhile);
     Builder.SetInsertPoint(bbEndWhile);
     return bbEndWhile;
+}
+
+string WhileStmtAST::toString() {
+    string s = "循环：\n条件:\n";
+    s.append(this->Cond->toString());
+    s.append("\n执行域："+this->Body->toString());
+    return s;
+}
+
+string ExpressionAST::toString() {
+    return std::string();
+}
+
+string StatementAST::toString() {
+    return std::string();
+}
+
+string ExpressionStatementAST::toString() {
+    return std::string("变量声明：" + expr->toString());
+}
+
+string BlockAST::toString() {
+    string s = "block域内容：\n";
+    for (auto st : statements) {
+        s.append(st->toString() + "\n");
+    }
+    return s;
+}
+
+string IdentifierExprAST::toString() {
+    return string("标识符：") + identifier;
 }

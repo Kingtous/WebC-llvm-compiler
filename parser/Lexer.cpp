@@ -26,22 +26,18 @@ int Lexer::_getNextToken() {
 
         if (identifierStr == "if") {
             return T_IF;
-        } else if (identifierStr == "else") {
+        } else if (identifierStr == "el") {
             return T_ELSE;
-        } else if (identifierStr == "while") {
+        } else if (identifierStr == "wh") {
             return T_WHILE;
-        } else if (identifierStr == "break") {
-            return T_BREAK;
-        } else if (identifierStr == "continue") {
+        } else if (identifierStr == "cont") {
             return T_CONTINUE;
-        } else if (identifierStr == "return") {
+        } else if (identifierStr == "ret") {
             return T_RETURN;
-        } else if (identifierStr == "for") {
+        } else if (identifierStr == "lp") {
             return T_FOR;
-        } else if (identifierStr == "break") {
-            return T_BREAK;
-        } else if (identifierStr == "continue") {
-            return T_CONTINUE;
+        } else if (identifierStr == "out") {
+            return T_OUT;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;

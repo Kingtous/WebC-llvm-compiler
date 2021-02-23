@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.  */
+/* A Bison parser, made by GNU Bison 3.7.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -48,10 +48,9 @@ extern int yydebug;
 #line 5 "Parser.y"
 
 #include "Lexer.h"
-#include "ast/NodeAST.hpp"
-
+ #include "ast/NodeAST.hpp"
 // 程序分析入口点
-extern BlockAST *program;
+extern BlockAST* program;
 using std::vector;
 
 #line 57 "Parser.hpp"
@@ -59,7 +58,8 @@ using std::vector;
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-enum yytokentype {
+  enum yytokentype
+  {
     YYEMPTY = -2,
     END = 0,                       /* "END OF FILE BY SYSYPLUS COMPILER BY KINGTOUS"  */
     YYerror = 256,                 /* error  */
@@ -91,7 +91,7 @@ enum yytokentype {
     T_CONST = 282,                 /* T_CONST  */
     T_FOR = 283,                   /* T_FOR  */
     T_WHILE = 284,                 /* T_WHILE  */
-    T_BREAK = 285,                 /* T_BREAK  */
+    T_OUT = 285,                   /* T_OUT  */
     T_CONTINUE = 286,              /* T_CONTINUE  */
     T_IF = 287,                    /* T_IF  */
     T_ELSE = 288,                  /* T_ELSE  */
@@ -102,33 +102,34 @@ enum yytokentype {
     T_AND = 294,                   /* T_AND  */
     T_MINUS = 295,                 /* T_MINUS  */
     T_POS = 296                    /* T_POS  */
-};
-typedef enum yytokentype yytoken_kind_t;
+  };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
-#if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
-union YYSTYPE {
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+union YYSTYPE
+{
 #line 21 "Parser.y"
 
-    NodeAST *node;
-    ExpressionAST *expr;
-    StatementAST *stmt;
-    BlockAST *block;
-    IdentifierExprAST *ident;
-    IdentifierArrExprAST *identarr;
-    VariableDeclarationAST *vdeclar;
-    ConditionAST *cond;
-    ForExprAST *forexpr;
-    WhileStmtAST *whilestmt;
-    std::vector<VariableDeclarationAST *> *varvec;
-    std::vector<ExpressionAST *> *exprvec;
-    std::vector<ExpressionAST *> *aivec; // array index vector
-    vector<NodeAST *> *arrayvalvec;
-    std::string *string;
-    double double_value;
-    int int_value;
-    int token;
+	NodeAST* node;
+	ExpressionAST* expr;
+	StatementAST* stmt;
+	BlockAST* block;
+	IdentifierExprAST* ident;
+	IdentifierArrExprAST* identarr;
+	VariableDeclarationAST* vdeclar;
+	ConditionAST* cond;
+	ForExprAST* forexpr;
+	WhileStmtAST* whilestmt;
+	std::vector<VariableDeclarationAST*> *varvec;
+	std::vector<ExpressionAST*> *exprvec;
+	std::vector<ExpressionAST*> *aivec; // array index vector
+	vector<NodeAST*>* arrayvalvec;
+	std::string *string;
+	double double_value;
+	int int_value;
+	int token;
 
 #line 135 "Parser.hpp"
 

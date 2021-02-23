@@ -50,7 +50,7 @@ void yyerror(const char *s)
 // , ; () [] {}
 %token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR T_CONST
 // 循环
-%token <token> T_FOR T_WHILE T_BREAK T_CONTINUE
+%token <token> T_FOR T_WHILE T_OUT T_CONTINUE
 %token <token> T_IF T_ELSE
 %token <token> T_RETURN
 %token <token> T_VOID T_INT
@@ -114,7 +114,7 @@ fprintf(stderr,"build var decl stmt\n");
 	| T_RETURN ';'{$$ = new ReturnStmtAST();}
 	| T_RETURN expr ';'{$$ = new ReturnStmtAST($2);}
 	| for_stmt {$$ = $1;}
-	| T_BREAK ';' {$$ = new BreakStmtAST();}
+	| T_OUT ';' {$$ = new OutStmtAST();}
 	| T_CONTINUE ';' {$$ = new ContinueStmtAST();}
 	| block {$$ = $1;}
 	| ';' {}

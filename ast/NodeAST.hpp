@@ -50,14 +50,20 @@ public:
     virtual ~NodeAST() = default;
 
     virtual llvm::Value *codegen() = 0;
+
+    virtual string toString() = 0;
 };
 
 /// 表达式，如数字、代码块、赋值语句、二元操作语句
 class ExpressionAST : public NodeAST {
+public:
+    string toString() override;
 };
 
 /// 声明，如变量声明、函数声明
 class StatementAST : public NodeAST {
+public:
+    string toString() override;
 };
 
 class ExpressionStatementAST : public NodeAST {
@@ -66,6 +72,8 @@ public:
     ExpressionStatementAST(ExpressionAST *expr);
 
     Value *codegen() override;
+
+    string toString() override;
 };
 
 class ReturnStmtAST : public StatementAST {
@@ -76,6 +84,8 @@ public:
     explicit ReturnStmtAST(ExpressionAST *expr);
 
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 /// 块结点，一个块含有多种声明，也可作为一个程序的入口点
@@ -84,6 +94,8 @@ public:
     vector<StatementAST *> statements;
 
     Value *codegen() override;
+
+    string toString() override;
 };
 
 //////////////////// 用于存储数字的结点 ///////////////////////
@@ -102,6 +114,8 @@ public:
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
     /// 换句话说，没有办法“改变”SSA值。
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 // 标识符
@@ -116,6 +130,8 @@ public:
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
     /// 换句话说，没有办法“改变”SSA值。
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 // 变量声明语句
@@ -143,6 +159,8 @@ public:
     llvm::Value *codegen() override;
 
     virtual std::string getName();
+
+    string toString() override;
 };
 
 // 变量声明语句
@@ -190,6 +208,8 @@ public:
     Type *buildPointerTy();
 
     string getName() override;
+
+    string toString() override;
 };
 
 // 变量赋值句
@@ -207,6 +227,8 @@ public:
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
     /// 换句话说，没有办法“改变”SSA值。
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 class VariableArrAssignmentAST : public StatementAST {
@@ -223,6 +245,8 @@ public:
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
     /// 换句话说，没有办法“改变”SSA值。
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 
@@ -238,6 +262,8 @@ public:
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
     /// 换句话说，没有办法“改变”SSA值。
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 /// 数值语法结点
@@ -252,6 +278,8 @@ public:
     /// SSA值的最独特之处在于它们的值是在相关指令执行时计算的，并且在指令重新执行之前（以及如果）它不会获得新值。
     /// 换句话说，没有办法“改变”SSA值。
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 /// 变量结点
@@ -277,6 +305,8 @@ public:
     Value *codeGenAnd(NodeAST *l, NodeAST *r);
 
     Value *codeGenOr(NodeAST *l, NodeAST *r);
+
+    string toString() override;
 };
 
 /// 函数调用结点
@@ -289,6 +319,8 @@ public:
                                                                                     args(std::move(args)) {};
 
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 /// 函数描述结点
@@ -304,6 +336,8 @@ public:
     llvm::Function *codegen() override;
 
     const std::string &getName() const;
+
+    string toString() override;
 };
 
 /// 函数结点
@@ -319,14 +353,18 @@ public:
     void cleanCodeGenContext();
 
     llvm::Function *codegen() override;
+
+    string toString() override;
 };
 
 /// Break结点
-class BreakStmtAST : public StatementAST {
+class OutStmtAST : public StatementAST {
 public:
-    BreakStmtAST();
+    OutStmtAST();
 
     Value *codegen() override;
+
+    string toString() override;
 };
 
 /// Break结点
@@ -335,6 +373,8 @@ public:
     ContinueStmtAST();
 
     Value *codegen() override;
+
+    string toString() override;
 };
 
 
@@ -348,6 +388,8 @@ public:
     ConditionAST(ExpressionAST *ifCond, BlockAST *ifStmt, BlockAST *elseStmt);
 
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 /// For结点
@@ -361,6 +403,8 @@ public:
     ForExprAST(NodeAST *start, NodeAST *end, NodeAST *step, BlockAST *body);
 
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 /// While结点
@@ -373,6 +417,8 @@ public:
     WhileStmtAST(NodeAST *cond, BlockAST *body);
 
     llvm::Value *codegen() override;
+
+    string toString() override;
 };
 
 Type *getTypeFromStr(const std::string &type);

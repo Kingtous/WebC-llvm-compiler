@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     window->set_size_request(1200,800);
     return app->run(*window);
 #else
-    return startAnalyze("../test/test.c");
+    return startAnalyze("test/test.c");
 #endif
 }
 
@@ -53,6 +53,7 @@ int startAnalyze(const char *path) {
     int result = yyparse();
     if (!result) {
         auto ast = program;
+        std::cout << ast->toString();
         auto val = ast->codegen();
         if (val == nullptr) {
             return 0;
@@ -90,7 +91,7 @@ int startAnalyze(const char *path) {
 
     TheModule->setDataLayout(TheTargetMachine->createDataLayout());
 
-    auto Filename = "../test/output.o";
+    auto Filename = "test/output.o";
     std::error_code EC;
     raw_fd_ostream dest(Filename, EC, sys::fs::F_None);
 
