@@ -25,9 +25,9 @@ ArgsParser *ArgsParser::inst(int args, char **argv) {
         }
         ap->output_path = output_arg->value();
         if (is_target_arg->isDefined()){
-            ap->opts.insert(Options::OUTPUT_EXECUTABLE);
-        } else {
             ap->opts.insert(Options::OUTPUT_LLVMAS_FILE);
+        } else {
+            ap->opts.insert(Options::OUTPUT_EXECUTABLE);
         }
         return ap;
     } else {
@@ -49,8 +49,8 @@ bool ArgsParser::verify(int args, char **argv) {
     cmd->addArg(output_arg);
 
     is_target_arg = new Arg("as",false,false);
-    is_target_arg->setDescription("是否只生成LLVM IR汇编文件");
-    is_target_arg->setLongDescription("source code -> llvm ir(assemble) -> object file");
+    is_target_arg->setDescription("是否生成可读汇编文件");
+    is_target_arg->setLongDescription("source code -> llvm ir -> assembly file(可视化) -> object file");
     cmd->addArg(is_target_arg);
 
     help_arg = new Help();
