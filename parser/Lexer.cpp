@@ -7,16 +7,26 @@
 int Lexer::_getNextToken() {
     static int LastChar = ' ';
     while (isspace(LastChar)) {
-        LastChar = getchar();
+        NEXTCHAR;
     }
     if (LastChar == ',') {
-        LastChar = getchar();
+        NEXTCHAR;
         return T_COMMA;
     }
     if (LastChar == ';') {
         // 分号直接return
-        LastChar = getchar();
+        NEXTCHAR;
         return ';';
+    }
+    if (LastChar == '\''){
+        string str = "";
+        while ((LastChar = getchar()) != '\''){
+            str.insert(str.end(),LastChar);
+        }
+        // 吃掉'
+        NEXTCHAR;
+        yylval.string = new string(str);
+        return T_STR;
     }
     // 判断是否是标识符
     if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
@@ -38,6 +48,8 @@ int Lexer::_getNextToken() {
             return T_FOR;
         } else if (identifierStr == "out") {
             return T_OUT;
+        } else if (identifierStr == "const"){
+            return T_CONST;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;
@@ -47,72 +59,72 @@ int Lexer::_getNextToken() {
     if (ispunct(LastChar)) {
         // 特判
         if (LastChar == '(') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_L_SPAR;
         } else if (LastChar == ')') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_R_SPAR;
         } else if (LastChar == '[') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_L_MPAR;
         } else if (LastChar == ']') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_R_MPAR;
         } else if (LastChar == '{') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_L_LPAR;
         } else if (LastChar == '}') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_R_LPAR;
         } else if (LastChar == '+') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_ADD;
         } else if (LastChar == '-' && isspace(seek())) {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_SUB;
         } else if (LastChar == '*') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_MUL;
         } else if (LastChar == '/' && seek() != '/') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_DIV;
         } else if (LastChar == '%') {
-            LastChar = getchar();
+            NEXTCHAR;
             return T_MOD;
         } else if (LastChar == '=') {
             if (seek() == '=') {
                 getchar();
-                LastChar = getchar();
+                NEXTCHAR;
                 return T_EQU;
             } else {
-                LastChar = getchar();
+                NEXTCHAR;
                 return T_ASSIGN;
             }
         } else if (LastChar == '<') {
             if (seek() == '=') {
                 getchar();
-                LastChar = getchar();
+                NEXTCHAR;
                 return T_LESS_EQU;
             } else {
-                LastChar = getchar();
+                NEXTCHAR;
                 return T_LESS;
             }
         } else if (LastChar == '>') {
             if (seek() == '=') {
                 getchar();
-                LastChar = getchar();
+                NEXTCHAR;
                 return T_GREATER_EQU;
             } else {
-                LastChar = getchar();
+                NEXTCHAR;
                 return T_GREATER;
             }
         } else if (LastChar == '!') {
             if (seek() == '=') {
                 getchar();
-                LastChar = getchar();
+                NEXTCHAR;
                 return T_N_EQU;
             }
-            LastChar = getchar();
+            NEXTCHAR;
             return T_REVERSE;
         }
 
@@ -124,7 +136,7 @@ int Lexer::_getNextToken() {
         // 注释
         if (identifierStr == "//") {
             while ((LastChar = getchar()) != '\n' && LastChar != EOF);
-            LastChar = getchar();
+            NEXTCHAR;
             return _getNextToken();
         }
         if (identifierStr == "&&") {
@@ -155,7 +167,7 @@ int Lexer::_getNextToken() {
         std::string NumStr;
         do {
             NumStr += LastChar;
-            LastChar = getchar();
+            NEXTCHAR;
         } while (isdigit(LastChar) || LastChar == '.');
         if (NumStr.find('.') == string::npos) {
             yylval.int_value = stoi(NumStr);
@@ -174,7 +186,7 @@ int Lexer::_getNextToken() {
     if (LastChar == '#') {
         // Comment until end of line.
         do
-            LastChar = getchar();
+            NEXTCHAR;
         while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
 
         if (LastChar != EOF)
@@ -186,7 +198,7 @@ int Lexer::_getNextToken() {
 
     // Otherwise, just return the character as its ascii value.
     int ThisChar = LastChar;
-    LastChar = getchar();
+    NEXTCHAR;
     return ThisChar;
 }
 

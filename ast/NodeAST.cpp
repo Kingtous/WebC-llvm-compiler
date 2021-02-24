@@ -7,6 +7,8 @@
 #include <utility>
 #include "ErrHelper.h"
 
+long StringExprAST::id = 0;
+
 llvm::Value *DoubleExprAST::codegen() {
     // 在LLVM IR中，数字常量用ConstantFP类表示 ，它在APFloat 内部保存数值（APFloat能够保持任意精度的浮点常量）
     return llvm::ConstantFP::get(TheContext, llvm::APFloat(Val));
@@ -469,7 +471,6 @@ llvm::Function *FunctionAST::codegen() {
             function->print(errs());
             goto clean;
         } else {
-            function->print(outs());
             cleanCodeGenContext();
         }
         return function;
@@ -484,7 +485,7 @@ llvm::Function *FunctionAST::codegen() {
 FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {}
 
 string FunctionAST::toString() {
-    return "函数结点：\n"+Proto->toString() + "\n" + Body->toString();
+    return "函数结点：\n" + Proto->toString() + "\n" + Body->toString();
 }
 
 Value *BlockAST::codegen() {
@@ -580,7 +581,8 @@ llvm::Value *VariableDeclarationAST::codegen() {
                                           GlobalVariable::LinkageTypes::ExternalLinkage,
                                           Constant::getNullValue(getTypeFromStr(type)), identifier->identifier);
             if (expr != nullptr) {
-                gv->setInitializer(dyn_cast<Constant>(expr->codegen()));
+                auto val = dyn_cast<Constant>(expr->codegen());
+                gv->setInitializer(val);
             }
             ret = gv;
         }
@@ -707,6 +709,12 @@ Type *getTypeFromStr(const std::string &type) {
         return Type::getDoubleTy(TheContext);
     } else if (type == "float") {
         return Type::getFloatTy(TheContext);
+    } else if (type == "char") {
+        // 8b
+        return Type::getInt8Ty(TheContext);
+    } else if (type == "str") {
+        // 8b的指针
+        return Type::getInt8Ty(TheContext)->getPointerTo();
     } else {
         return nullptr;
     }
@@ -1109,7 +1117,7 @@ llvm::Value *WhileStmtAST::codegen() {
 string WhileStmtAST::toString() {
     string s = "循环：\n条件:\n";
     s.append(this->Cond->toString());
-    s.append("\n执行域："+this->Body->toString());
+    s.append("\n执行域：" + this->Body->toString());
     return s;
 }
 
@@ -1135,4 +1143,41 @@ string BlockAST::toString() {
 
 string IdentifierExprAST::toString() {
     return string("标识符：") + identifier;
+}
+
+llvm::Value *StringExprAST::codegen() {
+    GlobalVariable *gv;
+    if (TheCodeGenContext->getFunc() == NIL) {
+        auto sz = str->size();
+        auto arr_type = ArrayType::get(getTypeFromStr("char"), sz + 1);
+        gv = new GlobalVariable(*TheModule,arr_type,
+                                true, GlobalValue::PrivateLinkage, ConstantDataArray::getString(TheContext, *str),
+                                getUniqueId());
+//        for (int i = 0; i < sz; ++i) {
+//            uint8_t ch = str->at(i);
+//            v.push_back(ConstantInt::get(getTypeFromStr("char"), ch));
+//        }
+        // 反斜杠0
+//        v.push_back(ConstantInt::get(getTypeFromStr("char"), '\0'));
+        gv->setUnnamedAddr(GlobalVariable::UnnamedAddr::Global);
+        return ConstantExpr::getBitCast(gv,getTypeFromStr("str"));
+    } else {
+        gv = Builder.CreateGlobalString(*str, StringExprAST::getUniqueId());
+    }
+    return Builder.CreateInBoundsGEP(gv, {ConstantInt::get(getTypeFromStr("int"), 0),
+                                          ConstantInt::get(getTypeFromStr("int"), 0)});
+}
+
+string StringExprAST::getUniqueId() {
+    return std::string("_str_") + to_string(StringExprAST::id++);
+}
+
+void StringExprAST::setUniqueId(long id) {
+    StringExprAST::id = id;
+}
+
+StringExprAST::StringExprAST(string *str) : str(str) {}
+
+string StringExprAST::toString() {
+    return str == NIL ? "" : *str;
 }

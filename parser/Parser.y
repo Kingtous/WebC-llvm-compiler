@@ -49,6 +49,8 @@ void yyerror(const char *s)
 %token <token> T_EQU T_N_EQU T_LESS T_GREATER T_REVERSE T_LESS_EQU T_GREATER_EQU
 // , ; () [] {}
 %token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR T_CONST
+// ' "
+%token <token> T_STR
 // 循环
 %token <token> T_FOR T_WHILE T_OUT T_CONTINUE
 %token <token> T_IF T_ELSE
@@ -60,7 +62,7 @@ void yyerror(const char *s)
 %type <block> program block stmts
 %type <ident> ident
 %type <identarr> ident_arr
-%type <expr> number expr
+%type <expr> number expr str
 %type <cond> if_condition
 %type <forexpr> for_stmt
 %type <whilestmt> while_stmt
@@ -167,8 +169,8 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| expr T_N_EQU expr {$$ = new BinaryExprAST(BinaryType::n_equ,$1,$3);}
 	| expr T_AND expr {$$ = new BinaryExprAST(BinaryType::AND,$1,$3);}
 	| expr T_OR expr {$$ = new BinaryExprAST(BinaryType::OR,$1,$3);}
+	| str {$$ = $1;}
 	;
-
 //aivec
 array_index : T_L_MPAR T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back(NIL);}
 	| T_L_MPAR expr T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back($2);}
@@ -231,6 +233,8 @@ array_init_val :  expr {$$ = new vector<NodeAST*>(); $$->push_back($1);}
 
 array_init_list : array_init_list T_COMMA array_init_val {$$ = $1; $1->insert($1->end(),$3->begin(),$3->end());}
 	| array_init_val {$$ = $1;}
+
+str : T_STR {$$ = new StringExprAST($<string>$);}
 %%
 
 BlockAST* program = nullptr;

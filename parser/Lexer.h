@@ -15,6 +15,8 @@
 #include "FileReader.h"
 #include "Parser.hpp"
 
+#define NEXTCHAR (LastChar=getchar())
+
 class Lexer {
 public:
     std::string identifierStr = ""; //如果是tok_identifier就传入

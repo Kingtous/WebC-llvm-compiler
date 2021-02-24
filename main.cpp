@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
 }
 
 int genCode(ArgsParser* parser){
+    TheModule->print(outs(),NIL);
     auto opts = parser->getOpts();
     // 生成目标代码
     InitializeAllTargetInfos();

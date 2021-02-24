@@ -101,6 +101,24 @@ public:
 //////////////////// 用于存储数字的结点 ///////////////////////
 
 // 标识符
+class StringExprAST : public ExpressionAST {
+public:
+    StringExprAST(string *str);
+
+    std::string* str;
+
+    llvm::Value *codegen() override;
+
+    string toString() override;
+
+    static string getUniqueId();
+    static void setUniqueId(long id);
+
+//private:
+    static long id;
+};
+
+// 标识符
 class IdentifierExprAST : public ExpressionAST {
 public:
     std::string identifier;

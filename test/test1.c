@@ -3,6 +3,8 @@
 //
 #include <stdio.h>
 
+char* a = "1234";
+
 extern "C" {
 //int sum2d(int[][2], int);
 //int sum(int a[], int length);
@@ -11,5 +13,5 @@ int sum(int cnt);
 }
 
 int main() {
-    printf("num is %d", sum(10000000));
+    char* a = "123456";
 }
