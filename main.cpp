@@ -7,6 +7,7 @@
 #include "Global.h"
 #include "ui/widgets.h"
 #include "ErrHelper.h"
+#include "pass/TimeAnalysisPass.h"
 
 using namespace llvm;
 Lexer *m_lexer;
@@ -94,6 +95,7 @@ int genCode(ArgsParser* parser){
     pass.add(createReassociatePass());
     pass.add(createGVNPass());
     pass.add(createCFGSimplificationPass());
+    pass.add(new TimeAnalysisPass());
     auto file_type = CodeGenFileType::CGFT_ObjectFile;
     if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()){
         file_type = CodeGenFileType::CGFT_AssemblyFile;

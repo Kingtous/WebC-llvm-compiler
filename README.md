@@ -20,19 +20,19 @@ LLVM框架语言：LLVM 12.0.0
     - 基础类型、数组、多维数组传参
 - 条件分支关键字
   - if
-- 循环关键字
-  - for
-  - While
-  - break
-    - continue
-- 函数返回 return
+- 循环关键字(c++ -> sysyplus)
+  - for -> lp
+  - While -> whl
+  - break -> out
+    - continue -> cont
+- 函数返回 return -> ret
   - 保持单入单出特性
 - 全局、局部变量
 - 数组
   - 全局、局部数组/多维数组
   - 数组定义时初始化
 - 字符串
-  - 局部、全局声明
+  - 局部、全局声明、传值
 - 生成AST语法树
 - 生成对应系统架构的目标代码
 - ...(比较懒，不想写)
