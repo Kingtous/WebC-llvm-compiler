@@ -81,7 +81,7 @@ int genCode(ArgsParser* parser){
 
     TheModule->setDataLayout(TheTargetMachine->createDataLayout());
 
-    const auto& Filename = parser->getOutputPath();
+    const auto &Filename = parser->getOutputPath();
     std::error_code EC;
     raw_fd_ostream dest(Filename, EC, sys::fs::F_None);
 
@@ -91,12 +91,12 @@ int genCode(ArgsParser* parser){
     }
 
     legacy::PassManager pass;
-    pass.add(createReassociatePass());
-    pass.add(createGVNPass());
-    pass.add(createCFGSimplificationPass());
+//    pass.add(createReassociatePass());
+//    pass.add(createGVNPass());
+//    pass.add(createCFGSimplificationPass());
     pass.add(new TimeAnalysisPass());
     auto file_type = CodeGenFileType::CGFT_ObjectFile;
-    if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()){
+    if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()) {
         file_type = CodeGenFileType::CGFT_AssemblyFile;
     }
 

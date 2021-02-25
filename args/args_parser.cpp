@@ -67,9 +67,6 @@ bool ArgsParser::verify(int args, char **argv) {
         } else {
             return true;
         }
-    } catch (filesystem_error &fe) {
-        fprintf(stderr, "输入文件不存在或权限错误");
-        return false;
     } catch (const HelpHasBeenPrintedException &) {
         return false;
     }

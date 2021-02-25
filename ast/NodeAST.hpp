@@ -106,16 +106,17 @@ class StringExprAST : public ExpressionAST {
 public:
     StringExprAST(string *str);
 
-    std::string* str;
+    std::string *str;
 
     llvm::Value *codegen() override;
 
     string toString() override;
 
     static string getUniqueId();
+
     static void setUniqueId(long id);
 
-//private:
+private:
     static long id;
 };
 

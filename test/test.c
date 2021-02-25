@@ -15,7 +15,14 @@ char getStr(int c){
 
 int main(){
     //str a = repeated 0 25;
-    long t = time(nil);
-    echo('hello world!');
-    ret 0;
+    int a = 0;
+    lp(
+    int i = 0;
+    i < 5;
+    i = i + 1) {
+        sleep(1);
+    }
+
+    ret
+    0;
 }
