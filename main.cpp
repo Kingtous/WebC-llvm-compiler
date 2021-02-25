@@ -1,6 +1,4 @@
 #include <iostream>
-#include <gtkmm.h>
-
 #include "args_parser.h"
 #include "parser/Parser.hpp"
 #include "parser/FileReader.h"
@@ -12,10 +10,14 @@
 using namespace llvm;
 Lexer *m_lexer;
 
+#ifdef CGUI
+#include <gtkmm.h>
 static void activate(GtkApplication *app, gpointer data);
+#endif
 
-int startAnalyze(ArgsParser* parser);
-int genCode(ArgsParser* parser);
+int startAnalyze(ArgsParser *parser);
+
+int genCode(ArgsParser *parser);
 
 int main(int argc, char **argv) {
 #ifdef CGUI
@@ -48,14 +50,14 @@ int main(int argc, char **argv) {
     return OK;
 }
 
-int genCode(ArgsParser* parser){
+int genCode(ArgsParser* parser) {
     auto opts = parser->getOpts();
-    // 生成目标代码
-    InitializeAllTargetInfos();
-    InitializeAllTargets();
-    InitializeAllTargetMCs();
-    InitializeAllAsmParsers();
-    InitializeAllAsmPrinters();
+    // 生成目标代码，目前只初始化x86
+    LLVMInitializeX86TargetInfo();
+    LLVMInitializeX86Target();
+    LLVMInitializeX86TargetMC();
+    LLVMInitializeX86AsmParser();
+    LLVMInitializeX86AsmPrinter();
 
     auto TargetTriple = sys::getDefaultTargetTriple();
     TheModule->setTargetTriple(TargetTriple);
