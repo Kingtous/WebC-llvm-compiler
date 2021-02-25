@@ -120,6 +120,7 @@ fprintf(stderr,"build var decl stmt\n");
 	| T_CONTINUE ';' {$$ = new ContinueStmtAST();}
 	| block {$$ = $1;}
 	| ';' {}
+	| expr ';' {$$ = new ExpressionStatementAST($1);}
 	;
 
 ident : T_IDENTIFIER {

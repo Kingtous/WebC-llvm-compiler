@@ -210,12 +210,15 @@ string BinaryExprAST::toString() {
 
 llvm::Value *CallExprAST::codegen() {
     // Look up the name in the global module table.
-    llvm::Function *CalleeF = TheModule->getFunction(callName);
-    if (!CalleeF)
+    llvm::Function *func = TheModule->getFunction(callName);
+    if (func == NIL){
+        func = ExternFunctionLinker::getExternFunc(TheContext,*TheModule,callName);
+    }
+    if (!func)
         return LogErrorV("Unknown function referenced");
 
     // If argument mismatch error.
-    if (CalleeF->arg_size() != args.size())
+    if (func->arg_size() != args.size())
         return LogErrorV("Incorrect # arguments passed");
 
     std::vector<llvm::Value *> argsV;
@@ -227,7 +230,7 @@ llvm::Value *CallExprAST::codegen() {
         argsV.push_back(av);
     }
 
-    return Builder.CreateCall(CalleeF, argsV, "calltmp");
+    return Builder.CreateCall(func, argsV, "calltmp");
 }
 
 string CallExprAST::toString() {

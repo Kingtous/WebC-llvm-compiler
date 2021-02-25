@@ -12,6 +12,7 @@
 #include <typeinfo>
 
 #include "Global.h"
+#include "extern/ExternFunctionLinker.h"
 
 using namespace std;
 using namespace llvm;
@@ -66,7 +67,7 @@ public:
     string toString() override;
 };
 
-class ExpressionStatementAST : public NodeAST {
+class ExpressionStatementAST : public StatementAST {
     ExpressionAST *expr;
 public:
     ExpressionStatementAST(ExpressionAST *expr);

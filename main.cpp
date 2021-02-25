@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
 }
 
 int genCode(ArgsParser* parser){
-    TheModule->print(outs(),NIL);
     auto opts = parser->getOpts();
     // 生成目标代码
     InitializeAllTargetInfos();
@@ -106,6 +105,7 @@ int genCode(ArgsParser* parser){
         return 1;
     }
     pass.run(*TheModule);
+    TheModule->print(outs(),NIL);
     dest.flush();
 
     outs() << "已生成目标文件(.o/.dll)： " << Filename << "\n";

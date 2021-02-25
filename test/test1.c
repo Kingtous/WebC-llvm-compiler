@@ -5,6 +5,8 @@
 
 //char* a = "1234";
 
+extern int f();
+
 extern "C" {
 char getStr();
 }

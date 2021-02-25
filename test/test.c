@@ -12,3 +12,8 @@ char getStr(){
     }
     ret a[5];
 }
+
+int main(){
+    echo('hello world!');
+    ret 0;
+}
