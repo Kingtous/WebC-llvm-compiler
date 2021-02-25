@@ -50,6 +50,8 @@ int Lexer::_getNextToken() {
             return T_OUT;
         } else if (identifierStr == "const"){
             return T_CONST;
+        } else if (identifierStr == "nil"){
+            return T_NULL;
         }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;

@@ -22,7 +22,7 @@ llvm::Value *VariableExprAST::codegen() {
     // 从符号表中取出
     llvm::Value *v = NamedValues[Name];
     if (!v)
-        LogErrorV((std::string("Unknown Variable Name:") + Name).c_str());
+        LogErrorV((std::string("未知变量名:") + Name).c_str());
     return v;
 }
 
@@ -215,7 +215,7 @@ llvm::Value *CallExprAST::codegen() {
         func = ExternFunctionLinker::getExternFunc(TheContext,*TheModule,callName);
     }
     if (!func)
-        return LogErrorV("Unknown function referenced");
+        return LogErrorV(("使用了未知的函数：" + callName).c_str());
 
     // If argument mismatch error.
     if (func->arg_size() != args.size())
@@ -1183,4 +1183,12 @@ StringExprAST::StringExprAST(string *str) : str(str) {}
 
 string StringExprAST::toString() {
     return str == NIL ? "" : *str;
+}
+
+string NullExprAST::toString() {
+    return "空值";
+}
+
+llvm::Value *NullExprAST::codegen() {
+    return ConstantExpr::getNullValue(getTypeFromStr("long")->getPointerTo());
 }

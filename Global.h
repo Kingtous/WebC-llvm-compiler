@@ -42,7 +42,7 @@
 #define INIT_NUM -1
 
 /// 特性前缀
-#define LabelPrefix "neuq_kingtous_"
+#define LabelPrefix "__neuq_kingtous_"
 #define APPNAME "cn.kingtous.sysycompiler"
 /// 全局变量
 #define HASLOCALS (TheCodeGenContext->get_current_locals() != nullptr)

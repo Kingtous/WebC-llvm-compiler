@@ -50,7 +50,7 @@ void yyerror(const char *s)
 // , ; () [] {}
 %token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR T_CONST
 // ' "
-%token <token> T_STR
+%token <token> T_STR T_NULL
 // 循环
 %token <token> T_FOR T_WHILE T_OUT T_CONTINUE
 %token <token> T_IF T_ELSE
@@ -171,6 +171,7 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| expr T_AND expr {$$ = new BinaryExprAST(BinaryType::AND,$1,$3);}
 	| expr T_OR expr {$$ = new BinaryExprAST(BinaryType::OR,$1,$3);}
 	| str {$$ = $1;}
+	| T_NULL {$$ = new NullExprAST();}
 	;
 //aivec
 array_index : T_L_MPAR T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back(NIL);}

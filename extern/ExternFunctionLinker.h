@@ -11,6 +11,8 @@ class ExternFunctionLinker {
 public:
     static Function* getOrAddPrintfFunc(LLVMContext& context, Module& module);
 
+    static Function* getOrAddTimeFunc(LLVMContext& context, Module& module);
+
     static Function* getExternFunc(LLVMContext& context, Module& module, const std::string& func_name);
 };
 

@@ -328,6 +328,13 @@ public:
     string toString() override;
 };
 
+/// 空值结点
+class NullExprAST : public ExpressionAST {
+public:
+    llvm::Value *codegen() override;
+    string toString() override;
+};
+
 /// 函数调用结点
 class CallExprAST : public ExpressionAST {
     std::string callName;

@@ -5,7 +5,7 @@
 
 str a = '1234';
 
-char getStr(){
+char getStr(int c){
     lp (int i = 0; i < 4; i = i+1) {
         str b = a;
         ret b[0];
@@ -14,6 +14,8 @@ char getStr(){
 }
 
 int main(){
+    //str a = repeated 0 25;
+    long t = time(nil);
     echo('hello world!');
     ret 0;
 }

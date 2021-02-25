@@ -90,19 +90,20 @@ using std::vector;
     T_R_LPAR = 281,                /* T_R_LPAR  */
     T_CONST = 282,                 /* T_CONST  */
     T_STR = 283,                   /* T_STR  */
-    T_FOR = 284,                   /* T_FOR  */
-    T_WHILE = 285,                 /* T_WHILE  */
-    T_OUT = 286,                   /* T_OUT  */
-    T_CONTINUE = 287,              /* T_CONTINUE  */
-    T_IF = 288,                    /* T_IF  */
-    T_ELSE = 289,                  /* T_ELSE  */
-    T_RETURN = 290,                /* T_RETURN  */
-    T_VOID = 291,                  /* T_VOID  */
-    T_INT = 292,                   /* T_INT  */
-    T_OR = 294,                    /* T_OR  */
-    T_AND = 295,                   /* T_AND  */
-    T_MINUS = 296,                 /* T_MINUS  */
-    T_POS = 297                    /* T_POS  */
+    T_NULL = 284,                  /* T_NULL  */
+    T_FOR = 285,                   /* T_FOR  */
+    T_WHILE = 286,                 /* T_WHILE  */
+    T_OUT = 287,                   /* T_OUT  */
+    T_CONTINUE = 288,              /* T_CONTINUE  */
+    T_IF = 289,                    /* T_IF  */
+    T_ELSE = 290,                  /* T_ELSE  */
+    T_RETURN = 291,                /* T_RETURN  */
+    T_VOID = 292,                  /* T_VOID  */
+    T_INT = 293,                   /* T_INT  */
+    T_OR = 295,                    /* T_OR  */
+    T_AND = 296,                   /* T_AND  */
+    T_MINUS = 297,                 /* T_MINUS  */
+    T_POS = 298                    /* T_POS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -132,7 +133,7 @@ union YYSTYPE
 	int int_value;
 	int token;
 
-#line 136 "Parser.hpp"
+#line 137 "Parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
