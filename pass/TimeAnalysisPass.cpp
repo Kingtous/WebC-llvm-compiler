@@ -35,9 +35,9 @@ bool TimeAnalysisPass::runOnFunction(Function &func) {
     auto time_mem = Builder.CreateAlloca(getTypeFromStr("long"));
     Builder.CreateStore(time_v, time_mem);
 
-    auto stmt = TheModule->getGlobalVariable(LabelPrefix + string("time_cost"));
+    auto stmt = TheModule->getGlobalVariable(LabelPrefix + string(func.getName()) +  string("time_cost"));
     if (stmt == NIL) {
-        stmt = Builder.CreateGlobalString("function cost time(s): %ld", LabelPrefix + string("time_cost"));
+        stmt = Builder.CreateGlobalString(string("function<"+func.getName().str())+string(">: %ld(ms)"), LabelPrefix + string("time_cost"));
     }
     std::vector<Constant *> args_vec;
     args_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));

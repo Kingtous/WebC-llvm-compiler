@@ -34,14 +34,14 @@ Function *ExternFunctionLinker::getOrAddTimeFunc(LLVMContext &context, Module &m
     auto funcs = module.functions();
     auto it = funcs.begin();
     for (; it != funcs.end(); it++) {
-        if ((*it).getName() == "time") {
+        if ((*it).getName() == "__getms") {
             return &(*it);
         }
     }
 //    std::vector<Type*> args;
 //    args.push_back(Type::getInt64PtrTy(context));
-    FunctionType *ty = FunctionType::get(Type::getInt64Ty(context), Type::getInt64PtrTy(context), false);
-    auto func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "time", module);
+    FunctionType *ty = FunctionType::get(Type::getInt64Ty(context), false);
+    auto func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "__getms", module);
     return func;
 }
 

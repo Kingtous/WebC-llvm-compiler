@@ -8,3 +8,6 @@ CMakeCache.txt
 *.output
 .vscode/**
 Makefile
+module/lib/**
+module/CMakeFiles/**
+module/time/CMakeFiles/**

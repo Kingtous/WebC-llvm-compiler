@@ -19,7 +19,7 @@ add_definitions(${LLVM_DEFINITIONS})
 #        DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser/Parser.h)
 
 # C++静态链接
-set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+#set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 #message(STATUS "GTK3_INCLUDE_DIRS: ${GTK3_INCLUDE_DIRS}")
@@ -95,3 +95,6 @@ target_link_libraries(sysyplus_compiler ${llvm_libs})
 #add_custom_command(TARGET sysyplus_compiler PRE_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy_directory
 #        ${CMAKE_SOURCE_DIR}/ui/ui ${CMAKE_CURRENT_BINARY_DIR}/ui)
+
+#message(STATUS "配置目标库")
+#add_subdirectory(module)
