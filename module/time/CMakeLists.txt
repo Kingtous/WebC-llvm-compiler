@@ -3,23 +3,27 @@ project(KingtousProject)
 set(CMAKE_CXX_STANDARD 17)
 
 message(STATUS ${CMAKE_SOURCE_DIR})
-set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/time/obj/unknown)
-set(LOCATION "")
+set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
+set(LOCATION ".")
 
 if (APPLE)
     message(STATUS "macOS detected")
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/time/obj/x86_64/mac)
-#    set(CMAKE_C_FLAGS  "-fPIC")
-#    set(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/x86_64/mac)
+    #    set(CMAKE_C_FLAGS  "-fPIC")
+    #    set(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
 endif ()
 
-if (LINUX)
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/time/obj/x86_64/linux)
-    message(STATUS "linux detected")
+if (UNIX)
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/x86_64/linux)
+    message(STATUS "unix detected")
 endif ()
 
 aux_source_directory(src SRC)
 
 add_library(time STATIC ${SRC})
 
-install(TARGETS time LIBRARY DESTINATION ${LOCATION})
+
+install(TARGETS time
+        ARCHIVE DESTINATION ${LOCATION}
+        LIBRARY DESTINATION ${LOCATION}
+        )

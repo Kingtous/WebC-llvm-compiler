@@ -98,3 +98,11 @@ target_link_libraries(sysyplus_compiler ${llvm_libs})
 
 #message(STATUS "配置目标库")
 #add_subdirectory(module)
+
+# time module
+aux_source_directory(module/time/src TIME_MODULE)
+message(STATUS "${TIME_MODULE}")
+add_library(time "${TIME_MODULE}")
+
+# test.cpp
+add_executable(test test/test1.c)
