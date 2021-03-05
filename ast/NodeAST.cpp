@@ -40,7 +40,7 @@ llvm::Value *BinaryExprAST::codegen() {
         if (!L || !R)
             return nullptr;
         // 数值计算
-        if (L->getType() == getTypeFromStr("int") && R->getType() == getTypeFromStr("int")) {
+        if (L->getType()->isIntegerTy() && R->getType()->isIntegerTy()) {
             switch (type) {
                 case BinaryType::add:
                     return Builder.CreateAdd(L, R, "add");
@@ -74,8 +74,8 @@ llvm::Value *BinaryExprAST::codegen() {
 //                auto boolR = Builder.CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
 //                Builder.
 //                return Builder.CreateICmpSLE(boolL, boolR, "less_equ");
-//            default:
-//                return LogErrorV(("invalid binary operator"));
+            default:
+                return LogErrorV(("invalid binary operator"));
             }
         } else {
             // 类型不相同，做类型转换
@@ -211,16 +211,6 @@ string BinaryExprAST::toString() {
 llvm::Value *CallExprAST::codegen() {
     // Look up the name in the global module table.
     llvm::Function *func = TheModule->getFunction(callName);
-    if (func == NIL){
-        func = ExternFunctionLinker::getExternFunc(TheContext,*TheModule,callName);
-    }
-    if (!func)
-        return LogErrorV(("使用了未知的函数：" + callName).c_str());
-
-    // If argument mismatch error.
-    if (func->arg_size() != args.size())
-        return LogErrorV("Incorrect # arguments passed");
-
     std::vector<llvm::Value *> argsV;
     for (unsigned i = 0, e = args.size(); i != e; ++i) {
         Value *av = args[i]->codegen();
@@ -229,6 +219,20 @@ llvm::Value *CallExprAST::codegen() {
         }
         argsV.push_back(av);
     }
+
+    if (func == NIL){
+        auto ev = ExternFunctionLinker::tryHandleFuncCall(TheContext,*TheModule,callName,&argsV);
+        // Extern直接处理，就直接返回
+        if (ev){
+            return ev;
+        }
+    }
+    if (!func)
+        return LogErrorV(("使用了未知的函数：" + callName).c_str());
+
+    // If argument mismatch error.
+    if (func->arg_size() != args.size())
+        return LogErrorV("Incorrect # arguments passed");
 
     return Builder.CreateCall(func, argsV, "calltmp");
 }
@@ -403,7 +407,8 @@ string ForExprAST::toString() {
 
 
 const std::string &PrototypeAST::getName() const {
-    return name;
+    auto str = FuncPrefix + name;
+    return move(str);
 }
 
 PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args)

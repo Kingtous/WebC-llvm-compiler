@@ -43,6 +43,7 @@
 
 /// 特性前缀
 #define LabelPrefix "__neuq_kingtous_"
+#define FuncPrefix "__sysyplus_"
 #define APPNAME "cn.kingtous.sysycompiler"
 /// 全局变量
 #define HASLOCALS (TheCodeGenContext->get_current_locals() != nullptr)

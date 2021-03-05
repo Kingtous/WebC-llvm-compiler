@@ -1,5 +1,5 @@
 //use http;
-//int global[5] = {1, 2, 3, 4, 5};
+int global[5] = {1, 2, 3, 4, 5};
 
 //int ctotal = 0;
 
@@ -13,16 +13,17 @@ char getStr(int c){
     ret a[5];
 }
 
+int changeNumtoZero(int num){
+    num = 2;
+    ret num;
+}
+
 int main(){
     //str a = repeated 0 25;
-    int a = 0;
-    lp(
-    int i = 0;
-    i < 5;
-    i = i + 1) {
-        sleep(1);
-    }
-
-    ret
-    0;
+    int an = 0;
+    an = 5 / 0;
+    an = changeNumtoZero(an);
+//    sleep(1);
+    echo('an value is',an);
+    ret 1;
 }

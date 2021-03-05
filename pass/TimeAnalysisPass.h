@@ -7,7 +7,7 @@
 
 #include "Global.h"
 
-#include "extern/ExternFunctionLinker.h"
+#include "extern/ExternFunctionHandler.h"
 
 struct TimeAnalysisPass : public FunctionPass{
     static char ID;

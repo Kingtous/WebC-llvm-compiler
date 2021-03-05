@@ -44,7 +44,6 @@ private:
     char getchar();
 
     char seek();
-
 };
 
 extern Lexer *TheLexer;

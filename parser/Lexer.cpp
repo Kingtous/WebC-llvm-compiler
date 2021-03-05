@@ -53,6 +53,9 @@ int Lexer::_getNextToken() {
         } else if (identifierStr == "nil"){
             return T_NULL;
         }
+//        else if (identifierStr == "module"){
+//            return T_MODULE;
+//        }
         yylval.string = new std::string(identifierStr);
         return T_IDENTIFIER;
     }

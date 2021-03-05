@@ -237,6 +237,8 @@ array_init_list : array_init_list T_COMMA array_init_val {$$ = $1; $1->insert($1
 	| array_init_val {$$ = $1;}
 
 str : T_STR {$$ = new StringExprAST($<string>$);}
+
+module_stmt : T_MODULE
 %%
 
 BlockAST* program = nullptr;

@@ -105,4 +105,4 @@ message(STATUS "${TIME_MODULE}")
 add_library(time "${TIME_MODULE}")
 
 # test.cpp
-add_executable(test test/test1.c)
+#add_executable(test test/test1.c)

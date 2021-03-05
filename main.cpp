@@ -115,6 +115,10 @@ int genCode(ArgsParser* parser) {
 }
 
 int startAnalyze(ArgsParser* parser) {
+    // 初始化外层函数
+    ExternFunctionLinker::registerHandler(new EchoFunctionHandler());
+    ExternFunctionLinker::registerHandler(new SleepFunctionHandler());
+    ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
     for (const auto& file : parser->getFiles()){
         outs() << "正在分析 " << file << "...\n";
         FileReader reader(file);
