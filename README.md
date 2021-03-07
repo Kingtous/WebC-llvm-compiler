@@ -3,6 +3,8 @@
 使用LLVM框架的Sysy2020语言编译器
 ---
 
+当前编译状态：![build status](https://github.com/Kingtous/Sysy2020-llvm-compiler/actions/workflows/cmake.yml/badge.svg)
+
 LLVM框架语言：LLVM 12.0.0
 
 编译环境：cmake 3.13 + Deepin 20.1 Beta
