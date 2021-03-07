@@ -74,8 +74,8 @@ llvm::Value *BinaryExprAST::codegen() {
 //                auto boolR = Builder.CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
 //                Builder.
 //                return Builder.CreateICmpSLE(boolL, boolR, "less_equ");
-            default:
-                return LogErrorV(("invalid binary operator"));
+                default:
+                    return LogErrorV(("invalid binary operator"));
             }
         } else {
             // 类型不相同，做类型转换
@@ -220,10 +220,10 @@ llvm::Value *CallExprAST::codegen() {
         argsV.push_back(av);
     }
 
-    if (func == NIL){
-        auto ev = ExternFunctionLinker::tryHandleFuncCall(TheContext,*TheModule,callName,&argsV);
+    if (func == NIL) {
+        auto ev = ExternFunctionLinker::tryHandleFuncCall(TheContext, *TheModule, callName, &argsV);
         // Extern直接处理，就直接返回
-        if (ev){
+        if (ev) {
             return ev;
         }
     }
@@ -254,7 +254,7 @@ llvm::Function *PrototypeAST::codegen() {
     }
     llvm::FunctionType *FT = llvm::FunctionType::get(getTypeFromStr(returnType), Args, false);;
     llvm::Function *F =
-            llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, TheModule.get());
+            llvm::Function::Create(FT, llvm::Function::ExternalLinkage, getName(), TheModule.get());
 
     // Set names for all arguments.
     unsigned Idx = 0;
@@ -407,8 +407,7 @@ string ForExprAST::toString() {
 
 
 const std::string &PrototypeAST::getName() const {
-    auto str = FuncPrefix + name;
-    return move(str);
+    return name;
 }
 
 PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args)
@@ -426,7 +425,8 @@ void FunctionAST::cleanCodeGenContext() {
 }
 
 llvm::Function *FunctionAST::codegen() {
-    llvm::Function *function = TheModule->getFunction(Proto->getName());
+    auto name = Proto->getName();
+    llvm::Function *function = TheModule->getFunction(name);
     // 设置返回值block
     auto retBB = BasicBlock::Create(TheContext, "function_ret");
     TheCodeGenContext->setRetBb(retBB);
@@ -867,21 +867,23 @@ vector<Constant *> *VariableArrDeclarationAST::genGlobalExprs() {
 //    for (auto exp = exprs->begin(); exp != exprs->end() ; exp++) {
 //
 //    }
-    for_each(exprs->begin(), exprs->end(), [&](NodeAST *e) {
+    for_each(exprs->begin(), exprs->end(), [&](NodeAST *e) -> void {
         auto v = e->codegen();
         if (!isa<Constant>(v)) {
             if (v->getType()->isIntegerTy()) {
 //                auto id = typeid(v);
                 auto ty = dyn_cast<IntegerType>(v->getType());
                 if (ty == NIL) {
-                    return LogErrorV("全局数组初始化必须为常量声明");
+                    LogErrorV("全局数组初始化必须为常量声明");
+                    return;
                 } else {
                     // TODO FixME!
                     auto info = typeid(v).name();
                     v = ConstantInt::get(getTypeFromStr("int"), 0);
                 }
             } else {
-                return LogErrorV("全局数组初始化必须为常量声明");
+                LogErrorV("全局数组初始化必须为常量声明");
+                return;
             }
         }
         arr_index_value_vector->push_back(dyn_cast<Constant>(v));
@@ -950,12 +952,14 @@ vector<uint64_t> VariableArrDeclarationAST::getIndexVal() {
             if (vmaxindex.empty()) {
                 vmaxindex.push_back(INT_MAX);
             } else {
-                return LogErrorV("只允许数组index首部为空值，要不然无法编译，我就罢工了");
+                LogError("只允许数组index首部为空值，要不然无法编译，我就罢工了");
+                return;
             }
         } else {
             auto value_index = dyn_cast<ConstantInt>(e->codegen());
             if (value_index == NIL) {
-                return LogErrorV("声明一个数组长度不能使用非常量");
+                LogError("声明一个数组长度不能使用非常量");
+                return;
             } else {
                 if (value_index->getBitWidth() <= 32) {
                     vmaxindex.push_back(value_index->getSExtValue());
@@ -1158,7 +1162,7 @@ llvm::Value *StringExprAST::codegen() {
     if (TheCodeGenContext->getFunc() == NIL) {
         auto sz = str->size();
         auto arr_type = ArrayType::get(getTypeFromStr("char"), sz + 1);
-        gv = new GlobalVariable(*TheModule,arr_type,
+        gv = new GlobalVariable(*TheModule, arr_type,
                                 true, GlobalValue::PrivateLinkage, ConstantDataArray::getString(TheContext, *str),
                                 getUniqueId());
 //        for (int i = 0; i < sz; ++i) {
@@ -1168,7 +1172,7 @@ llvm::Value *StringExprAST::codegen() {
         // 反斜杠0
 //        v.push_back(ConstantInt::get(getTypeFromStr("char"), '\0'));
         gv->setUnnamedAddr(GlobalVariable::UnnamedAddr::Global);
-        return ConstantExpr::getBitCast(gv,getTypeFromStr("str"));
+        return ConstantExpr::getBitCast(gv, getTypeFromStr("str"));
     } else {
         gv = Builder.CreateGlobalString(*str, StringExprAST::getUniqueId());
     }

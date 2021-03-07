@@ -20,6 +20,6 @@ Value* ExternFunctionLinker::tryHandleFuncCall(LLVMContext &context, Module &mod
 void ExternFunctionLinker::registerHandler(ExternFunctionHandler *handler) {
     if (handler != NIL && std::find(handlers.begin(),handlers.end(),handler) == handlers.end()) {
         handlers.push_back(handler);
-        sort(handlers.begin(),handlers.end(),ExternFunctionHandler::externFunctionHandlerCompRule);
+        std::sort(handlers.begin(), handlers.end(), ExternFunctionHandler::externFunctionHandlerCompRule);
     }
 }
