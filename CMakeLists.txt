@@ -100,9 +100,15 @@ target_link_libraries(sysyplus_compiler ${llvm_libs})
 #add_subdirectory(module)
 
 # time module
-aux_source_directory(module/time/src TIME_MODULE)
-message(STATUS "${TIME_MODULE}")
-add_library(time "${TIME_MODULE}")
+#aux_source_directory(module/time/src TIME_MODULE)
+#message(STATUS "${TIME_MODULE}")
+#add_library(time "${TIME_MODULE}")
+add_subdirectory(module)
+
+# Web
+#aux_source_directory(module/web/src WEB_MODULE)
+#message(STATUS "${WEB_MODULE}")
+#add_library(web "${WEB_MODULE}")
 
 # test.cpp
 #add_executable(test test/test1.c)
