@@ -29,6 +29,7 @@ aux_source_directory(src SRC)
 add_library(web STATIC ${SRC})
 
 add_executable(webdemo src/web.hpp src/web.cpp src/webdemo.cpp)
+target_link_libraries(webdemo pthread)
 
 install(TARGETS web
         ARCHIVE DESTINATION ${LOCATION}
