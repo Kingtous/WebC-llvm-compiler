@@ -20,10 +20,8 @@ int changeNumtoZero(int num){
 
 int main(){
     //str a = repeated 0 25;
-    int an = 0;
-    an = 5 / 0;
-    an = changeNumtoZero(an);
-//    sleep(1);
-    echo('an value is',an);
+    int an = 1;
+    an = getSocket();
+    echo('socket id is',an);
     ret 1;
 }

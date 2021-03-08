@@ -119,6 +119,7 @@ int startAnalyze(ArgsParser* parser) {
     ExternFunctionLinker::registerHandler(new EchoFunctionHandler());
     ExternFunctionLinker::registerHandler(new SleepFunctionHandler());
     ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
+    ExternFunctionLinker::registerHandler(new WebFunctionHandler());
     for (const auto& file : parser->getFiles()){
         outs() << "正在分析 " << file << "...\n";
         FileReader reader(file);

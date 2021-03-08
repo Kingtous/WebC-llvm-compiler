@@ -43,6 +43,8 @@ public:
 
     static Function *getOrAddSleepFunc(LLVMContext &context, Module &module);
 
+    static Function *getOrAddGetSocketFunc(LLVMContext &context, Module &module);
+
 };
 
 
@@ -72,6 +74,16 @@ public:
     SleepFunctionHandler();
 
     Value* tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
+};
+
+class WebFunctionHandler : public ExternFunctionHandler{
+public:
+
+    WebFunctionHandler();
+
+    Value *tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
+
+    int getPriority() override;
 };
 
 #endif //SYSYPLUS_COMPILER_EXTERNFUNCTIONHANDLER_H

@@ -149,3 +149,25 @@ Function *ExternFunctionHandler::getOrAddSleepFunc(LLVMContext &context, Module 
     auto func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "sleep", module);
     return func;
 }
+
+Function *ExternFunctionHandler::getOrAddGetSocketFunc(LLVMContext &context, Module &module) {
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), false);
+    auto func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_getSocket", module);
+    return func;
+}
+
+Value *
+WebFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) {
+    if (callName == "getSocket" && argV->empty()){
+        auto func = ExternFunctionHandler::getOrAddGetSocketFunc(context,module);
+        return Builder.CreateCall(func);
+    }
+    return NIL;
+}
+
+int WebFunctionHandler::getPriority() {
+    return INTERNAL_IMPL;
+}
+
+WebFunctionHandler::WebFunctionHandler() {
+}

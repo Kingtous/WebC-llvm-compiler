@@ -86,5 +86,7 @@ const char *_web_callGetRequest(int sId, char *host, char *path) {
     // Receive the HTTP response
     http::read(*socketIt->second, buffer, res);
     auto string = res.body().c_str();
-    return string;
+    char* str = new char[res.body().size()]{'\0'};
+    memcpy(str,string,res.body().size());
+    return str;
 }
