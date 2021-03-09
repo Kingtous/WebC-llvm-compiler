@@ -36,7 +36,7 @@ int _web_init() {
     return OK;
 }
 
-int _web_connect(int sId, const char *baseUrlOrIp, const char *port) {
+int _web_connectSocket(int sId, const char *baseUrlOrIp, const char *port) {
     _web_init();
     auto socketIt = _web_tcp_socket_map.find(sId);
     if (socketIt == _web_tcp_socket_map.end()) {
@@ -52,7 +52,7 @@ int _web_connect(int sId, const char *baseUrlOrIp, const char *port) {
     return socket->is_open() ? OK : CONNECT_FAILED;
 }
 
-int _web_closeWeb(int sId) {
+int _web_closeSocket(int sId) {
     auto socketIt = _web_tcp_socket_map.find(sId);
     if (socketIt == _web_tcp_socket_map.end()) {
         return SOCKET_NOT_EXISTS;
@@ -62,7 +62,7 @@ int _web_closeWeb(int sId) {
     return OK;
 }
 
-int _web_isConnected(int sId) {
+int _web_isSocketConnected(int sId) {
     auto socketIt = _web_tcp_socket_map.find(sId);
     if (socketIt == _web_tcp_socket_map.end()) {
         return SOCKET_NOT_EXISTS;

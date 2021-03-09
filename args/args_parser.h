@@ -19,6 +19,7 @@ public:
     enum Options{
         OUTPUT_LLVMAS_FILE,
         OUTPUT_EXECUTABLE,
+        PASS_TIME_ANALYSIS
     };
 
     static ArgsParser* inst(int args,char** argv);

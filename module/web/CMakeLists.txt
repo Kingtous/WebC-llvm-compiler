@@ -24,9 +24,9 @@ if (UNIX)
     message(STATUS "unix detected")
 endif ()
 
-aux_source_directory(src SRC)
+#aux_source_directory(src SRC)
 
-add_library(web STATIC ${SRC})
+add_library(web STATIC src/web.hpp src/web.cpp)
 
 add_executable(webdemo src/web.hpp src/web.cpp src/webdemo.cpp)
 target_link_libraries(webdemo pthread)

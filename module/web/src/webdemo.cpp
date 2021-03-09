@@ -8,8 +8,8 @@ int main(){
     auto ip = "39.107.226.2";
     auto port = "80";
     int socketId = _web_getSocket();
-    int code = _web_connect(socketId,ip,port);
+    int code = _web_connectSocket(socketId,ip,port);
     auto resp = _web_callGetRequest(socketId,"file.kingtous.cn","/");
-    _web_closeWeb(socketId);
+    _web_closeSocket(socketId);
     return code;
 }

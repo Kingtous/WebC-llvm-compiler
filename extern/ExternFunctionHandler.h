@@ -45,6 +45,14 @@ public:
 
     static Function *getOrAddGetSocketFunc(LLVMContext &context, Module &module);
 
+    static Function *getOrAddConnectSocketFunc(LLVMContext &context, Module &module);
+
+    static Function *getOrAddCloseSocketFunc(LLVMContext &context, Module &module);
+
+    static Function *getOrAddIsSocketConnectedFunc(LLVMContext &context, Module &module);
+
+    static Function *getOrAddGetRequestFunc(LLVMContext &context, Module &module);
+
 };
 
 

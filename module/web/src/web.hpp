@@ -47,21 +47,21 @@ int _web_getSocket();
  * @param port 端口号
  * @return 连接状态
  */
-int _web_connect(int socketId, const char *baseUrlOrIp, const char *port);
+int _web_connectSocket(int socketId, const char *baseUrlOrIp, const char *port);
 
 /**
  * 关闭socket
  * @param socketId
  * @return
  */
-int _web_closeWeb(int socketId);
+int _web_closeSocket(int socketId);
 
 /**
  * socket是否连接
  * @param socketId
  * @return
  */
-int _web_isConnected(int socketId);
+int _web_isSocketConnected(int socketId);
 
 /**
  * 通过GET请求发送HTTP数据

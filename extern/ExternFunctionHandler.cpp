@@ -10,8 +10,8 @@ Value *
 EchoFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) {
     if (callName == "echo" && argV != NIL) {
         std::string format_str;
-        for (auto v : *argV){
-            if (v->getType()->isIntegerTy()){
+        for (auto v : *argV) {
+            if (v->getType()->isIntegerTy()) {
                 switch (dyn_cast<IntegerType>(v->getType())->getBitWidth()) {
                     case 32 :
                         format_str.append("%d");
@@ -22,25 +22,24 @@ EchoFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string
                     default:
                         format_str.append("%d");
                 }
-            }
-            else if (v->getType()->isPointerTy() && v->getType()->getContainedType(0)->isIntegerTy(8)){
+            } else if (v->getType()->isPointerTy() && v->getType()->getContainedType(0)->isIntegerTy(8)) {
                 // 字符数组
                 format_str.append("%s");
             } else {
                 // not implemented
-                return LogErrorV(("打印函数的参数无法理解："+v->getName()).str().c_str());
+                return LogErrorV(("打印函数的参数无法理解：" + v->getName()).str().c_str());
             }
             format_str.append(" ");
         }
         format_str.append("\n");
-        auto symbol_value = ConstantDataArray::getString(context,format_str);
+        auto symbol_value = ConstantDataArray::getString(context, format_str);
         auto symbol_mem = Builder.CreateAlloca(symbol_value->getType());
-        Builder.CreateStore(symbol_value,symbol_mem);
+        Builder.CreateStore(symbol_value, symbol_mem);
         auto symbol_pointer = Builder.CreateInBoundsGEP(symbol_mem,
-        {ConstantInt::get(Type::getInt32Ty(context),0),
-                    ConstantInt::get(Type::getInt32Ty(context),0)});
-        argV->insert(argV->begin(),symbol_pointer);
-        return Builder.CreateCall(getOrAddPrintfFunc(context,module),*argV,"echo");
+                                                        {ConstantInt::get(Type::getInt32Ty(context), 0),
+                                                         ConstantInt::get(Type::getInt32Ty(context), 0)});
+        argV->insert(argV->begin(), symbol_pointer);
+        return Builder.CreateCall(getOrAddPrintfFunc(context, module), *argV, "echo");
     }
     return NIL;
 }
@@ -65,7 +64,7 @@ int ExternFunctionHandler::getPriority() {
 Value *SleepFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName,
                                        std::vector<Value *> *argV) {
     if (callName == "sleep") {
-        return Builder.CreateCall(getOrAddSleepFunc(context,module),*argV);
+        return Builder.CreateCall(getOrAddSleepFunc(context, module), *argV);
     }
     return NIL;
 }
@@ -79,7 +78,7 @@ int SleepFunctionHandler::getPriority() {
 Value *
 TimeFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) {
     if (callName == "now") {
-        auto func = getOrAddTimeFunc(context,module);
+        auto func = getOrAddTimeFunc(context, module);
         return Builder.CreateCall(func);
     }
     return NIL;
@@ -92,9 +91,8 @@ int TimeFunctionHandler::getPriority() {
 }
 
 
-
 Function *ExternFunctionHandler::getExternFunc(LLVMContext &context, Module &module, const std::string &func_name,
-                                              std::vector<Value *> *vector) {
+                                               std::vector<Value *> *vector) {
     // 判断是否可用加
     if (func_name == "echo") {
         return ExternFunctionHandler::getOrAddPrintfFunc(context, module);
@@ -151,16 +149,77 @@ Function *ExternFunctionHandler::getOrAddSleepFunc(LLVMContext &context, Module 
 }
 
 Function *ExternFunctionHandler::getOrAddGetSocketFunc(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_getSocket");
+    if (func != NIL) {
+        return func;
+    }
     FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), false);
-    auto func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_getSocket", module);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_getSocket", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddConnectSocketFunc(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_connectSocket");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context),
+                                         {Type::getInt32Ty(context), Type::getInt8Ty(context)->getPointerTo(),
+                                          Type::getInt8Ty(context)->getPointerTo()}, false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_connectSocket", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddCloseSocketFunc(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_closeSocket");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), Type::getInt32Ty(context), false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_closeSocket", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddIsSocketConnectedFunc(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_isSocketConnected");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), Type::getInt32Ty(context), false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_isSocketConnected", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddGetRequestFunc(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_callGetRequest");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt32Ty(context),
+                                                                     Type::getInt8Ty(context)->getPointerTo(),
+                                                                     Type::getInt8Ty(context)->getPointerTo()}, false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_callGetRequest", module);
     return func;
 }
 
 Value *
 WebFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) {
-    if (callName == "getSocket" && argV->empty()){
-        auto func = ExternFunctionHandler::getOrAddGetSocketFunc(context,module);
+    // 处理 {@link module/web/web.h}，注意名字要保持一致
+    if (callName == "getSocket" && argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddGetSocketFunc(context, module);
         return Builder.CreateCall(func);
+    } else if (callName == "connectSocket" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddConnectSocketFunc(context, module);
+        return Builder.CreateCall(func, *argV);
+    } else if (callName == "closeSocket" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddCloseSocketFunc(context, module);
+        return Builder.CreateCall(func, *argV);
+    } else if (callName == "getRequest" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddGetRequestFunc(context, module);
+        return Builder.CreateCall(func, *argV);
+    } else if (callName == "isSocketConnected" && !argV->empty()){
+        auto func = ExternFunctionHandler::getOrAddIsSocketConnectedFunc(context,module);
+        return Builder.CreateCall(func,*argV);
     }
     return NIL;
 }

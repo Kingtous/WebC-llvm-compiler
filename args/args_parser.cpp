@@ -11,6 +11,7 @@ CmdLine *cmd;
 MultiArg* input_arg;
 Arg* output_arg;
 Arg* is_target_arg;
+Arg* time_analysis_arg;
 Help* help_arg;
 
 ArgsParser::ArgsParser() {
@@ -28,6 +29,10 @@ ArgsParser *ArgsParser::inst(int args, char **argv) {
             ap->opts.insert(Options::OUTPUT_LLVMAS_FILE);
         } else {
             ap->opts.insert(Options::OUTPUT_EXECUTABLE);
+        }
+        // 是否加入时间分析
+        if (time_analysis_arg->isDefined()){
+            ap->opts.insert(Options::PASS_TIME_ANALYSIS);
         }
         return ap;
     } else {
@@ -48,10 +53,15 @@ bool ArgsParser::verify(int args, char **argv) {
     input_arg->setLongDescription(String("输出文件"));
     cmd->addArg(output_arg);
 
-    is_target_arg = new Arg("as",false,false);
+    is_target_arg = new Arg('s',"as",false,false);
     is_target_arg->setDescription("是否生成可读汇编文件");
     is_target_arg->setLongDescription("source code -> llvm ir -> assembly file(可视化) -> object file");
     cmd->addArg(is_target_arg);
+
+    time_analysis_arg = new Arg('t',"time_analysis",false,false);
+    time_analysis_arg->setDescription("是否在每个函数内加入时间分析");
+    time_analysis_arg->setLongDescription("add time analysis into every function");
+    cmd->addArg(time_analysis_arg);
 
     help_arg = new Help();
     help_arg->setExecutable(argv[0]);

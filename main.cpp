@@ -96,7 +96,9 @@ int genCode(ArgsParser* parser) {
 //    pass.add(createReassociatePass());
 //    pass.add(createGVNPass());
 //    pass.add(createCFGSimplificationPass());
-    pass.add(new TimeAnalysisPass());
+    if (opts.find(ArgsParser::Options::PASS_TIME_ANALYSIS) != opts.end()){
+        pass.add(new TimeAnalysisPass());
+    }
     auto file_type = CodeGenFileType::CGFT_ObjectFile;
     if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()) {
         file_type = CodeGenFileType::CGFT_AssemblyFile;
