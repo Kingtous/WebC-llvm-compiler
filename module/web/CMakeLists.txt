@@ -28,8 +28,8 @@ endif ()
 
 add_library(web STATIC src/web.hpp src/web.cpp)
 
-add_executable(webdemo src/web.hpp src/web.cpp src/webdemo.cpp)
-target_link_libraries(webdemo pthread)
+add_executable(webdemo src/webdemo.cpp src/web.hpp src/web.cpp)
+target_link_libraries(webdemo Boost::filesystem Boost::system pthread)
 
 install(TARGETS web
         ARCHIVE DESTINATION ${LOCATION}
