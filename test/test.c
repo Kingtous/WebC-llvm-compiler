@@ -1,21 +1,9 @@
-//use http;
-int global[5] = {1, 2, 3, 4, 5};
-
-//int ctotal = 0;
-
-str a = '1234';
-
-char getStr(int c){
-    lp (int i = 0; i < 4; i = i+1) {
-        str b = a;
-        ret b[0];
+int recursive_call(int a){
+    if (a == 0){
+        ret a;
+    } el {
+        ret recursive_call(a-1);
     }
-    ret a[5];
-}
-
-int changeNumtoZero(int num){
-    num = 2;
-    ret num;
 }
 
 int main(){
@@ -36,5 +24,5 @@ int main(){
         echo(response);
     }
     closeSocket(socketId);
-    ret 1;
+    ret 0;
 }

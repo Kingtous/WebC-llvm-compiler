@@ -343,7 +343,10 @@ class CallExprAST : public ExpressionAST {
 
 public:
     CallExprAST(std::string callName, std::vector<ExpressionAST*> args) : callName(std::move(callName)),
-                                                                                    args(std::move(args)) {};
+
+                                                                                        args(std::move(args)) {}
+
+    const string &getCallName() const;;
 
     llvm::Value *codegen() override;
 

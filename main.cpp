@@ -93,9 +93,10 @@ int genCode(ArgsParser* parser) {
     }
 
     legacy::PassManager pass;
-//    pass.add(createReassociatePass());
-//    pass.add(createGVNPass());
-//    pass.add(createCFGSimplificationPass());
+    pass.add(createReassociatePass());
+    pass.add(createGVNPass());
+    pass.add(createCFGSimplificationPass());
+    pass.add(createTailCallEliminationPass());
     if (opts.find(ArgsParser::Options::PASS_TIME_ANALYSIS) != opts.end()){
         pass.add(new TimeAnalysisPass());
     }

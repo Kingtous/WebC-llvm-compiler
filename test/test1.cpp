@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
+#include <stack>
 //char* a = "1234";
 
 //extern int f();
@@ -25,8 +26,8 @@ class A {
 };
 
 
-int a(int a){
-
+int af(int a){
+    return af(a-3) + af(a-2);
 }
 
 int get(int maxv) {

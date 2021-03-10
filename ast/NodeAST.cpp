@@ -233,12 +233,15 @@ llvm::Value *CallExprAST::codegen() {
     // If argument mismatch error.
     if (func->arg_size() != args.size())
         return LogErrorV("Incorrect # arguments passed");
-
     return Builder.CreateCall(func, argsV, "calltmp");
 }
 
 string CallExprAST::toString() {
     return "函数调用：" + callName;
+}
+
+const string &CallExprAST::getCallName() const {
+    return callName;
 }
 
 llvm::Function *PrototypeAST::codegen() {
@@ -689,6 +692,13 @@ llvm::Value *ReturnStmtAST::codegen() {
         if (v == NIL) {
             return LogErrorV("函数返回的值为空，可能是值解析失败，或变量不存在");
         } else {
+            // 当返回递归函数
+            if (typeid(*expr) == typeid(CallExprAST)){
+                auto call_expr = dynamic_cast<CallExprAST *>(expr);
+                if (call_expr->getCallName() == TheCodeGenContext->getFunc()->getName()){
+                    dyn_cast<CallInst>(v)->setTailCall(true);
+                }
+            }
             if (!v->getType()->isVoidTy()) {
                 Builder.CreateStore(v, ret_addr);
             }
