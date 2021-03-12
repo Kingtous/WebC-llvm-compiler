@@ -15,7 +15,7 @@
 #define CONNECT_FAILED -3
 #define SOCKET_NOT_EXISTS -3
 #define NOT_CONNECTED -4
-#define OK 0
+#define ROK 0
 
 using namespace std;
 using tcp = boost::asio::ip::tcp;

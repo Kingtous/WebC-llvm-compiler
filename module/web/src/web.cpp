@@ -33,7 +33,7 @@ int _web_init() {
         _web_io_context = new boost::asio::io_context();
         _web_resolver = new tcp::resolver(*_web_io_context);
     }
-    return OK;
+    return ROK;
 }
 
 int _web_connectSocket(int sId, const char *baseUrlOrIp, const char *port) {
@@ -49,7 +49,7 @@ int _web_connectSocket(int sId, const char *baseUrlOrIp, const char *port) {
     }
     // 连接
     boost::asio::connect(*socket, results.begin(), results.end());
-    return socket->is_open() ? OK : CONNECT_FAILED;
+    return socket->is_open() ? ROK : CONNECT_FAILED;
 }
 
 int _web_closeSocket(int sId) {
@@ -59,7 +59,7 @@ int _web_closeSocket(int sId) {
     }
     boost::system::error_code ec;
     socketIt->second->shutdown(tcp::socket::shutdown_both,ec);
-    return OK;
+    return ROK;
 }
 
 int _web_isSocketConnected(int sId) {
@@ -67,7 +67,7 @@ int _web_isSocketConnected(int sId) {
     if (socketIt == _web_tcp_socket_map.end()) {
         return SOCKET_NOT_EXISTS;
     }
-    return socketIt->second->is_open() ? OK : NOT_CONNECTED;
+    return socketIt->second->is_open() ? ROK : NOT_CONNECTED;
 }
 
 const char *_web_callGetRequest(int sId, char *host, char *path) {

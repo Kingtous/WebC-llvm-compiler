@@ -32,11 +32,11 @@
 #include "llvm/Target/TargetOptions.h"
 
 /// 状态字
-#define OK 0
-#define ERR -1
-#define INVALID -2
+#define ROK 0
+#define RERR -1
+#define RINVALID -2
 //#define DEBUG_FLAG 1
-//#define CGUI 1
+#define CGUI 1
 
 /// 初始化数字
 #define INIT_NUM -1

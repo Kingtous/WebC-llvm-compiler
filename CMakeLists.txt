@@ -11,7 +11,6 @@ add_definitions(${LLVM_DEFINITIONS})
 #pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 #include_directories(${GTK3_INCLUDE_DIRS})
 #link_directories(${GTK3_LIBRARY_DIRS})
-#
 #add_definitions(${GTK3_CFLAGS_OTHER})
 # 处理语法分析器
 #find_package(BISON)
@@ -38,12 +37,12 @@ add_definitions(${LLVM_DEFINITIONS})
 #link_directories(${GTK3_LIBRARY_DIRS})
 
 
-# import gtkmm
-#pkg_check_modules(GTKMM gtkmm-3.0)
-#link_directories(${GTKMM_LIBRARY_DIRS})
-#include_directories(${GTKMM_INCLUDE_DIRS})
-#aux_source_directory(ui UI)
-#message(STATUS "窗口实现：${UI}")
+# import gtkmm, for linux use 3.0, for macos use 4.0 for test
+pkg_check_modules(GTKMM gtkmm-3.0)
+link_directories(${GTKMM_LIBRARY_DIRS})
+include_directories(${GTKMM_INCLUDE_DIRS})
+aux_source_directory(ui UI)
+message(STATUS "窗口实现：${UI}")
 
 # 导入头文件
 include_directories(
@@ -67,11 +66,14 @@ aux_source_directory(pass PASS)
 message(STATUS "外部声明：${EXT}")
 aux_source_directory(extern EXT)
 message(STATUS "Pass：${PASS}")
+message(STATUS "编译器：${COMPILER}")
+aux_source_directory(compiler COMPILER)
+message(STATUS "Pass：${COMPILER}")
 
 add_executable(sysyplus_compiler
         ${ROOT} ${AST} ${PARSER}
         #        ${BISON_Parser_OUTPUTS}
-        ${CodeGen} ${UI} ${ARGS} ${PASS} ${EXT}
+        ${CodeGen} ${UI} ${ARGS} ${PASS} ${EXT} ${COMPILER}
         args/all.hpp args/api.hpp args/arg.hpp args/arg_iface.hpp
         args/cmd_line.hpp args/command.hpp args/context.hpp args/enums.hpp
         args/exceptions.hpp args/group_iface.hpp args/groups.hpp args/help_printer.hpp
@@ -88,8 +90,8 @@ llvm_map_components_to_libnames(llvm_libs support core irreader
 message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
-target_link_libraries(sysyplus_compiler ${llvm_libs})
-#target_link_libraries(sysyplus_compiler ${llvm_libs} ${GTKMM_LIBRARIES})
+#target_link_libraries(sysyplus_compiler ${llvm_libs})
+target_link_libraries(sysyplus_compiler ${llvm_libs} ${GTKMM_LIBRARIES})
 
 #message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
 #add_custom_command(TARGET sysyplus_compiler PRE_BUILD
