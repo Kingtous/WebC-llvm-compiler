@@ -19,11 +19,11 @@ int main(int argc, char **argv) {
     // Open a new module.
     auto args = ArgsParser::inst(argc,argv);
     if (args == NIL){
-        return INVALID;
+        return RINVALID;
     }
-    if (startAnalyze(args) == OK){
-        if (genCode(args) == OK){
-            return OK;
+    if (startAnalyze(args) == ROK){
+        if (genCode(args) == ROK){
+            return ROK;
         } else {
             errs() << "生成代码失败";
         }

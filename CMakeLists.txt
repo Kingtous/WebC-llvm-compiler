@@ -38,6 +38,7 @@ add_definitions(${LLVM_DEFINITIONS})
 
 
 # import gtkmm, for linux use 3.0, for macos use 4.0 for test
+FIND_PACKAGE(PkgConfig REQUIRED)
 pkg_check_modules(GTKMM gtkmm-3.0)
 link_directories(${GTKMM_LIBRARY_DIRS})
 include_directories(${GTKMM_INCLUDE_DIRS})
@@ -80,6 +81,8 @@ add_executable(sysyplus_compiler
         args/help_printer.hpp args/help_printer_iface.hpp args/multi_arg.hpp args/types.hpp
         args/utils.hpp args/value_utils.hpp
         )
+
+add_compile_definitions(sysyplus_compiler PUBLIC CGUI=0 DEBUG_FLAG=1)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

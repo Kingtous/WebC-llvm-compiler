@@ -35,8 +35,6 @@
 #define ROK 0
 #define RERR -1
 #define RINVALID -2
-//#define DEBUG_FLAG 1
-#define CGUI 1
 
 /// 初始化数字
 #define INIT_NUM -1
