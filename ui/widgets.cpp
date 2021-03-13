@@ -31,6 +31,13 @@ void CompilerWindow::initMenuBar() {
     file_action_group->add_action("打开", sigc::mem_fun(*this, &CompilerWindow::onFileOpen));
     file_action_group->add_action("退出", sigc::mem_fun(*this, &CompilerWindow::onFileExit));
     insert_action_group("文件", file_action_group);
+    Gtk::ImageMenuItem *item;
+    builder->get_widget("menu_help_about", item);
+    item->signal_select().connect([]() {
+        Gtk::AboutDialog *dialog;
+        builder->get_widget("main_about", dialog);
+        dialog->show();
+    });
 }
 
 CompilerWindow::CompilerWindow(BaseObjectType* cobject,
@@ -54,4 +61,13 @@ void CompilerWindow::onFileExit() {
 void CompilerWindow::init() {
     set_show_menubar(true);
     initMenuBar();
+}
+
+
+CompilerTextView::CompilerTextView() {
+
+}
+
+CompilerTextView::CompilerTextView(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) {
+
 }

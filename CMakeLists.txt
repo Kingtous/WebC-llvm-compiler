@@ -39,9 +39,11 @@ add_definitions(${LLVM_DEFINITIONS})
 
 # import gtkmm, for linux use 3.0, for macos use 4.0 for test
 FIND_PACKAGE(PkgConfig REQUIRED)
-pkg_check_modules(GTKMM gtkmm-3.0)
+pkg_check_modules(GTKMM gtkmm-3.0 gtksourceviewmm-3.0)
 link_directories(${GTKMM_LIBRARY_DIRS})
 include_directories(${GTKMM_INCLUDE_DIRS})
+message(STATUS "GTKMM Lib ${GTKMM_LIBRARY_DIRS}")
+message(STATUS "GTKMM Inc ${GTKMM_INCLUDE_DIRS}")
 aux_source_directory(ui UI)
 message(STATUS "窗口实现：${UI}")
 
@@ -82,7 +84,8 @@ add_executable(sysyplus_compiler
         args/utils.hpp args/value_utils.hpp
         )
 
-add_compile_definitions(sysyplus_compiler PUBLIC CGUI=0 DEBUG_FLAG=1)
+# CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式
+add_compile_definitions(sysyplus_compiler PUBLIC CGUI=1 DEBUG_FLAG=1)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

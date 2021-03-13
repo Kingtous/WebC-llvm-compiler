@@ -6,10 +6,14 @@
 
 #ifndef SYSYPLUS_COMPILER_WIDGETS_H
 #define SYSYPLUS_COMPILER_WIDGETS_H
+
 #include <gtkmm/application.h>
 #include <gtkmm/applicationwindow.h>
 #include <gtkmm/window.h>
 #include <gtkmm/builder.h>
+#include <gtkmm/imagemenuitem.h>
+#include <gtkmm/aboutdialog.h>
+#include <gtksourceviewmm/view.h>
 #include <giomm/simpleactiongroup.h>
 
 #define WINDOW_NAME "SySyCompiler By Kingtous"
@@ -40,12 +44,22 @@ public:
     void init();
 
     void initMenuBar();
+
     void on_menu_file_new_activate();
+
     void onFileOpen();
+
     void onFileExit();
 
 private:
     RefPtr<SimpleActionGroup> file_action_group;
+};
+
+class CompilerTextView : public Gsv::View {
+public:
+    CompilerTextView();
+
+    CompilerTextView(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder);
 };
 
 #endif //SYSYPLUS_COMPILER_WIDGETS_H

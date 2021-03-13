@@ -1,14 +1,5 @@
-int recursive_call(int a){
-    if (a == 0){
-        ret a;
-    } el {
-        ret recursive_call(a-1);
-    }
-}
-
 int main(){
-    //str a = repeated 0 25;
-    echo('init web framework');
+    echo('init web framework', '123', '345');
     int socketId = getSocket();
     echo('socket id is',socketId);
     str url = 'file.kingtous.cn';
