@@ -4,8 +4,18 @@
 
 #include "ErrHelper.h"
 
+// CGUI
+#ifdef CGUI
+
+extern void logOnUi(const char *Str);
+
+#endif
+
 std::unique_ptr<NodeAST> LogError(const char *Str) {
     fprintf(stderr, "Error: %s\n", Str);
+#ifdef CGUI
+    logOnUi(Str);
+#endif
     return nullptr;
 }
 
