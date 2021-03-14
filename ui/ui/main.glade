@@ -59,40 +59,10 @@
     </child>
   </object>
   <object class="GtkFileFilter" id="filter_code_file"/>
-  <object class="GtkAboutDialog" id="main_about">
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="type-hint">dialog</property>
-    <property name="program-name">SysyPlus Compiler</property>
-    <property name="version">V1.0</property>
-    <property name="copyright" translatable="yes">Kingtous</property>
-    <property name="comments" translatable="yes">2021毕业设计-金韬-计科1702班 东北大学秦皇岛分校</property>
-    <property name="website">https://kingtous.cn</property>
-    <property name="website-label" translatable="yes">我的网站</property>
-    <property name="authors">Kingtous</property>
-    <property name="translator-credits" translatable="yes">吕艳霞、王翠荣</property>
-    <property name="logo-icon-name">accessories-text-editor</property>
-    <property name="license-type">gpl-3-0</property>
-    <child internal-child="vbox">
-      <object class="GtkBox">
-        <property name="can-focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox">
-            <property name="can-focus">False</property>
-            <property name="layout-style">end</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-      </object>
-    </child>
+    <property name="stock">gtk-media-play</property>
   </object>
   <object class="GtkApplicationWindow" id="main_window">
     <property name="can-focus">False</property>
@@ -226,7 +196,7 @@
               <object class="GtkMenuItem">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">编辑(_E)</property>
+                <property name="label" translatable="yes">构建(_V)</property>
                 <property name="use-underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu">
@@ -234,11 +204,12 @@
                     <property name="can-focus">False</property>
                     <child>
                       <object class="GtkImageMenuItem">
-                        <property name="label">gtk-cut</property>
+                        <property name="label">imagemenuitem</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="use-underline">True</property>
-                        <property name="use-stock">True</property>
+                        <property name="image">image1</property>
+                        <property name="use-stock">False</property>
+                        <property name="always-show-image">True</property>
                       </object>
                     </child>
                     <child>
@@ -270,14 +241,6 @@
                     </child>
                   </object>
                 </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkMenuItem">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label" translatable="yes">视图(_V)</property>
-                <property name="use-underline">True</property>
               </object>
             </child>
             <child>
@@ -346,8 +309,40 @@
         </child>
       </object>
     </child>
-    <child type="titlebar">
-      <placeholder/>
+  </object>
+  <object class="GtkAboutDialog" id="main_about">
+    <property name="can-focus">False</property>
+    <property name="type-hint">dialog</property>
+    <property name="program-name">SysyPlus Compiler</property>
+    <property name="version">V1.0</property>
+    <property name="copyright" translatable="yes">Kingtous</property>
+    <property name="comments" translatable="yes">2021毕业设计-金韬-计科1702班 东北大学秦皇岛分校</property>
+    <property name="website">https://kingtous.cn</property>
+    <property name="website-label" translatable="yes">我的网站</property>
+    <property name="authors">Kingtous</property>
+    <property name="translator-credits" translatable="yes">吕艳霞、王翠荣</property>
+    <property name="logo-icon-name">accessories-text-editor</property>
+    <property name="license-type">gpl-3-0</property>
+    <child internal-child="vbox">
+      <object class="GtkBox">
+        <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox">
+            <property name="can-focus">False</property>
+            <property name="layout-style">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
     </child>
   </object>
 </interface>
