@@ -38,6 +38,7 @@
 
 /// 初始化数字
 #define INIT_NUM -1
+#define INIT_IOBUF 4096
 
 /// 特性前缀
 #define LabelPrefix "__neuq_kingtous_"
