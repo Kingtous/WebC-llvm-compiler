@@ -159,16 +159,16 @@ void CompilerWindow::initMenuBar() {
             setStatus(IN_BUILD);
             boost::asio::post(threads, [&]() {
                 m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
-                log("正在编译中\n",M_STATUS::IN_BUILD);
+                log("正在编译中\n", M_STATUS::IN_BUILD);
                 auto code_buffer = std::string(m_textview->get_buffer()->begin(), m_textview->get_buffer()->end());
                 auto default_output_path = m_file->get_path() + ".o";
                 std::set<ArgsParser::Options> s;
                 s.insert(ArgsParser::Options::OUTPUT_EXECUTABLE);
                 int res = build(&code_buffer, default_output_path.c_str(), s);
                 if (res == ROK) {
-                    log("编译完成\n",M_STATUS::IN_BUILD);
+                    log("编译完成\n", M_STATUS::IN_BUILD);
                 } else {
-                    log("编译失败\n",M_STATUS::IN_BUILD);
+                    log("编译失败\n", M_STATUS::IN_BUILD);
                 }
                 setStatus(IN_EDIT);
             });
@@ -288,7 +288,7 @@ void CompilerWindow::initCodeForm() {
                 auto current_time = pt::microsec_clock::local_time();
                 auto delta_time = current_time - m_last_edit_time;
                 if (delta_time.total_milliseconds() > 1000) {
-                    signal_idle().connect_once([&](){
+                    signal_idle().connect_once([&]() {
                         m_main_build_notebook->set_current_page(STATIC_ANALYSIS_PAGE_ID);
                     });
                     analysis(new string(m_gsv->get_source_buffer()->begin(), m_gsv->get_source_buffer()->end()));
@@ -300,13 +300,15 @@ void CompilerWindow::initCodeForm() {
     });
 }
 
-void CompilerWindow::log(const char *str,const M_STATUS& state) {
-    signal_idle().connect_once([&, str]() {
+void CompilerWindow::log(const char *str, const M_STATUS &state) {
+    // 保存调用时log的state
+    auto log_state = m_state;
+    signal_idle().connect_once([&, str, state, log_state]() {
         // 加个大锁，在UI线程执行
         log_mutex->lock();
         auto tmp_state = state;
-        if (tmp_state == M_STATUS::IN_NONE){
-            tmp_state = m_state;
+        if (tmp_state == M_STATUS::IN_NONE) {
+            tmp_state = log_state;
         }
         switch (tmp_state) {
             case M_STATUS::IN_EDIT:
