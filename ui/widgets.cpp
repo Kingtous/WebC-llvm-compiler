@@ -3,6 +3,7 @@
 //
 
 #include <ErrHelper.h>
+#include <gtksourceviewmm.h>
 #include "widgets.h"
 
 using namespace Gtk;
@@ -31,7 +32,7 @@ int initWindow(int argc, char **argv, const char *glade_path, const char *window
 }
 
 long writeFile(RefPtr<File> file_ptr, const std::string &content) {
-    if (file_ptr->query_exists()){
+    if (file_ptr->query_exists()) {
         file_ptr->remove();
     }
     auto output_stream = file_ptr->create_file();
@@ -66,7 +67,7 @@ void CompilerWindow::initMenuBar() {
         m_main_about->show();
     });
     // 新建文件
-    m_menu_file_new->signal_activate().connect([&](){
+    m_menu_file_new->signal_activate().connect([&]() {
         m_file.clear();
         m_textview->get_buffer()->set_text("");
         setTitle(WINDOW_NAME);
@@ -86,10 +87,10 @@ void CompilerWindow::initMenuBar() {
                     auto io = m_file->open_readwrite();
                     auto input = io->get_input_stream();
                     auto buf = new char[INIT_IOBUF];
-                    int read = input->read(buf,INIT_IOBUF);
-                    while(read != 0){
-                        s.append(buf,read);
-                        read = input->read(buf,INIT_IOBUF);
+                    int read = input->read(buf, INIT_IOBUF);
+                    while (read != 0) {
+                        s.append(buf, read);
+                        read = input->read(buf, INIT_IOBUF);
                     }
                     m_textview->get_buffer()->set_text(s);
                     input->close();
@@ -103,7 +104,7 @@ void CompilerWindow::initMenuBar() {
     });
     // 保存文件
     m_menu_file_save->signal_activate().connect([&]() {
-        if (m_file.get() == nullptr){
+        if (m_file.get() == nullptr) {
             auto dialog = new FileChooserDialog(*this, "保存文件", FileChooserAction::FILE_CHOOSER_ACTION_SAVE);
             dialog->set_do_overwrite_confirmation(true);
             dialog->add_button("保存", RESPONSE_OK);
@@ -111,7 +112,7 @@ void CompilerWindow::initMenuBar() {
             dialog->signal_response().connect([=](int resp) {
                 if (resp == RESPONSE_OK) {
                     writeFile(dialog->get_file(),
-                              string(m_textview->get_buffer()->begin(),m_textview->get_buffer()->end()));
+                              string(m_textview->get_buffer()->begin(), m_textview->get_buffer()->end()));
                     setLatestMessage("保存成功");
                 }
                 dialog->close();
@@ -120,7 +121,7 @@ void CompilerWindow::initMenuBar() {
             dialog->show();
         } else {
             writeFile(m_file,
-                      string(m_textview->get_buffer()->begin(),m_textview->get_buffer()->end()));
+                      string(m_textview->get_buffer()->begin(), m_textview->get_buffer()->end()));
             setLatestMessage("保存成功");
         }
     });
@@ -162,9 +163,7 @@ void CompilerWindow::initMenuBar() {
 CompilerWindow::CompilerWindow(BaseObjectType *cobject,
                                const Glib::RefPtr<Gtk::Builder> &builder)
         : Gtk::ApplicationWindow(cobject) {
-    // 编辑器
-    builder->get_widget("main_code_form", m_textview);
-    m_textview->set_name("codeForm");
+    builder->get_widget("main_code_window", m_main_code_window);
     // 关于
     builder->get_widget("main_about", m_main_about);
     // 选择文件
@@ -213,7 +212,29 @@ void CompilerWindow::setLatestMessage(const ustring &msg) {
 }
 
 void CompilerWindow::initCodeForm() {
-//    Pango::FontMap
+    //    m_textview->set_name("codeForm");
+    Gsv::init();
+    m_gsv = new Gsv::View();
+    m_gsv->set_name("code");
+    m_textview = m_gsv;
+    m_main_code_window->set_policy(PolicyType::POLICY_AUTOMATIC, PolicyType::POLICY_AUTOMATIC);
+    m_main_code_window->add(*m_gsv);
+    m_gsv->set_visible(true);
+    m_gsv->set_hexpand(true);
+    m_gsv->set_vexpand(true);
+    // 展示函数
+    m_gsv->set_show_line_numbers(true);
+    // 高亮
+    m_gsv->set_highlight_current_line(true);
+    m_gsv->set_auto_indent(true);
+    m_gsv->set_show_line_marks(true);
+    m_gsv->set_insert_spaces_instead_of_tabs(true);
+    m_gsv->set_draw_spaces(Gsv::DRAW_SPACES_ALL);
+    m_lm = Gsv::LanguageManager::get_default();
+    auto lan = m_lm->get_language("c");
+    m_gsv->get_source_buffer()->set_language(lan);
+    m_gsv->get_source_buffer()->set_highlight_syntax(true);
+
 // TODO 增加字体可修改
     try {
         auto style_context = get_style_context();

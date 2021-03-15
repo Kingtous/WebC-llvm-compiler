@@ -1,5 +1,4 @@
-textview text {
-    font-family: "JetBrains Mono Medium";
-    font-size: 30px;
-    color: black;
+code {
+    font-family: Monospace;
+    font-size: 18pt;
 }

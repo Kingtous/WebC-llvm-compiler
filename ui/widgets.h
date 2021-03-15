@@ -113,10 +113,16 @@ private:
     TextView *m_main_runtime_console;
     TextView *m_main_build_console;
     TextView *m_main_static_analysis_console;
+    ScrolledWindow* m_main_code_window;
+
     // 暂存数据
     RefPtr<Gio::File> m_file;
     // 状态机
     M_STATUS m_state;
+    // buffer
+    Gsv::View* m_gsv;
+    RefPtr<Gsv::LanguageManager> m_lm;
+    Pango::FontDescription* m_font_desc;
 };
 
 class CompilerTextView : public Gsv::View {
