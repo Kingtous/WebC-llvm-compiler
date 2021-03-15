@@ -19,6 +19,14 @@ std::unique_ptr<NodeAST> LogError(const char *Str) {
     return nullptr;
 }
 
+std::unique_ptr<NodeAST> LogInfo(const char *Str) {
+    fprintf(stdout, "Info: %s\n", Str);
+#ifdef CGUI
+    logOnUi(Str);
+#endif
+    return nullptr;
+}
+
 std::unique_ptr<PrototypeAST> LogErrorP(const char *Str) {
     LogError(Str);
     return nullptr;

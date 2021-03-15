@@ -95,6 +95,7 @@ void CompilerWindow::initMenuBar() {
                         read = input->read(buf, INIT_IOBUF);
                     }
                     m_textview->get_buffer()->set_text(s);
+                    setTitle(m_file->get_basename());
                     input->close();
                     io->close();
                     break;
@@ -113,9 +114,11 @@ void CompilerWindow::initMenuBar() {
             dialog->add_button("取消", RESPONSE_CANCEL);
             dialog->signal_response().connect([=](int resp) {
                 if (resp == RESPONSE_OK) {
+                    m_file = dialog->get_file();
                     writeFile(dialog->get_file(),
                               string(m_textview->get_buffer()->begin(), m_textview->get_buffer()->end()));
                     setLatestMessage("保存成功");
+                    setTitle(m_file->get_basename());
                 }
                 dialog->close();
                 delete dialog;
@@ -147,14 +150,27 @@ void CompilerWindow::initMenuBar() {
     });
     // 构建
     m_menu_build_compile->signal_activate().connect([&]() {
+        if (m_file.get() == nullptr) {
+            // 先调用保存
+            m_menu_file_save->activate();
+            return;
+        }
         if (getMState() == IN_EDIT) {
             setStatus(IN_BUILD);
-            setLatestMessage("正在编译");
-            auto thread = Thread::create([&]() {
-                // TODO 编译逻辑
-                LogError("building");
+            boost::asio::post(threads, [&]() {
+                m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
+                log("正在编译中\n",M_STATUS::IN_BUILD);
+                auto code_buffer = std::string(m_textview->get_buffer()->begin(), m_textview->get_buffer()->end());
+                auto default_output_path = m_file->get_path() + ".o";
+                std::set<ArgsParser::Options> s;
+                s.insert(ArgsParser::Options::OUTPUT_EXECUTABLE);
+                int res = build(&code_buffer, default_output_path.c_str(), s);
+                if (res == ROK) {
+                    log("编译完成\n",M_STATUS::IN_BUILD);
+                } else {
+                    log("编译失败\n",M_STATUS::IN_BUILD);
+                }
                 setStatus(IN_EDIT);
-                m_textview->get_buffer()->begin();
             });
         } else {
             setLatestMessage("正在编译，稍后再次尝试编译");
@@ -199,6 +215,7 @@ void CompilerWindow::onFileExit() {
 }
 
 void CompilerWindow::init() {
+    log_mutex = new Glib::Mutex();
     this->m_state = CompilerWindow::IN_EDIT;
     set_show_menubar(true);
     initMenuBar();
@@ -253,6 +270,7 @@ void CompilerWindow::initCodeForm() {
     catch (CssProviderError &e) {
         LogErrorV(e.what().c_str());
     }
+    m_main_build_notebook->set_current_page(STATIC_ANALYSIS_PAGE_ID);
     // 内容改变
     m_gsv->get_source_buffer()->signal_changed().connect([&]() {
         // 清空一次
@@ -270,8 +288,11 @@ void CompilerWindow::initCodeForm() {
                 auto current_time = pt::microsec_clock::local_time();
                 auto delta_time = current_time - m_last_edit_time;
                 if (delta_time.total_milliseconds() > 1000) {
+                    signal_idle().connect_once([&](){
+                        m_main_build_notebook->set_current_page(STATIC_ANALYSIS_PAGE_ID);
+                    });
                     analysis(new string(m_gsv->get_source_buffer()->begin(), m_gsv->get_source_buffer()->end()));
-                    log("分析完成");
+                    log("分析完成\n");
                     m_is_dirty = false;
                 }
             }
@@ -279,26 +300,32 @@ void CompilerWindow::initCodeForm() {
     });
 }
 
-void CompilerWindow::log(const char *string) {
-    switch (m_state) {
-        case M_STATUS::IN_EDIT:
-            m_main_static_analysis_console->get_buffer()
-                    ->insert(m_main_static_analysis_console->get_buffer()->end(), string);
-            m_main_build_notebook->set_current_page(2);
-            break;
-        case M_STATUS::IN_RUNNING:
-            m_main_runtime_console->get_buffer()
-                    ->insert(m_main_runtime_console->get_buffer()->end(), string);
-            m_main_build_notebook->set_current_page(1);
-            break;
-        case M_STATUS::IN_BUILD:
-            m_main_build_console->get_buffer()
-                    ->insert(m_main_build_console->get_buffer()->end(), string);
-            m_main_build_notebook->set_current_page(0);
-            break;
-        default:
-            break;
-    }
+void CompilerWindow::log(const char *str,const M_STATUS& state) {
+    signal_idle().connect_once([&, str]() {
+        // 加个大锁，在UI线程执行
+        log_mutex->lock();
+        auto tmp_state = state;
+        if (tmp_state == M_STATUS::IN_NONE){
+            tmp_state = m_state;
+        }
+        switch (tmp_state) {
+            case M_STATUS::IN_EDIT:
+                m_main_static_analysis_console->get_buffer()
+                        ->insert(m_main_static_analysis_console->get_buffer()->end(), str);
+                break;
+            case M_STATUS::IN_RUNNING:
+                m_main_runtime_console->get_buffer()
+                        ->insert(m_main_runtime_console->get_buffer()->end(), str);
+                break;
+            case M_STATUS::IN_BUILD:
+                m_main_build_console->get_buffer()
+                        ->insert(m_main_build_console->get_buffer()->end(), str);
+                break;
+            default:
+                break;
+        }
+        log_mutex->unlock();
+    });
 }
 
 CompilerWindow::CompilerWindow() {

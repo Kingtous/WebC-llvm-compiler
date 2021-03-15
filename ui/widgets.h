@@ -19,6 +19,9 @@
 #include "compiler/Compiler.h"
 
 #define WINDOW_NAME "SySyCompiler By Kingtous"
+#define BUILD_PAGE_ID 0
+#define RUNTIME_PAGE_ID 1
+#define STATIC_ANALYSIS_PAGE_ID 2
 
 using namespace Gtk;
 using namespace Glib;
@@ -61,6 +64,7 @@ long writeFile(RefPtr<File> file_ptr, const void *buffer, long sz);
 class CompilerWindow : public Gtk::ApplicationWindow {
 public:
     enum M_STATUS {
+        IN_NONE,
         IN_EDIT,
         IN_BUILD,
         IN_RUNNING,
@@ -95,7 +99,7 @@ public:
 
     void setLatestMessage(const ustring &msg);
 
-    void log(const char *string);
+    void log(const char *string,const M_STATUS& state = M_STATUS::IN_NONE);
 
     void setStatus(M_STATUS status);
 
@@ -124,14 +128,16 @@ private:
     // 暂存数据
     RefPtr<Gio::File> m_file;
     // 状态机
-    M_STATUS m_state;
+    volatile M_STATUS m_state;
     // buffer
     Gsv::View *m_gsv;
     RefPtr<Gsv::LanguageManager> m_lm;
     Pango::FontDescription *m_font_desc;
-    boost::asio::thread_pool threads{1};
+    // 1个守护线程，1个编译线程
+    boost::asio::thread_pool threads{2};
     bool m_is_dirty = false;
     pt::ptime m_last_edit_time;
+    Glib::Mutex* log_mutex;
 };
 
 class CompilerTextView : public Gsv::View {

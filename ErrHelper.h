@@ -9,6 +9,8 @@
 #include "ast/NodeAST.hpp"
 #include "Global.h"
 
+std::unique_ptr<NodeAST> LogInfo(const char *Str);
+
 /// LogError* - These are little helper functions for error handling.
 std::unique_ptr<NodeAST> LogError(const char *Str);
 
