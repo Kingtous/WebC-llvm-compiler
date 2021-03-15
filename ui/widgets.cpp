@@ -194,7 +194,7 @@ void CompilerWindow::onFileOpen() {
 }
 
 void CompilerWindow::onFileExit() {
-    close();
+//    close();
 }
 
 void CompilerWindow::init() {
