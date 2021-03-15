@@ -7,6 +7,8 @@
 
 #include "Global.h"
 
+using namespace llvm;
+
 class RecursiveToLoopPass : public FunctionPass {
 
 public:

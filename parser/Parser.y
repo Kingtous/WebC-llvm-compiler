@@ -13,8 +13,15 @@ using std::vector;
 %{
 #include "Lexer.h"
 extern char *yytext;
+#ifdef CGUI
+extern void logOnUi(const char* s);
+#endif
 void yyerror(const char *s)
-{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCCol()); }
+{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCCol());
+#ifdef CGUI
+logOnUi((string(s)+" 在 " + to_string(TheLexer->getCLineNumber())+" 行 "+to_string(TheLexer->getCCol())+" 列").c_str());
+#endif
+}
 %}
 
 // 声明变量可能有的类型
@@ -238,7 +245,7 @@ array_init_list : array_init_list T_COMMA array_init_val {$$ = $1; $1->insert($1
 
 str : T_STR {$$ = new StringExprAST($<string>$);}
 
-module_stmt : T_MODULE
+//module_stmt : T_MODULE
 %%
 
 BlockAST* program = nullptr;

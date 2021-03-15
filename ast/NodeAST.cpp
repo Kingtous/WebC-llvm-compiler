@@ -6,12 +6,13 @@
 
 #include <utility>
 #include "ErrHelper.h"
+#include "codegen/CodeGen.h"
 
 long StringExprAST::id = 0;
 
 llvm::Value *DoubleExprAST::codegen() {
     // 在LLVM IR中，数字常量用ConstantFP类表示 ，它在APFloat 内部保存数值（APFloat能够保持任意精度的浮点常量）
-    return llvm::ConstantFP::get(TheContext, llvm::APFloat(Val));
+    return llvm::ConstantFP::get(*TheContext, llvm::APFloat(Val));
 }
 
 string DoubleExprAST::toString() {
@@ -20,9 +21,11 @@ string DoubleExprAST::toString() {
 
 llvm::Value *VariableExprAST::codegen() {
     // 从符号表中取出
-    llvm::Value *v = NamedValues[Name];
-    if (!v)
+    llvm::Value *v = FINDLOCAL(Name);
+    if (!v){
+        ABORT_COMPILE;
         LogErrorV((std::string("未知变量名:") + Name).c_str());
+    }
     return v;
 }
 
@@ -37,82 +40,87 @@ llvm::Value *BinaryExprAST::codegen() {
     } else {
         llvm::Value *L = LEA->codegen();
         llvm::Value *R = REA->codegen();
-        if (!L || !R)
-            return nullptr;
+        if (!L || !R){
+            ABORT_COMPILE;
+            return LogErrorV("二元表达式解析失败");
+        }
         // 数值计算
         if (L->getType()->isIntegerTy() && R->getType()->isIntegerTy()) {
             switch (type) {
                 case BinaryType::add:
-                    return Builder.CreateAdd(L, R, "add");
+                    return Builder->CreateAdd(L, R, "add");
                 case BinaryType::sub:
-                    return Builder.CreateSub(L, R, "sub");
+                    return Builder->CreateSub(L, R, "sub");
                 case BinaryType::mul:
-                    return Builder.CreateMul(L, R, "mul");
+                    return Builder->CreateMul(L, R, "mul");
                 case BinaryType::divi:
-                    return Builder.CreateSDiv(L, R, "divi");
+                    return Builder->CreateSDiv(L, R, "divi");
                 case BinaryType::mod:
-                    return Builder.CreateSRem(L, R,
+                    return Builder->CreateSRem(L, R,
                                               "mod");
                 case BinaryType::less:
-                    return Builder.CreateICmpSLT(L, R, "less_than");
+                    return Builder->CreateICmpSLT(L, R, "less_than");
                 case BinaryType::greater:
-                    return Builder.CreateICmpSGT(L, R, "greater_than");
+                    return Builder->CreateICmpSGT(L, R, "greater_than");
                 case BinaryType::equ:
-                    return Builder.CreateICmpEQ(L, R, "equ");
+                    return Builder->CreateICmpEQ(L, R, "equ");
                 case BinaryType::greater_equ:
-                    return Builder.CreateICmpSGE(L, R, "greater_equ");
+                    return Builder->CreateICmpSGE(L, R, "greater_equ");
                 case BinaryType::less_equ:
-                    return Builder.CreateICmpSLE(L, R, "less_equ");
+                    return Builder->CreateICmpSLE(L, R, "less_equ");
                 case BinaryType::n_equ:
-                    return Builder.CreateICmpNE(L, R, "not_equ");
+                    return Builder->CreateICmpNE(L, R, "not_equ");
 //            case BinaryType::AND:
-//                auto boolL = Builder.CreateICmpNE(L,ConstantInt::get(getTypeFromStr("bool"),0));
-//                auto boolR = Builder.CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
-//                return Builder.CreateICmpSLE(boolL, boolR, "less_equ");
+//                auto boolL = Builder->CreateICmpNE(L,ConstantInt::get(getTypeFromStr("bool"),0));
+//                auto boolR = Builder->CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
+//                return Builder->CreateICmpSLE(boolL, boolR, "less_equ");
 //            case BinaryType::AND:
-//                auto boolL = Builder.CreateICmpNE(L,ConstantInt::get(getTypeFromStr("bool"),0));
-//                auto boolR = Builder.CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
-//                Builder.
-//                return Builder.CreateICmpSLE(boolL, boolR, "less_equ");
+//                auto boolL = Builder->CreateICmpNE(L,ConstantInt::get(getTypeFromStr("bool"),0));
+//                auto boolR = Builder->CreateICmpNE(R,ConstantInt::get(getTypeFromStr("bool"),0));
+//                Builder->
+//                return Builder->CreateICmpSLE(boolL, boolR, "less_equ");
                 default:
+                    ABORT_COMPILE;
                     return LogErrorV(("invalid binary operator"));
             }
         } else {
             // 类型不相同，做类型转换
             if (L->getType()->isIntegerTy()) {
-                L = Builder.CreateSIToFP(L, R->getType());
+                L = Builder->CreateSIToFP(L, R->getType());
             }
             if (R->getType()->isIntegerTy()) {
-                R = Builder.CreateSIToFP(R, L->getType());
+                R = Builder->CreateSIToFP(R, L->getType());
             }
             switch (type) {
                 case BinaryType::add:
-                    return Builder.CreateFAdd(L, R, "add");
+                    return Builder->CreateFAdd(L, R, "add");
                 case BinaryType::sub:
-                    return Builder.CreateFSub(L, R, "sub");
+                    return Builder->CreateFSub(L, R, "sub");
                 case BinaryType::mul:
-                    return Builder.CreateFMul(L, R, "mul");
+                    return Builder->CreateFMul(L, R, "mul");
                 case BinaryType::divi:
-                    return Builder.CreateFDiv(L, R, "divi");
+                    return Builder->CreateFDiv(L, R, "divi");
                 case BinaryType::mod:
-                    return Builder.CreateFRem(L, R, "mod");
+                    return Builder->CreateFRem(L, R, "mod");
                 case BinaryType::less:
-                    return Builder.CreateFCmpOLT(L, R, "less_than");
+                    return Builder->CreateFCmpOLT(L, R, "less_than");
                 case BinaryType::equ:
-                    return Builder.CreateFCmpOEQ(L, R, "ordered_fequ");
+                    return Builder->CreateFCmpOEQ(L, R, "ordered_fequ");
                 case BinaryType::greater:
-                    return Builder.CreateFCmpOGT(L, R, "greater_than");
+                    return Builder->CreateFCmpOGT(L, R, "greater_than");
                 case BinaryType::greater_equ:
-                    return Builder.CreateFCmpOGE(L, R, "greater_equ");
+                    return Builder->CreateFCmpOGE(L, R, "greater_equ");
                 case BinaryType::less_equ:
-                    return Builder.CreateFCmpOLE(L, R, "less_equ");
+                    return Builder->CreateFCmpOLE(L, R, "less_equ");
                 case BinaryType::n_equ:
-                    return Builder.CreateFCmpONE(L, R, "not_equ");
+                    return Builder->CreateFCmpONE(L, R, "not_equ");
                 default:
+                    ABORT_COMPILE;
                     return LogErrorV(("invalid binary operator"));
             }
         }
     }
+    ABORT_COMPILE;
     return NIL;
 }
 
@@ -120,11 +128,13 @@ BinaryExprAST::BinaryExprAST(BinaryType type, ExpressionAST *lea, ExpressionAST 
                                                                                         REA(rea) {}
 
 Value *BinaryExprAST::codeGenAnd(NodeAST *l, NodeAST *r) {
-    if (Builder.GetInsertBlock() == NIL) {
+    if (Builder->GetInsertBlock() == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("当前需要一个Basic Block来开始and环境");
     }
-    auto func = Builder.GetInsertBlock()->getParent();
+    auto func = Builder->GetInsertBlock()->getParent();
     if (func == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("&&需要在函数环境下使用，建议在函数中使用");
     }
 //    BasicBlock* condTrue = NIL;
@@ -138,34 +148,36 @@ Value *BinaryExprAST::codeGenAnd(NodeAST *l, NodeAST *r) {
 //    } else {
 //        return LogErrorV("不能将二元操作符应用于");
 //    }
-    auto bbCond1 = Builder.GetInsertBlock();
-    auto bbCond2 = BasicBlock::Create(TheContext, "and_right");
-    auto bbCondEnd = BasicBlock::Create(TheContext, "and_end");
+    auto bbCond1 = Builder->GetInsertBlock();
+    auto bbCond2 = BasicBlock::Create(*TheContext, "and_right");
+    auto bbCondEnd = BasicBlock::Create(*TheContext, "and_end");
     auto cond1V = l->codegen();
-    cond1V = Builder.CreateICmpSGT(cond1V, ConstantInt::get(cond1V->getType(), 0));
-    bbCond1 = Builder.GetInsertBlock();
-    Builder.CreateCondBr(cond1V, bbCond2, bbCondEnd); // 如果为true的话接着判断cond2，
+    cond1V = Builder->CreateICmpSGT(cond1V, ConstantInt::get(cond1V->getType(), 0));
+    bbCond1 = Builder->GetInsertBlock();
+    Builder->CreateCondBr(cond1V, bbCond2, bbCondEnd); // 如果为true的话接着判断cond2，
     func->getBasicBlockList().push_back(bbCond2);
-    Builder.SetInsertPoint(bbCond2);
+    Builder->SetInsertPoint(bbCond2);
     auto cond2V = r->codegen();
-    cond2V = Builder.CreateICmpSGT(cond2V, ConstantInt::get(cond2V->getType(), 0));
+    cond2V = Builder->CreateICmpSGT(cond2V, ConstantInt::get(cond2V->getType(), 0));
     // 要考虑嵌套
-    bbCond2 = Builder.GetInsertBlock();
-    Builder.CreateBr(bbCondEnd);
+    bbCond2 = Builder->GetInsertBlock();
+    Builder->CreateBr(bbCondEnd);
     func->getBasicBlockList().push_back(bbCondEnd);
-    Builder.SetInsertPoint(bbCondEnd);
-    auto phi = Builder.CreatePHI(getTypeFromStr("bool"), 2);
+    Builder->SetInsertPoint(bbCondEnd);
+    auto phi = Builder->CreatePHI(getTypeFromStr("bool"), 2);
     phi->addIncoming(cond1V, bbCond1);
     phi->addIncoming(cond2V, bbCond2);
     return phi;
 }
 
 Value *BinaryExprAST::codeGenOr(NodeAST *l, NodeAST *r) {
-    if (Builder.GetInsertBlock() == NIL) {
+    if (Builder->GetInsertBlock() == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("当前需要一个Basic Block来开始or环境");
     }
-    auto func = Builder.GetInsertBlock()->getParent();
+    auto func = Builder->GetInsertBlock()->getParent();
     if (func == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("||需要在函数环境下使用");
     }
 //    BasicBlock* condTrue = NIL;
@@ -179,26 +191,26 @@ Value *BinaryExprAST::codeGenOr(NodeAST *l, NodeAST *r) {
 //    } else {
 //        return LogErrorV("不能将二元操作符应用于");
 //    }
-    auto bbCond1 = Builder.GetInsertBlock();
-    auto bbCond2 = BasicBlock::Create(TheContext, "or_right");
-    auto bbCondEnd = BasicBlock::Create(TheContext, "or_end");
+    auto bbCond1 = Builder->GetInsertBlock();
+    auto bbCond2 = BasicBlock::Create(*TheContext, "or_right");
+    auto bbCondEnd = BasicBlock::Create(*TheContext, "or_end");
     // TODO
-    Builder.SetInsertPoint(bbCond1);
+    Builder->SetInsertPoint(bbCond1);
     auto cond1V = l->codegen();
-    cond1V = Builder.CreateICmpNE(cond1V, ConstantInt::get(cond1V->getType(), 0));
-    bbCond1 = Builder.GetInsertBlock();
-    Builder.CreateCondBr(cond1V, bbCondEnd, bbCond2);
+    cond1V = Builder->CreateICmpNE(cond1V, ConstantInt::get(cond1V->getType(), 0));
+    bbCond1 = Builder->GetInsertBlock();
+    Builder->CreateCondBr(cond1V, bbCondEnd, bbCond2);
 
     func->getBasicBlockList().push_back(bbCond2);
-    Builder.SetInsertPoint(bbCond2);
+    Builder->SetInsertPoint(bbCond2);
     auto cond2V = r->codegen();
-    cond2V = Builder.CreateICmpNE(cond2V, ConstantInt::get(cond2V->getType(), 0));
+    cond2V = Builder->CreateICmpNE(cond2V, ConstantInt::get(cond2V->getType(), 0));
     // 要考虑嵌套，更新当前bb
-    bbCond2 = Builder.GetInsertBlock();
-    Builder.CreateBr(bbCondEnd);
+    bbCond2 = Builder->GetInsertBlock();
+    Builder->CreateBr(bbCondEnd);
     func->getBasicBlockList().push_back(bbCondEnd);
-    Builder.SetInsertPoint(bbCondEnd);
-    auto phi = Builder.CreatePHI(getTypeFromStr("bool"), 2);
+    Builder->SetInsertPoint(bbCondEnd);
+    auto phi = Builder->CreatePHI(getTypeFromStr("bool"), 2);
     phi->addIncoming(cond1V, bbCond1);
     phi->addIncoming(cond2V, bbCond2);
     return phi;
@@ -215,25 +227,30 @@ llvm::Value *CallExprAST::codegen() {
     for (unsigned i = 0, e = args.size(); i != e; ++i) {
         Value *av = args[i]->codegen();
         if (av == NIL) {
+            ABORT_COMPILE;
             return LogErrorV(("函数形参解析失败：" + av->getName()).str().c_str());
         }
         argsV.push_back(av);
     }
 
     if (func == NIL) {
-        auto ev = ExternFunctionLinker::tryHandleFuncCall(TheContext, *TheModule, callName, &argsV);
+        auto ev = ExternFunctionLinker::tryHandleFuncCall(*TheContext, *TheModule, callName, &argsV);
         // Extern直接处理，就直接返回
         if (ev) {
             return ev;
         }
     }
-    if (!func)
+    if (!func){
+        ABORT_COMPILE;
         return LogErrorV(("使用了未知的函数：" + callName).c_str());
+    }
 
     // If argument mismatch error.
-    if (func->arg_size() != args.size())
+    if (func->arg_size() != args.size()){
+        ABORT_COMPILE;
         return LogErrorV("Incorrect # arguments passed");
-    return Builder.CreateCall(func, argsV, "calltmp");
+    }
+    return Builder->CreateCall(func, argsV, "calltmp");
 }
 
 string CallExprAST::toString() {
@@ -271,64 +288,68 @@ Value *ConditionAST::codegen() {
     // 解析if表达式
     Value *ifCondV = if_cond->codegen();
     if (!ifCondV) {
+        ABORT_COMPILE;
         return LogErrorV("if parse error");
     }
     // 创建一条 icnp ne指令，用于if的比较，由于是bool比较，此处直接与0比较。
-    ifCondV = Builder.CreateICmpNE(ifCondV, ConstantInt::get(getTypeFromStr("bool"), 0), "neuq_jintao_ifcond");
+    ifCondV = Builder->CreateICmpNE(ifCondV, ConstantInt::get(getTypeFromStr("bool"), 0), "neuq_jintao_ifcond");
     // 获取if里面的函数体，准备创建基础块
-    auto theFunction = Builder.GetInsertBlock()->getParent();
+    auto theFunction = Builder->GetInsertBlock()->getParent();
     if (!theFunction) {
+        ABORT_COMPILE;
         return LogErrorV("if没在函数体内使用");
     }
     // 创建三个basic block，先添加IfTrue至函数体里面
-    BasicBlock *bbIfTrue = BasicBlock::Create(TheContext, "neuq_jintao_if_true", theFunction);
-    BasicBlock *bbElse = else_stmt == NIL ? NIL : BasicBlock::Create(TheContext, "neuq_jintao_else");
-    BasicBlock *bbIfEnd = BasicBlock::Create(TheContext, "neuq_jintao_if_end");
+    BasicBlock *bbIfTrue = BasicBlock::Create(*TheContext, "neuq_jintao_if_true", theFunction);
+    BasicBlock *bbElse = else_stmt == NIL ? NIL : BasicBlock::Create(*TheContext, "neuq_jintao_else");
+    BasicBlock *bbIfEnd = BasicBlock::Create(*TheContext, "neuq_jintao_if_end");
     LOCALS->setContextType(CodeGenBlockContextType::IF);
-    LOCALS->context.ifCodeGenBlockContext = new IfCodeGenBlockContext(Builder.GetInsertBlock(), bbIfEnd, bbIfTrue,
+    LOCALS->context.ifCodeGenBlockContext = new IfCodeGenBlockContext(Builder->GetInsertBlock(), bbIfEnd, bbIfTrue,
                                                                       bbElse);
     // 创建条件分支,createCondBr(条件结果，为true的basic block，为false的basic block)
     if (bbElse == NIL) {
-        Builder.CreateCondBr(ifCondV, bbIfTrue, bbIfEnd);
+        Builder->CreateCondBr(ifCondV, bbIfTrue, bbIfEnd);
     } else {
-        Builder.CreateCondBr(ifCondV, bbIfTrue, bbElse);
+        Builder->CreateCondBr(ifCondV, bbIfTrue, bbElse);
     }
     // 开启往Basic Block中塞入代码
-    Builder.SetInsertPoint(bbIfTrue);
+    Builder->SetInsertPoint(bbIfTrue);
     Value *ifTrueV = if_stmt->codegen();
     if (!ifTrueV) {
+        ABORT_COMPILE;
         return LogErrorV("if里面的内容有误");
     }
     // if 中为true的代码写完了，将if跳转到else后面，也就是IfEnd结点。这符合逻辑，同时也是LLVM的强制要求，每个Basic Block必须以跳转结尾
-    if (Builder.GetInsertBlock()->empty() || !(*Builder.GetInsertBlock()->rbegin()).isTerminator()) {
-        Builder.CreateBr(bbIfEnd);
+    if (Builder->GetInsertBlock()->empty() || !(*Builder->GetInsertBlock()->rbegin()).isTerminator()) {
+        Builder->CreateBr(bbIfEnd);
     }
     // 将插入if内容时，可能会有循环嵌套，需要更新嵌套最底层的insertBlock
-    bbIfTrue = Builder.GetInsertBlock();
+    bbIfTrue = Builder->GetInsertBlock();
     // 塞入else
     if (bbElse != NIL) {
         theFunction->getBasicBlockList().push_back(bbElse);
-        Builder.SetInsertPoint(bbElse);
+        Builder->SetInsertPoint(bbElse);
         Value *elseV = nullptr;
         if (else_stmt) {
             elseV = else_stmt->codegen();
             if (!elseV) {
+                ABORT_COMPILE;
                 return LogErrorV("else里面内容有误");
             }
         }
-        if (Builder.GetInsertBlock()->empty() || !(*Builder.GetInsertBlock()->rbegin()).isTerminator()) {
-            Builder.CreateBr(bbIfEnd);
+        if (Builder->GetInsertBlock()->empty() || !(*Builder->GetInsertBlock()->rbegin()).isTerminator()) {
+            Builder->CreateBr(bbIfEnd);
         }
-        bbElse = Builder.GetInsertBlock();
+        bbElse = Builder->GetInsertBlock();
     }
     // 创建末尾结点
     theFunction->getBasicBlockList().push_back(bbIfEnd);
-    Builder.SetInsertPoint(bbIfEnd);
+    Builder->SetInsertPoint(bbIfEnd);
 //    PHINode *pn;
 //    if (elseV){
-//        pn = Builder.CreatePHI(ifTrueV->getType(), 2, "neuq_jintao_iftmp");
+//        pn = Builder->CreatePHI(ifTrueV->getType(), 2, "neuq_jintao_iftmp");
 //    } else {
-//        pn = Builder.CreatePHI(ifTrueV->getType(), 1, "neuq_jintao_iftmp");
+//        pn = Builder->CreatePHI(ifTrueV->getType(), 1, "neuq_jintao_iftmp");
 //    }
 //    pn->addIncoming(ifTrueV, bbIfTrue);
 //    if (elseV){
@@ -346,55 +367,60 @@ string ConditionAST::toString() {
 }
 
 Value *ForExprAST::codegen() {
-    Function *theFuntion = Builder.GetInsertBlock()->getParent();
+    Function *theFuntion = Builder->GetInsertBlock()->getParent();
     if (theFuntion == nullptr) {
-        return nullptr;
+        ABORT_COMPILE;
+        return LogErrorV("for 需要在函数语境下使用");
     }
     // 先执行for(xxx;;)
-    auto tmpForBlock = BasicBlock::Create(TheContext, "bb_for_start", theFuntion);
+    auto tmpForBlock = BasicBlock::Create(*TheContext, "bb_for_start", theFuntion);
     TheCodeGenContext->push_block(tmpForBlock);
 
     auto bbStart = tmpForBlock;
-    auto bbCond = BasicBlock::Create(TheContext, "bb_for_cond", theFuntion);
-    auto bbStep = BasicBlock::Create(TheContext, "bb_for_step", theFuntion);
-    auto bbBody = BasicBlock::Create(TheContext, "bb_for_body", theFuntion);
-    auto bbEndFor = BasicBlock::Create(TheContext, "bb_for_end");
+    auto bbCond = BasicBlock::Create(*TheContext, "bb_for_cond", theFuntion);
+    auto bbStep = BasicBlock::Create(*TheContext, "bb_for_step", theFuntion);
+    auto bbBody = BasicBlock::Create(*TheContext, "bb_for_body", theFuntion);
+    auto bbEndFor = BasicBlock::Create(*TheContext, "bb_for_end");
     LOCALS->setContextType(CodeGenBlockContextType::FOR);
     LOCALS->context.forCodeGenBlockContext = new ForCodeGenBlockContext(bbStart, bbCond, bbStep, bbBody, bbEndFor);
-    Builder.CreateBr(bbStart);
-    Builder.SetInsertPoint(bbStart);
+    Builder->CreateBr(bbStart);
+    Builder->SetInsertPoint(bbStart);
     auto startV = Start->codegen();
     if (startV == nullptr) {
+        ABORT_COMPILE;
         return LogErrorV("for(x;;){}中x有误");
     }
-    Builder.CreateBr(bbCond);
+    Builder->CreateBr(bbCond);
 
-    Builder.SetInsertPoint(bbCond);
+    Builder->SetInsertPoint(bbCond);
     auto condV = Cond->codegen();
     if (condV == nullptr) {
+        ABORT_COMPILE;
         return LogErrorV("for(;x;){}中x有误");
     }
 
-    condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"), 0), "neuq_jintao_ifcond");
-    Builder.CreateCondBr(condV, bbBody, bbEndFor);
+    condV = Builder->CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"), 0), "neuq_jintao_ifcond");
+    Builder->CreateCondBr(condV, bbBody, bbEndFor);
 
-    Builder.SetInsertPoint(bbBody);
+    Builder->SetInsertPoint(bbBody);
     auto body = Body->codegen();
     if (body == nullptr) {
+        ABORT_COMPILE;
         return LogErrorV("for执行内容有误");
     }
-    auto ins = Builder.GetInsertBlock()->rbegin();
-    if (ins == Builder.GetInsertBlock()->rend() || !(*ins).isTerminator()) {
-        Builder.CreateBr(bbStep);
+    auto ins = Builder->GetInsertBlock()->rbegin();
+    if (ins == Builder->GetInsertBlock()->rend() || !(*ins).isTerminator()) {
+        Builder->CreateBr(bbStep);
     }
-    Builder.SetInsertPoint(bbStep);
+    Builder->SetInsertPoint(bbStep);
     auto stepV = Step->codegen();
     if (stepV == nullptr) {
+        ABORT_COMPILE;
         return LogErrorV("for(;;x){}中x有误");
     }
-    Builder.CreateBr(bbCond);
+    Builder->CreateBr(bbCond);
     theFuntion->getBasicBlockList().push_back(bbEndFor);
-    Builder.SetInsertPoint(bbEndFor);
+    Builder->SetInsertPoint(bbEndFor);
     TheCodeGenContext->pop_block();
     return bbEndFor;
 }
@@ -431,21 +457,23 @@ llvm::Function *FunctionAST::codegen() {
     auto name = Proto->getName();
     llvm::Function *function = TheModule->getFunction(name);
     // 设置返回值block
-    auto retBB = BasicBlock::Create(TheContext, "function_ret");
+    auto retBB = BasicBlock::Create(*TheContext, "function_ret");
     TheCodeGenContext->setRetBb(retBB);
 
     if (!function)
         function = Proto->codegen();
 
-    if (!function)
+    if (!function){
+        ABORT_COMPILE;
         return nullptr;
+    }
     // 如果函数不为空，则表示已定义过了
     if (!function->empty())
         return (llvm::Function *) LogErrorV("Function cannot be redefined.");
 
     // Create a new basic block to start insertion into.
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "jintao_entry", function);
-    Builder.SetInsertPoint(BB);
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "jintao_entry", function);
+    Builder->SetInsertPoint(BB);
     TheCodeGenContext->push_block(BB);
     TheCodeGenContext->setFunction(function);
 
@@ -453,27 +481,27 @@ llvm::Function *FunctionAST::codegen() {
 //    auto funcVars = TheCodeGenContext->get_current_locals()->localVars;
     for (auto &Arg : function->args()) {
         // 分配一片内存
-        auto mem = Builder.CreateAlloca(Arg.getType());
-        Builder.CreateStore(&Arg, mem);
+        auto mem = Builder->CreateAlloca(Arg.getType());
+        Builder->CreateStore(&Arg, mem);
         LOCALSVARS.insert(make_pair(Arg.getName().data(), mem));
     }
     // 把return值alloc一下，如果不是void
     if (!function->getReturnType()->isVoidTy()) {
-        Value *ret = Builder.CreateAlloca(function->getReturnType());
-        Builder.CreateStore(Constant::getNullValue(function->getReturnType()), ret);
+        Value *ret = Builder->CreateAlloca(function->getReturnType());
+        Builder->CreateStore(Constant::getNullValue(function->getReturnType()), ret);
         TheCodeGenContext->setRetV(ret);
     }
     if (Body->codegen()) {
         // 结束函数，创建return结点
-        if (Builder.GetInsertBlock()->empty() || !Builder.GetInsertBlock()->rbegin()->isTerminator()) {
-            Builder.CreateBr(retBB);
+        if (Builder->GetInsertBlock()->empty() || !Builder->GetInsertBlock()->rbegin()->isTerminator()) {
+            Builder->CreateBr(retBB);
         }
         function->getBasicBlockList().push_back(retBB);
-        Builder.SetInsertPoint(retBB);
+        Builder->SetInsertPoint(retBB);
         if (function->getReturnType()->isVoidTy()) {
-            Builder.CreateRetVoid();
+            Builder->CreateRetVoid();
         } else {
-            Builder.CreateRet(Builder.CreateLoad(TheCodeGenContext->getRetV()));
+            Builder->CreateRet(Builder->CreateLoad(TheCodeGenContext->getRetV()));
         }
         auto isNotValid = verifyFunction(*function, &errs());
         if (isNotValid) {
@@ -482,6 +510,7 @@ llvm::Function *FunctionAST::codegen() {
             function->print(errs());
             goto clean;
         } else {
+            ABORT_COMPILE;
             cleanCodeGenContext();
         }
         return function;
@@ -505,6 +534,9 @@ Value *BlockAST::codegen() {
         auto iterator = statements.begin();
         Value *lastStatementValue;
         for (; iterator != statements.end(); iterator++) {
+            if (IS_COMPILE_ABORTED){
+                break;
+            }
             auto it = (*iterator);
             if (typeid(*it) == typeid(OutStmtAST)) {
                 if (iterator + 1 != statements.end()) {
@@ -521,13 +553,16 @@ Value *BlockAST::codegen() {
         }
         return lastStatementValue;
     } else {
-        auto bb = BasicBlock::Create(TheContext, "blk");
-        Builder.CreateBr(bb);
+        auto bb = BasicBlock::Create(*TheContext, "blk");
+        Builder->CreateBr(bb);
         func->getBasicBlockList().push_back(bb);
-        Builder.SetInsertPoint(bb);
+        Builder->SetInsertPoint(bb);
         auto iterator = statements.begin();
         Value *lastStatementValue;
         for (; iterator != statements.end(); iterator++) {
+            if (IS_COMPILE_ABORTED){
+                break;
+            }
             auto it = (*iterator);
             lastStatementValue = (*iterator)->codegen();
             if (typeid(*it) == typeid(OutStmtAST)) {
@@ -560,12 +595,13 @@ llvm::Value *VariableAssignmentAST::codegen() {
     auto ori_v = FINDLOCAL(identifier);
     if (ori_v != nullptr) {
         auto v = expr == nullptr ? nullptr : expr->codegen();
-        result = Builder.CreateStore(v, ori_v);
+        result = Builder->CreateStore(v, ori_v);
     } else {
         auto gv = TheModule->getNamedGlobal(identifier);
         if (gv) {
-            result = Builder.CreateStore(expr->codegen(), gv);
+            result = Builder->CreateStore(expr->codegen(), gv);
         } else {
+            ABORT_COMPILE;
             return LogErrorV((identifier + " is not defined!").c_str());
         }
     }
@@ -586,6 +622,7 @@ llvm::Value *VariableDeclarationAST::codegen() {
         auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
         if (global_variable) {
             fprintf(stderr, "variable %s redefined", identifier->identifier.c_str());
+            ABORT_COMPILE;
             return nullptr;
         } else {
             auto *gv = new GlobalVariable(*TheModule, getTypeFromStr(type), isConst,
@@ -599,16 +636,16 @@ llvm::Value *VariableDeclarationAST::codegen() {
         }
     } else {
         if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
-            ret = Builder.CreateAlloca(getTypeFromStr(type));
+            ret = Builder->CreateAlloca(getTypeFromStr(type));
 //            identifier.
-//            auto mem = Builder.CreateAlloca(getTypeFromStr(type),)
+//            auto mem = Builder->CreateAlloca(getTypeFromStr(type),)
             if (expr != nullptr) {
                 auto v = expr->codegen();
                 if (v->getType()->isIntegerTy() && v->getType() != getTypeFromStr(type)) {
                     // 不同，尝试进行修剪
-                    v = Builder.CreateZExtOrTrunc(v, getTypeFromStr(type));
+                    v = Builder->CreateZExtOrTrunc(v, getTypeFromStr(type));
                 }
-                Builder.CreateStore(v, ret);
+                Builder->CreateStore(v, ret);
             }
             INSERTLOCAL(identifier->identifier, ret);
         }
@@ -634,7 +671,7 @@ string VariableDeclarationAST::toString() {
 }
 
 llvm::Value *IntegerExprAST::codegen() {
-    return ConstantInt::get(Type::getInt32Ty(TheContext), Val, true);
+    return ConstantInt::get(Type::getInt32Ty(*TheContext), Val, true);
 }
 
 string IntegerExprAST::toString() {
@@ -645,12 +682,12 @@ llvm::Value *IdentifierExprAST::codegen() {
     if (HASLOCALS) {
         auto local_mem = FINDLOCAL(identifier);
         if (local_mem != nullptr) {
-            auto v = Builder.CreateLoad(local_mem);
+            auto v = Builder->CreateLoad(local_mem);
             if (v->getType()->isArrayTy()) {
                 // 数组兜底
                 v->eraseFromParent();
                 // 0取数组，后0为取第一个元素所在地址
-                return Builder.CreateInBoundsGEP(local_mem,
+                return Builder->CreateInBoundsGEP(local_mem,
                                                  {ConstantInt::get(getTypeFromStr("int"), 0),
                                                   ConstantInt::get(getTypeFromStr("int"), 0)});
             }
@@ -660,8 +697,9 @@ llvm::Value *IdentifierExprAST::codegen() {
     // 可能是全局变量
     auto gv = TheModule->getNamedGlobal(identifier);
     if (gv) {
-        return Builder.CreateLoad(gv);
+        return Builder->CreateLoad(gv);
     } else {
+        ABORT_COMPILE;
         return LogErrorV((identifier + " is not defined!!!").c_str());
     }
 }
@@ -679,17 +717,20 @@ ReturnStmtAST::ReturnStmtAST() {
 llvm::Value *ReturnStmtAST::codegen() {
     auto ret_bb = TheCodeGenContext->getRetBb();
     if (ret_bb == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("return是否用在了非函数环境下？");
     }
     if (expr == nullptr) {
-        return Builder.CreateBr(ret_bb);
+        return Builder->CreateBr(ret_bb);
     } else {
         auto ret_addr = TheCodeGenContext->getRetV();
         if (ret_addr == NIL) {
+            ABORT_COMPILE;
             return LogErrorV("无返回值分配域？请联系作者");
         }
         auto v = expr->codegen();
         if (v == NIL) {
+            ABORT_COMPILE;
             return LogErrorV("函数返回的值为空，可能是值解析失败，或变量不存在");
         } else {
             // 当返回递归函数
@@ -700,9 +741,9 @@ llvm::Value *ReturnStmtAST::codegen() {
                 }
             }
             if (!v->getType()->isVoidTy()) {
-                Builder.CreateStore(v, ret_addr);
+                Builder->CreateStore(v, ret_addr);
             }
-            Builder.CreateBr(ret_bb);
+            Builder->CreateBr(ret_bb);
             return v;
         }
     }
@@ -714,25 +755,25 @@ string ReturnStmtAST::toString() {
 
 Type *getTypeFromStr(const std::string &type) {
     if (type == "int") {
-        return Type::getInt32Ty(TheContext);
+        return Type::getInt32Ty(*TheContext);
     } else if (type == "long") {
-        return Type::getInt64Ty(TheContext);
+        return Type::getInt64Ty(*TheContext);
     } else if (type == "short") {
-        return Type::getInt8Ty(TheContext);
+        return Type::getInt8Ty(*TheContext);
     } else if (type == "bool") {
-        return Type::getInt1Ty(TheContext); // 本质上就是1字节的int
+        return Type::getInt1Ty(*TheContext); // 本质上就是1字节的int
     } else if (type == "void") {
-        return Type::getVoidTy(TheContext);
+        return Type::getVoidTy(*TheContext);
     } else if (type == "double") {
-        return Type::getDoubleTy(TheContext);
+        return Type::getDoubleTy(*TheContext);
     } else if (type == "float") {
-        return Type::getFloatTy(TheContext);
+        return Type::getFloatTy(*TheContext);
     } else if (type == "char") {
         // 8b
-        return Type::getInt8Ty(TheContext);
+        return Type::getInt8Ty(*TheContext);
     } else if (type == "str") {
         // 8b的指针
-        return Type::getInt8Ty(TheContext)->getPointerTo();
+        return Type::getInt8Ty(*TheContext)->getPointerTo();
     } else {
         return nullptr;
     }
@@ -754,6 +795,7 @@ ArrayType *buildArrayType(vector<ExpressionAST *> *vec, Type *arrayElemType) {
             }
             arr_type = arr_type == nullptr ? ArrayType::get(arrayElemType, size) : ArrayType::get(arr_type, size);
         } else {
+            ABORT_COMPILE;
             LogError("数组声明[]内必须为常量，请检查");
         }
     }
@@ -802,7 +844,7 @@ llvm::Value *IdentifierArrExprAST::codegen() {
     // 添加0取指针地址
     // FIXME 此处特判了如果是连续的两个pointerType，则判断可能传入的是一个CreateStore后的值，此时进行Load（该方案拓展性差，后期改良方案）
     if (local->getType()->isPointerTy() && local->getType()->getContainedType(0)->isPointerTy()) {
-        local = Builder.CreateLoad(local);
+        local = Builder->CreateLoad(local);
     } else {
         v_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
     }
@@ -814,12 +856,13 @@ llvm::Value *IdentifierArrExprAST::codegen() {
     for (; it < arrIndex->end(); it++) {
         auto v = (*it)->codegen();
         if (v == nullptr) {
+            ABORT_COMPILE;
             return LogErrorV("数组解析失败");
         }
         v_vec.push_back(v);
     }
-    ret = Builder.CreateInBoundsGEP(ret, ArrayRef<Value *>(v_vec));
-    return Builder.CreateLoad(ret);
+    ret = Builder->CreateInBoundsGEP(ret, ArrayRef<Value *>(v_vec));
+    return Builder->CreateLoad(ret);
 }
 
 IdentifierArrExprAST::IdentifierArrExprAST(const string &identifier, vector<ExpressionAST *> *arrIndex)
@@ -852,7 +895,7 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
         }
     } else {
         if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
-            auto mem = Builder.CreateAlloca(arr_type);
+            auto mem = Builder->CreateAlloca(arr_type);
             genLocalStoreExprs(mem);
             INSERTLOCAL(identifier->identifier, mem);
             ret = mem;
@@ -884,6 +927,7 @@ vector<Constant *> *VariableArrDeclarationAST::genGlobalExprs() {
 //                auto id = typeid(v);
                 auto ty = dyn_cast<IntegerType>(v->getType());
                 if (ty == NIL) {
+                    ABORT_COMPILE;
                     LogErrorV("全局数组初始化必须为常量声明");
                     return;
                 } else {
@@ -892,6 +936,7 @@ vector<Constant *> *VariableArrDeclarationAST::genGlobalExprs() {
                     v = ConstantInt::get(getTypeFromStr("int"), 0);
                 }
             } else {
+                ABORT_COMPILE;
                 LogErrorV("全局数组初始化必须为常量声明");
                 return;
             }
@@ -912,11 +957,11 @@ void VariableArrDeclarationAST::genLocalStoreExprs(Value *mem) {
             vector<Value *> gepindex_vec;
             gepindex_vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
             for (auto index : vindex) {
-                auto intv = ConstantInt::get(Type::getInt32Ty(TheContext), index);
+                auto intv = ConstantInt::get(Type::getInt32Ty(*TheContext), index);
                 gepindex_vec.push_back(intv);
             }
-            auto ret = Builder.CreateInBoundsGEP(mem, ArrayRef(gepindex_vec));
-            Builder.CreateStore(e->codegen(), ret);
+            auto ret = Builder->CreateInBoundsGEP(mem, ArrayRef(gepindex_vec));
+            Builder->CreateStore(e->codegen(), ret);
             if (incrementVectorIndex(vindex, vmaxindex)) {
 //                LogWarn("数组声明超过定义，超过定义的值将被忽略");
                 break;
@@ -962,12 +1007,14 @@ vector<uint64_t> VariableArrDeclarationAST::getIndexVal() {
             if (vmaxindex.empty()) {
                 vmaxindex.push_back(INT_MAX);
             } else {
+                ABORT_COMPILE;
                 LogError("只允许数组index首部为空值，要不然无法编译，我就罢工了");
                 return;
             }
         } else {
             auto value_index = dyn_cast<ConstantInt>(e->codegen());
             if (value_index == NIL) {
+                ABORT_COMPILE;
                 LogError("声明一个数组长度不能使用非常量");
                 return;
             } else {
@@ -991,6 +1038,7 @@ Type *VariableArrDeclarationAST::buildPointerTy() {
     int length = idx_nums.size();
     for (int i = length - 1; i > 0; i--) {
         if (idx_nums[i] == INT_MAX) {
+            ABORT_COMPILE;
             return LogErrorTy("数组索引值只有第一个可以为空!(第一个索引我不管，你随便)");
         }
         type = ArrayType::get(type, idx_nums[i]);
@@ -1012,6 +1060,7 @@ VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identif
 llvm::Value *VariableArrAssignmentAST::codegen() {
     auto arr_addr = FINDLOCAL(identifier->identifier);
     if (arr_addr == nullptr) {
+        ABORT_COMPILE;
         return LogErrorV((identifier->identifier + "is not defined").c_str());
     }
     auto st = identifier->arrIndex->begin();
@@ -1023,9 +1072,9 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
         auto v = (*st)->codegen();
         vec.push_back(v);
     }
-    ret = Builder.CreateInBoundsGEP(arr_addr, ArrayRef(vec));
+    ret = Builder->CreateInBoundsGEP(arr_addr, ArrayRef(vec));
     auto newV = expr->codegen();
-    ret = Builder.CreateStore(newV, ret);
+    ret = Builder->CreateStore(newV, ret);
     return ret;
 }
 
@@ -1038,6 +1087,7 @@ OutStmtAST::OutStmtAST() = default;
 Value *OutStmtAST::codegen() {
     auto blk = TheCodeGenContext->findTopLoopCodeGenBlockTypeBlock();
     if (blk == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("break 不能用作于当前的代码上下文中，请检查");
     }
     switch (blk->contextType) {
@@ -1046,18 +1096,21 @@ Value *OutStmtAST::codegen() {
         case FOR:
             if (blk->context.forCodeGenBlockContext == NIL
                 || blk->context.forCodeGenBlockContext->bbEndFor == NIL) {
+                ABORT_COMPILE;
                 return LogErrorV("程序匹配的上下文context为NULL，请联系作者");
             }
-            return Builder.CreateBr(blk->context.forCodeGenBlockContext->bbEndFor);
+            return Builder->CreateBr(blk->context.forCodeGenBlockContext->bbEndFor);
         case IF:
             return LogErrorV("程序匹配的break环境与当前域不符(IF)，请联系作者");
         case WHILE:
             if (blk->context.whileCodeGenBlockContext == NIL
                 || blk->context.whileCodeGenBlockContext->bbEndWhile == NIL) {
+                ABORT_COMPILE;
                 return LogErrorV("程序匹配的上下文context为NULL(while continue;)，请联系作者");
             }
-            return Builder.CreateBr(blk->context.whileCodeGenBlockContext->bbEndWhile);
+            return Builder->CreateBr(blk->context.whileCodeGenBlockContext->bbEndWhile);
         default:
+            ABORT_COMPILE;
             return LogErrorV("Break在未知的代码域中，或编译器目前无法处理的关键字");
     }
     return NIL;
@@ -1072,26 +1125,32 @@ ContinueStmtAST::ContinueStmtAST() = default;
 Value *ContinueStmtAST::codegen() {
     auto blk = TheCodeGenContext->findTopLoopCodeGenBlockTypeBlock();
     if (blk == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("break 不能用作于当前的代码上下文中，请检查");
     }
     switch (blk->contextType) {
         case NONE:
+            ABORT_COMPILE;
             return LogErrorV("程序匹配的break环境与当前域不符(NONE)，请联系作者");
         case FOR:
             if (blk->context.forCodeGenBlockContext == NIL
                 || blk->context.forCodeGenBlockContext->bbEndFor == NIL) {
+                ABORT_COMPILE;
                 return LogErrorV("程序匹配的上下文context为NULL，请联系作者");
             }
-            return Builder.CreateBr(blk->context.forCodeGenBlockContext->bbStep);
+            return Builder->CreateBr(blk->context.forCodeGenBlockContext->bbStep);
         case IF:
+            ABORT_COMPILE;
             return LogErrorV("程序匹配的break环境与当前域不符(IF)，这可能是个bug，请联系作者");
         case WHILE:
             if (blk->context.whileCodeGenBlockContext == NIL
                 || blk->context.whileCodeGenBlockContext->bbCond == NIL) {
+                ABORT_COMPILE;
                 return LogErrorV("程序匹配的上下文context为NULL(while continue;)，请联系作者");
             }
-            return Builder.CreateBr(blk->context.whileCodeGenBlockContext->bbCond);
+            return Builder->CreateBr(blk->context.whileCodeGenBlockContext->bbCond);
         default:
+            ABORT_COMPILE;
             return LogErrorV("Break在未知的代码域中，或编译器目前无法处理的关键字");
     }
     return NIL;
@@ -1104,35 +1163,38 @@ string ContinueStmtAST::toString() {
 WhileStmtAST::WhileStmtAST(NodeAST *cond, BlockAST *body) : Cond(cond), Body(body) {}
 
 llvm::Value *WhileStmtAST::codegen() {
-    auto function = Builder.GetInsertBlock()->getParent();
+    auto function = Builder->GetInsertBlock()->getParent();
     if (function == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("while 不能用在非函数体中");
     }
-    BasicBlock *bbCond = BasicBlock::Create(TheContext, "while_cond", function);
-    BasicBlock *bbBody = BasicBlock::Create(TheContext, "while_body");
-    BasicBlock *bbEndWhile = BasicBlock::Create(TheContext, "while_end");
+    BasicBlock *bbCond = BasicBlock::Create(*TheContext, "while_cond", function);
+    BasicBlock *bbBody = BasicBlock::Create(*TheContext, "while_body");
+    BasicBlock *bbEndWhile = BasicBlock::Create(*TheContext, "while_end");
     LOCALS->setContextType(CodeGenBlockContextType::WHILE);
     LOCALS->context.whileCodeGenBlockContext = new WhileCodeGenBlockContext(bbCond, bbBody, bbEndWhile);
     // 创建条件分支
-    Builder.CreateBr(bbCond);
-    Builder.SetInsertPoint(bbCond);
+    Builder->CreateBr(bbCond);
+    Builder->SetInsertPoint(bbCond);
     auto condV = Cond->codegen();
     if (condV == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("while中的判断语句解析失败");
     }
-    condV = Builder.CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"), 0));
-    Builder.CreateCondBr(condV, bbBody, bbEndWhile);
+    condV = Builder->CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"), 0));
+    Builder->CreateCondBr(condV, bbBody, bbEndWhile);
     function->getBasicBlockList().push_back(bbBody);
-    Builder.SetInsertPoint(bbBody);
+    Builder->SetInsertPoint(bbBody);
     auto bodyV = Body->codegen();
     if (bodyV == NIL) {
+        ABORT_COMPILE;
         return LogErrorV("while中的判断语句解析失败");
     }
-    if (Builder.GetInsertBlock()->empty() || !Builder.GetInsertBlock()->rbegin()->isTerminator()) {
-        Builder.CreateBr(bbCond);
+    if (Builder->GetInsertBlock()->empty() || !Builder->GetInsertBlock()->rbegin()->isTerminator()) {
+        Builder->CreateBr(bbCond);
     }
     function->getBasicBlockList().push_back(bbEndWhile);
-    Builder.SetInsertPoint(bbEndWhile);
+    Builder->SetInsertPoint(bbEndWhile);
     return bbEndWhile;
 }
 
@@ -1173,7 +1235,7 @@ llvm::Value *StringExprAST::codegen() {
         auto sz = str->size();
         auto arr_type = ArrayType::get(getTypeFromStr("char"), sz + 1);
         gv = new GlobalVariable(*TheModule, arr_type,
-                                true, GlobalValue::PrivateLinkage, ConstantDataArray::getString(TheContext, *str),
+                                true, GlobalValue::PrivateLinkage, ConstantDataArray::getString(*TheContext, *str),
                                 getUniqueId());
 //        for (int i = 0; i < sz; ++i) {
 //            uint8_t ch = str->at(i);
@@ -1184,9 +1246,9 @@ llvm::Value *StringExprAST::codegen() {
         gv->setUnnamedAddr(GlobalVariable::UnnamedAddr::Global);
         return ConstantExpr::getBitCast(gv, getTypeFromStr("str"));
     } else {
-        gv = Builder.CreateGlobalString(*str, StringExprAST::getUniqueId());
+        gv = Builder->CreateGlobalString(*str, StringExprAST::getUniqueId());
     }
-    return Builder.CreateInBoundsGEP(gv, {ConstantInt::get(getTypeFromStr("int"), 0),
+    return Builder->CreateInBoundsGEP(gv, {ConstantInt::get(getTypeFromStr("int"), 0),
                                           ConstantInt::get(getTypeFromStr("int"), 0)});
 }
 

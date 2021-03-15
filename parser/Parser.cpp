@@ -77,10 +77,17 @@
 
 #include "Lexer.h"
 extern char *yytext;
+#ifdef CGUI
+extern void logOnUi(const char* s);
+#endif
 void yyerror(const char *s)
-{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCCol()); }
+{ fprintf(stderr,"%s on line %d, Col %d\n",s,TheLexer->getCLineNumber(),TheLexer->getCCol());
+#ifdef CGUI
+logOnUi((string(s)+" 在 " + to_string(TheLexer->getCLineNumber())+" 行 "+to_string(TheLexer->getCCol())+" 列").c_str());
+#endif
+}
 
-#line 84 "Parser.cpp"
+#line 91 "Parser.cpp"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -545,14 +552,14 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    93,    93,   101,   102,   105,   110,   111,   112,   113,
-     114,   115,   116,   117,   118,   119,   120,   121,   122,   123,
-     126,   130,   134,   140,   141,   147,   154,   155,   156,   157,
-     158,   159,   160,   161,   162,   163,   164,   165,   166,   167,
-     168,   169,   170,   171,   172,   173,   174,   177,   178,   179,
-     180,   182,   183,   184,   187,   191,   196,   197,   200,   208,
-     209,   211,   214,   215,   218,   223,   224,   225,   228,   231,
-     232,   233,   236,   237,   239
+       0,   100,   100,   108,   109,   112,   117,   118,   119,   120,
+     121,   122,   123,   124,   125,   126,   127,   128,   129,   130,
+     133,   137,   141,   147,   148,   154,   161,   162,   163,   164,
+     165,   166,   167,   168,   169,   170,   171,   172,   173,   174,
+     175,   176,   177,   178,   179,   180,   181,   184,   185,   186,
+     187,   189,   190,   191,   194,   198,   203,   204,   207,   215,
+     216,   218,   221,   222,   225,   230,   231,   232,   235,   238,
+     239,   240,   243,   244,   246
 };
 #endif
 
@@ -1288,471 +1295,471 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: stmts  */
-#line 93 "Parser.y"
+#line 100 "Parser.y"
                {
 			program = (yyvsp[0].block);
 			#ifdef DEBUG_FLAG
 			fprintf(stdout,"parse success\n");
 			#endif
 		}
-#line 1299 "Parser.cpp"
+#line 1306 "Parser.cpp"
     break;
 
   case 3: /* stmts: stmt  */
-#line 101 "Parser.y"
+#line 108 "Parser.y"
              {(yyval.block) = new BlockAST(); (yyval.block)->statements.push_back((yyvsp[0].stmt));}
-#line 1305 "Parser.cpp"
+#line 1312 "Parser.cpp"
     break;
 
   case 4: /* stmts: stmts stmt  */
-#line 102 "Parser.y"
+#line 109 "Parser.y"
                      {(yyvsp[-1].block)->statements.push_back((yyvsp[0].stmt));}
-#line 1311 "Parser.cpp"
+#line 1318 "Parser.cpp"
     break;
 
   case 5: /* stmt: var_decl ';'  */
-#line 105 "Parser.y"
+#line 112 "Parser.y"
                     {
 #ifdef DEBUG_FLAG
 fprintf(stderr,"build var decl stmt\n");
 #endif
 }
-#line 1321 "Parser.cpp"
+#line 1328 "Parser.cpp"
     break;
 
   case 6: /* stmt: T_CONST var_decl ';'  */
-#line 110 "Parser.y"
+#line 117 "Parser.y"
                                {(yyvsp[-1].vdeclar)->setIsConst(true);(yyval.stmt)=(yyvsp[-1].vdeclar);}
-#line 1327 "Parser.cpp"
+#line 1334 "Parser.cpp"
     break;
 
   case 7: /* stmt: func_decl  */
-#line 111 "Parser.y"
+#line 118 "Parser.y"
                     {(yyval.stmt) = (yyvsp[0].stmt);}
-#line 1333 "Parser.cpp"
+#line 1340 "Parser.cpp"
     break;
 
   case 8: /* stmt: if_condition  */
-#line 112 "Parser.y"
+#line 119 "Parser.y"
                        {(yyval.stmt) = (yyvsp[0].cond);}
-#line 1339 "Parser.cpp"
+#line 1346 "Parser.cpp"
     break;
 
   case 9: /* stmt: while_stmt  */
-#line 113 "Parser.y"
+#line 120 "Parser.y"
                      {(yyval.stmt) = (yyvsp[0].whilestmt);}
-#line 1345 "Parser.cpp"
+#line 1352 "Parser.cpp"
     break;
 
   case 10: /* stmt: ident T_ASSIGN expr ';'  */
-#line 114 "Parser.y"
+#line 121 "Parser.y"
                                   {(yyval.stmt) = new VariableAssignmentAST((yyvsp[-3].ident)->identifier,(yyvsp[-1].expr));}
-#line 1351 "Parser.cpp"
+#line 1358 "Parser.cpp"
     break;
 
   case 11: /* stmt: ident_arr T_ASSIGN expr ';'  */
-#line 115 "Parser.y"
+#line 122 "Parser.y"
                                       {(yyval.stmt) = new VariableArrAssignmentAST((yyvsp[-3].identarr),(yyvsp[-1].expr));}
-#line 1357 "Parser.cpp"
+#line 1364 "Parser.cpp"
     break;
 
   case 12: /* stmt: T_RETURN ';'  */
-#line 116 "Parser.y"
+#line 123 "Parser.y"
                       {(yyval.stmt) = new ReturnStmtAST();}
-#line 1363 "Parser.cpp"
+#line 1370 "Parser.cpp"
     break;
 
   case 13: /* stmt: T_RETURN expr ';'  */
-#line 117 "Parser.y"
+#line 124 "Parser.y"
                            {(yyval.stmt) = new ReturnStmtAST((yyvsp[-1].expr));}
-#line 1369 "Parser.cpp"
+#line 1376 "Parser.cpp"
     break;
 
   case 14: /* stmt: for_stmt  */
-#line 118 "Parser.y"
+#line 125 "Parser.y"
                    {(yyval.stmt) = (yyvsp[0].forexpr);}
-#line 1375 "Parser.cpp"
+#line 1382 "Parser.cpp"
     break;
 
   case 15: /* stmt: T_OUT ';'  */
-#line 119 "Parser.y"
+#line 126 "Parser.y"
                     {(yyval.stmt) = new OutStmtAST();}
-#line 1381 "Parser.cpp"
+#line 1388 "Parser.cpp"
     break;
 
   case 16: /* stmt: T_CONTINUE ';'  */
-#line 120 "Parser.y"
+#line 127 "Parser.y"
                          {(yyval.stmt) = new ContinueStmtAST();}
-#line 1387 "Parser.cpp"
+#line 1394 "Parser.cpp"
     break;
 
   case 17: /* stmt: block  */
-#line 121 "Parser.y"
+#line 128 "Parser.y"
                 {(yyval.stmt) = (yyvsp[0].block);}
-#line 1393 "Parser.cpp"
+#line 1400 "Parser.cpp"
     break;
 
   case 18: /* stmt: ';'  */
-#line 122 "Parser.y"
+#line 129 "Parser.y"
               {}
-#line 1399 "Parser.cpp"
+#line 1406 "Parser.cpp"
     break;
 
   case 19: /* stmt: expr ';'  */
-#line 123 "Parser.y"
+#line 130 "Parser.y"
                    {(yyval.stmt) = new ExpressionStatementAST((yyvsp[-1].expr));}
-#line 1405 "Parser.cpp"
-    break;
-
-  case 20: /* ident: T_IDENTIFIER  */
-#line 126 "Parser.y"
-                     {
- (yyval.ident) = new IdentifierExprAST(*(yyvsp[0].string));}
 #line 1412 "Parser.cpp"
     break;
 
+  case 20: /* ident: T_IDENTIFIER  */
+#line 133 "Parser.y"
+                     {
+ (yyval.ident) = new IdentifierExprAST(*(yyvsp[0].string));}
+#line 1419 "Parser.cpp"
+    break;
+
   case 21: /* ident_arr: ident array_index  */
-#line 130 "Parser.y"
+#line 137 "Parser.y"
                               { (yyval.identarr) = new IdentifierArrExprAST((yyvsp[-1].ident)->identifier,(yyvsp[0].aivec));}
-#line 1418 "Parser.cpp"
+#line 1425 "Parser.cpp"
     break;
 
   case 22: /* var_decl: ident ident  */
-#line 134 "Parser.y"
+#line 141 "Parser.y"
                        {
 		(yyval.vdeclar) = new VariableDeclarationAST(
 		(yyvsp[-1].ident)->identifier,
 		(yyvsp[0].ident)
 		);
 		}
-#line 1429 "Parser.cpp"
+#line 1436 "Parser.cpp"
     break;
 
   case 23: /* var_decl: ident ident T_ASSIGN expr  */
-#line 140 "Parser.y"
+#line 147 "Parser.y"
                                     {(yyval.vdeclar) = new VariableDeclarationAST((yyvsp[-3].ident)->identifier,(yyvsp[-2].ident),(yyvsp[0].expr));}
-#line 1435 "Parser.cpp"
+#line 1442 "Parser.cpp"
     break;
 
   case 24: /* var_decl: ident ident_arr  */
-#line 141 "Parser.y"
+#line 148 "Parser.y"
                           {
           		(yyval.vdeclar) = new VariableArrDeclarationAST(
           		(yyvsp[-1].ident)->identifier,
           		(yyvsp[0].identarr)
           		);
           		}
-#line 1446 "Parser.cpp"
+#line 1453 "Parser.cpp"
     break;
 
   case 25: /* var_decl: ident ident_arr T_ASSIGN array_init_val  */
-#line 147 "Parser.y"
+#line 154 "Parser.y"
                                                    {(yyval.vdeclar) = new VariableArrDeclarationAST((yyvsp[-3].ident)->identifier,(yyvsp[-2].identarr),(yyvsp[0].arrayvalvec));}
-#line 1452 "Parser.cpp"
+#line 1459 "Parser.cpp"
     break;
 
   case 26: /* expr: ident T_L_SPAR call_args T_R_SPAR  */
-#line 154 "Parser.y"
+#line 161 "Parser.y"
                                          {(yyval.expr) = new CallExprAST((yyvsp[-3].ident)->identifier,*(yyvsp[-1].exprvec)); }
-#line 1458 "Parser.cpp"
+#line 1465 "Parser.cpp"
     break;
 
   case 27: /* expr: ident  */
-#line 155 "Parser.y"
+#line 162 "Parser.y"
                 {(yyval.ident) = (yyvsp[0].ident);}
-#line 1464 "Parser.cpp"
+#line 1471 "Parser.cpp"
     break;
 
   case 28: /* expr: ident_arr  */
-#line 156 "Parser.y"
+#line 163 "Parser.y"
                     {(yyval.ident) = (yyvsp[0].identarr);}
-#line 1470 "Parser.cpp"
+#line 1477 "Parser.cpp"
     break;
 
   case 29: /* expr: T_SUB ident  */
-#line 157 "Parser.y"
+#line 164 "Parser.y"
                       {(yyval.expr) = new BinaryExprAST(BinaryType::sub,new IntegerExprAST(0),(yyvsp[0].ident));}
-#line 1476 "Parser.cpp"
+#line 1483 "Parser.cpp"
     break;
 
   case 31: /* expr: T_L_SPAR expr T_R_SPAR  */
-#line 159 "Parser.y"
+#line 166 "Parser.y"
                                  {(yyval.expr) = (yyvsp[-1].expr);}
-#line 1482 "Parser.cpp"
+#line 1489 "Parser.cpp"
     break;
 
   case 32: /* expr: expr T_ADD expr  */
-#line 160 "Parser.y"
+#line 167 "Parser.y"
                           {(yyval.expr) = new BinaryExprAST(BinaryType::add,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1488 "Parser.cpp"
+#line 1495 "Parser.cpp"
     break;
 
   case 33: /* expr: expr T_SUB expr  */
-#line 161 "Parser.y"
+#line 168 "Parser.y"
                           {(yyval.expr) = new BinaryExprAST(BinaryType::sub,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1494 "Parser.cpp"
+#line 1501 "Parser.cpp"
     break;
 
   case 34: /* expr: expr T_MUL expr  */
-#line 162 "Parser.y"
+#line 169 "Parser.y"
                           {(yyval.expr) = new BinaryExprAST(BinaryType::mul,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1500 "Parser.cpp"
+#line 1507 "Parser.cpp"
     break;
 
   case 35: /* expr: expr T_DIV expr  */
-#line 163 "Parser.y"
+#line 170 "Parser.y"
                           {(yyval.expr) = new BinaryExprAST(BinaryType::divi,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1506 "Parser.cpp"
+#line 1513 "Parser.cpp"
     break;
 
   case 36: /* expr: expr T_MOD expr  */
-#line 164 "Parser.y"
+#line 171 "Parser.y"
                           {(yyval.expr) = new BinaryExprAST(BinaryType::mod,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1512 "Parser.cpp"
+#line 1519 "Parser.cpp"
     break;
 
   case 37: /* expr: expr T_LESS expr  */
-#line 165 "Parser.y"
+#line 172 "Parser.y"
                            {(yyval.expr) = new BinaryExprAST(BinaryType::less,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1518 "Parser.cpp"
+#line 1525 "Parser.cpp"
     break;
 
   case 38: /* expr: expr T_GREATER expr  */
-#line 166 "Parser.y"
+#line 173 "Parser.y"
                               {(yyval.expr) = new BinaryExprAST(BinaryType::greater,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1524 "Parser.cpp"
+#line 1531 "Parser.cpp"
     break;
 
   case 39: /* expr: expr T_LESS_EQU expr  */
-#line 167 "Parser.y"
+#line 174 "Parser.y"
                                {(yyval.expr) = new BinaryExprAST(BinaryType::less_equ,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1530 "Parser.cpp"
+#line 1537 "Parser.cpp"
     break;
 
   case 40: /* expr: expr T_GREATER_EQU expr  */
-#line 168 "Parser.y"
+#line 175 "Parser.y"
                                   {(yyval.expr) = new BinaryExprAST(BinaryType::greater_equ,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1536 "Parser.cpp"
+#line 1543 "Parser.cpp"
     break;
 
   case 41: /* expr: expr T_EQU expr  */
-#line 169 "Parser.y"
+#line 176 "Parser.y"
                           {(yyval.expr) = new BinaryExprAST(BinaryType::equ,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1542 "Parser.cpp"
+#line 1549 "Parser.cpp"
     break;
 
   case 42: /* expr: expr T_N_EQU expr  */
-#line 170 "Parser.y"
+#line 177 "Parser.y"
                             {(yyval.expr) = new BinaryExprAST(BinaryType::n_equ,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1548 "Parser.cpp"
+#line 1555 "Parser.cpp"
     break;
 
   case 43: /* expr: expr T_AND expr  */
-#line 171 "Parser.y"
+#line 178 "Parser.y"
                           {(yyval.expr) = new BinaryExprAST(BinaryType::AND,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1554 "Parser.cpp"
+#line 1561 "Parser.cpp"
     break;
 
   case 44: /* expr: expr T_OR expr  */
-#line 172 "Parser.y"
+#line 179 "Parser.y"
                          {(yyval.expr) = new BinaryExprAST(BinaryType::OR,(yyvsp[-2].expr),(yyvsp[0].expr));}
-#line 1560 "Parser.cpp"
+#line 1567 "Parser.cpp"
     break;
 
   case 45: /* expr: str  */
-#line 173 "Parser.y"
+#line 180 "Parser.y"
               {(yyval.expr) = (yyvsp[0].expr);}
-#line 1566 "Parser.cpp"
+#line 1573 "Parser.cpp"
     break;
 
   case 46: /* expr: T_NULL  */
-#line 174 "Parser.y"
+#line 181 "Parser.y"
                  {(yyval.expr) = new NullExprAST();}
-#line 1572 "Parser.cpp"
+#line 1579 "Parser.cpp"
     break;
 
   case 47: /* array_index: T_L_MPAR T_R_MPAR  */
-#line 177 "Parser.y"
+#line 184 "Parser.y"
                                 {(yyval.aivec) = new vector<ExpressionAST*>(); (yyval.aivec)->push_back(NIL);}
-#line 1578 "Parser.cpp"
+#line 1585 "Parser.cpp"
     break;
 
   case 48: /* array_index: T_L_MPAR expr T_R_MPAR  */
-#line 178 "Parser.y"
+#line 185 "Parser.y"
                                  {(yyval.aivec) = new vector<ExpressionAST*>(); (yyval.aivec)->push_back((yyvsp[-1].expr));}
-#line 1584 "Parser.cpp"
+#line 1591 "Parser.cpp"
     break;
 
   case 49: /* array_index: T_L_MPAR T_R_MPAR array_index  */
-#line 179 "Parser.y"
+#line 186 "Parser.y"
                                        {(yyvsp[0].aivec)->insert((yyvsp[0].aivec)->begin(),NIL); (yyval.aivec) = (yyvsp[0].aivec);}
-#line 1590 "Parser.cpp"
+#line 1597 "Parser.cpp"
     break;
 
   case 50: /* array_index: T_L_MPAR expr T_R_MPAR array_index  */
-#line 180 "Parser.y"
+#line 187 "Parser.y"
                                              {(yyvsp[0].aivec)->insert((yyvsp[0].aivec)->begin(),(yyvsp[-2].expr)); (yyval.aivec) = (yyvsp[0].aivec);}
-#line 1596 "Parser.cpp"
+#line 1603 "Parser.cpp"
     break;
 
   case 51: /* call_args: %empty  */
-#line 182 "Parser.y"
+#line 189 "Parser.y"
                     {(yyval.exprvec) = new std::vector<ExpressionAST*>();}
-#line 1602 "Parser.cpp"
+#line 1609 "Parser.cpp"
     break;
 
   case 52: /* call_args: expr  */
-#line 183 "Parser.y"
+#line 190 "Parser.y"
                {(yyval.exprvec) = new std::vector<ExpressionAST*>();(yyval.exprvec)->push_back((yyvsp[0].expr));}
-#line 1608 "Parser.cpp"
+#line 1615 "Parser.cpp"
     break;
 
   case 53: /* call_args: call_args T_COMMA expr  */
-#line 184 "Parser.y"
+#line 191 "Parser.y"
                                  {(yyvsp[-2].exprvec)->push_back((yyvsp[0].expr));}
-#line 1614 "Parser.cpp"
+#line 1621 "Parser.cpp"
     break;
 
   case 54: /* number: T_DOUBLE  */
-#line 188 "Parser.y"
+#line 195 "Parser.y"
                 {
                     (yyval.expr) = new DoubleExprAST((yyvsp[0].double_value));
                 }
-#line 1622 "Parser.cpp"
+#line 1629 "Parser.cpp"
     break;
 
   case 55: /* number: T_INTEGER  */
-#line 191 "Parser.y"
+#line 198 "Parser.y"
                    {
        		(yyval.expr) = new IntegerExprAST((yyvsp[0].int_value));
        }
-#line 1630 "Parser.cpp"
+#line 1637 "Parser.cpp"
     break;
 
   case 56: /* block: T_L_LPAR stmts T_R_LPAR  */
-#line 196 "Parser.y"
+#line 203 "Parser.y"
                                 {(yyval.block) = (yyvsp[-1].block);}
-#line 1636 "Parser.cpp"
+#line 1643 "Parser.cpp"
     break;
 
   case 57: /* block: T_L_LPAR T_R_LPAR  */
-#line 197 "Parser.y"
+#line 204 "Parser.y"
                             {(yyval.block) = new BlockAST();}
-#line 1642 "Parser.cpp"
+#line 1649 "Parser.cpp"
     break;
 
   case 58: /* func_decl: ident ident T_L_SPAR func_args T_R_SPAR block  */
-#line 201 "Parser.y"
+#line 208 "Parser.y"
 {
 	PrototypeAST* proto = new PrototypeAST((yyvsp[-5].ident)->identifier,(yyvsp[-4].ident)->identifier,*(yyvsp[-2].varvec));
 	BlockAST* body = (yyvsp[0].block);
 	(yyval.stmt) = new FunctionAST(proto,body);
 	// printf("build function %s \n",$2->identifier.c_str());
 }
-#line 1653 "Parser.cpp"
+#line 1660 "Parser.cpp"
     break;
 
   case 59: /* func_args: %empty  */
-#line 208 "Parser.y"
+#line 215 "Parser.y"
                    { (yyval.varvec) = new std::vector<VariableDeclarationAST*>(); }
-#line 1659 "Parser.cpp"
-    break;
-
-  case 60: /* func_args: var_decl  */
-#line 209 "Parser.y"
-                 { (yyval.varvec) = new std::vector<VariableDeclarationAST*>();
-                   (yyval.varvec)->push_back((yyvsp[0].vdeclar)); }
 #line 1666 "Parser.cpp"
     break;
 
+  case 60: /* func_args: var_decl  */
+#line 216 "Parser.y"
+                 { (yyval.varvec) = new std::vector<VariableDeclarationAST*>();
+                   (yyval.varvec)->push_back((yyvsp[0].vdeclar)); }
+#line 1673 "Parser.cpp"
+    break;
+
   case 61: /* func_args: func_args T_COMMA var_decl  */
-#line 211 "Parser.y"
+#line 218 "Parser.y"
                                    { (yyvsp[-2].varvec)->push_back((yyvsp[0].vdeclar)); }
-#line 1672 "Parser.cpp"
+#line 1679 "Parser.cpp"
     break;
 
   case 62: /* if_condition: T_IF T_L_SPAR expr T_R_SPAR block  */
-#line 214 "Parser.y"
+#line 221 "Parser.y"
                                                  {(yyval.cond) = new ConditionAST((yyvsp[-2].expr),(yyvsp[0].block),nullptr);}
-#line 1678 "Parser.cpp"
+#line 1685 "Parser.cpp"
     break;
 
   case 63: /* if_condition: T_IF T_L_SPAR expr T_R_SPAR block T_ELSE block  */
-#line 215 "Parser.y"
+#line 222 "Parser.y"
                                                          {(yyval.cond) = new ConditionAST((yyvsp[-4].expr),(yyvsp[-2].block),(yyvsp[0].block));}
-#line 1684 "Parser.cpp"
+#line 1691 "Parser.cpp"
     break;
 
   case 64: /* for_stmt: T_FOR T_L_SPAR for_args ';' for_args ';' for_args T_R_SPAR block  */
-#line 219 "Parser.y"
+#line 226 "Parser.y"
         {
 		(yyval.forexpr) = new ForExprAST((yyvsp[-6].node),(yyvsp[-4].node),(yyvsp[-2].node),(yyvsp[0].block));
 	}
-#line 1692 "Parser.cpp"
+#line 1699 "Parser.cpp"
     break;
 
   case 65: /* for_args: var_decl  */
-#line 223 "Parser.y"
+#line 230 "Parser.y"
                     {(yyval.node) = (yyvsp[0].vdeclar);}
-#line 1698 "Parser.cpp"
+#line 1705 "Parser.cpp"
     break;
 
   case 66: /* for_args: ident T_ASSIGN expr  */
-#line 224 "Parser.y"
+#line 231 "Parser.y"
                               {(yyval.node) = new VariableAssignmentAST((yyvsp[-2].ident)->identifier,(yyvsp[0].expr));}
-#line 1704 "Parser.cpp"
+#line 1711 "Parser.cpp"
     break;
 
   case 67: /* for_args: expr  */
-#line 225 "Parser.y"
+#line 232 "Parser.y"
                {(yyval.node) = (yyvsp[0].expr);}
-#line 1710 "Parser.cpp"
+#line 1717 "Parser.cpp"
     break;
 
   case 68: /* while_stmt: T_WHILE T_L_SPAR expr T_R_SPAR block  */
-#line 228 "Parser.y"
+#line 235 "Parser.y"
                                                   {(yyval.whilestmt) = new WhileStmtAST((yyvsp[-2].expr),(yyvsp[0].block));}
-#line 1716 "Parser.cpp"
+#line 1723 "Parser.cpp"
     break;
 
   case 69: /* array_init_val: expr  */
-#line 231 "Parser.y"
+#line 238 "Parser.y"
                        {(yyval.arrayvalvec) = new vector<NodeAST*>(); (yyval.arrayvalvec)->push_back((yyvsp[0].expr));}
-#line 1722 "Parser.cpp"
+#line 1729 "Parser.cpp"
     break;
 
   case 70: /* array_init_val: T_L_LPAR array_init_list T_R_LPAR  */
-#line 232 "Parser.y"
+#line 239 "Parser.y"
                                             {(yyval.arrayvalvec) = (yyvsp[-1].arrayvalvec);}
-#line 1728 "Parser.cpp"
+#line 1735 "Parser.cpp"
     break;
 
   case 71: /* array_init_val: T_L_LPAR T_R_LPAR  */
-#line 233 "Parser.y"
+#line 240 "Parser.y"
                             {(yyval.arrayvalvec) = new vector<NodeAST*>();}
-#line 1734 "Parser.cpp"
+#line 1741 "Parser.cpp"
     break;
 
   case 72: /* array_init_list: array_init_list T_COMMA array_init_val  */
-#line 236 "Parser.y"
+#line 243 "Parser.y"
                                                          {(yyval.arrayvalvec) = (yyvsp[-2].arrayvalvec); (yyvsp[-2].arrayvalvec)->insert((yyvsp[-2].arrayvalvec)->end(),(yyvsp[0].arrayvalvec)->begin(),(yyvsp[0].arrayvalvec)->end());}
-#line 1740 "Parser.cpp"
+#line 1747 "Parser.cpp"
     break;
 
   case 73: /* array_init_list: array_init_val  */
-#line 237 "Parser.y"
+#line 244 "Parser.y"
                          {(yyval.arrayvalvec) = (yyvsp[0].arrayvalvec);}
-#line 1746 "Parser.cpp"
+#line 1753 "Parser.cpp"
     break;
 
   case 74: /* str: T_STR  */
-#line 239 "Parser.y"
+#line 246 "Parser.y"
             {(yyval.expr) = new StringExprAST((yyval.string));}
-#line 1752 "Parser.cpp"
+#line 1759 "Parser.cpp"
     break;
 
 
-#line 1756 "Parser.cpp"
+#line 1763 "Parser.cpp"
 
       default: break;
     }
@@ -1946,7 +1953,7 @@ yyreturn:
   return yyresult;
 }
 
-#line 240 "Parser.y"
+#line 249 "Parser.y"
 
 
 BlockAST* program = nullptr;

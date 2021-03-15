@@ -25,7 +25,8 @@ int initWindow(int argc, char **argv, const char *glade_path, const char *window
         window->set_size_request(1000, 800);
         window->init();
         return m_app->run(*window);
-    } catch (BuilderError &e) {
+    }
+    catch (BuilderError &e) {
         LogErrorV(e.what().c_str());
     }
     return -1;
@@ -54,6 +55,7 @@ long writeFile(RefPtr<File> file_ptr, const void *buffer, long sz) {
 void logOnUi(const char *Str) {
     if (window != nullptr) {
         window->log(Str);
+        window->log("\n");
     }
 }
 
@@ -152,8 +154,8 @@ void CompilerWindow::initMenuBar() {
                 // TODO 编译逻辑
                 LogError("building");
                 setStatus(IN_EDIT);
+                m_textview->get_buffer()->begin();
             });
-
         } else {
             setLatestMessage("正在编译，稍后再次尝试编译");
         }
@@ -182,6 +184,7 @@ CompilerWindow::CompilerWindow(BaseObjectType *cobject,
     builder->get_widget("main_build_console", m_main_build_console);
     builder->get_widget("main_static_analysis_console", m_main_static_analysis_console);
     builder->get_widget("main_runtime_console", m_main_runtime_console);
+    builder->get_widget("main_control_expander", m_main_control_expander);
 }
 
 void CompilerWindow::on_menu_file_new_activate() {
@@ -189,11 +192,10 @@ void CompilerWindow::on_menu_file_new_activate() {
 }
 
 void CompilerWindow::onFileOpen() {
-
 }
 
 void CompilerWindow::onFileExit() {
-//    close();
+    //    close();
 }
 
 void CompilerWindow::init() {
@@ -208,11 +210,14 @@ void CompilerWindow::setTitle(const ustring &str) {
 }
 
 void CompilerWindow::setLatestMessage(const ustring &msg) {
-    // TODO
+    m_main_bottom_status_label->set_text(msg);
 }
 
 void CompilerWindow::initCodeForm() {
-    //    m_textview->set_name("codeForm");
+    m_last_edit_time = pt::microsec_clock::local_time();
+    // 默认展开
+    m_main_control_expander->set_expanded(true);
+    // m_textview->set_name("codeForm");
     Gsv::init();
     m_gsv = new Gsv::View();
     m_gsv->set_name("code");
@@ -234,8 +239,7 @@ void CompilerWindow::initCodeForm() {
     auto lan = m_lm->get_language("c");
     m_gsv->get_source_buffer()->set_language(lan);
     m_gsv->get_source_buffer()->set_highlight_syntax(true);
-
-// TODO 增加字体可修改
+    // TODO 增加字体可修改
     try {
         auto style_context = get_style_context();
         style_context->add_class("");
@@ -245,9 +249,34 @@ void CompilerWindow::initCodeForm() {
         auto screen = display->get_default_screen();
         style_context->add_provider(provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
         style_context->add_provider_for_screen(screen, provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
-    } catch (CssProviderError &e) {
+    }
+    catch (CssProviderError &e) {
         LogErrorV(e.what().c_str());
     }
+    // 内容改变
+    m_gsv->get_source_buffer()->signal_changed().connect([&]() {
+        // 清空一次
+        m_main_static_analysis_console->get_buffer()->set_text("");
+        m_is_dirty = true;
+        m_last_edit_time = pt::microsec_clock::local_time();
+    });
+
+    // 静态分析检查线程
+    boost::asio::post(threads, [&]() {
+        while (1) {
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+            if (m_is_dirty) {
+                // 输入完成后，1s再分析
+                auto current_time = pt::microsec_clock::local_time();
+                auto delta_time = current_time - m_last_edit_time;
+                if (delta_time.total_milliseconds() > 1000) {
+                    analysis(new string(m_gsv->get_source_buffer()->begin(), m_gsv->get_source_buffer()->end()));
+                    log("分析完成");
+                    m_is_dirty = false;
+                }
+            }
+        }
+    });
 }
 
 void CompilerWindow::log(const char *string) {
@@ -255,12 +284,17 @@ void CompilerWindow::log(const char *string) {
         case M_STATUS::IN_EDIT:
             m_main_static_analysis_console->get_buffer()
                     ->insert(m_main_static_analysis_console->get_buffer()->end(), string);
-        case M_STATUS::IN_BUILD:
-            m_main_build_console->get_buffer()
-                    ->insert(m_main_build_console->get_buffer()->end(), string);
+            m_main_build_notebook->set_current_page(2);
+            break;
         case M_STATUS::IN_RUNNING:
             m_main_runtime_console->get_buffer()
                     ->insert(m_main_runtime_console->get_buffer()->end(), string);
+            m_main_build_notebook->set_current_page(1);
+            break;
+        case M_STATUS::IN_BUILD:
+            m_main_build_console->get_buffer()
+                    ->insert(m_main_build_console->get_buffer()->end(), string);
+            m_main_build_notebook->set_current_page(0);
             break;
         default:
             break;
@@ -278,10 +312,8 @@ CompilerWindow::M_STATUS CompilerWindow::getMState() const {
     return m_state;
 }
 
-
 CompilerTextView::CompilerTextView() {
 }
 
 CompilerTextView::CompilerTextView(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) {
-
 }

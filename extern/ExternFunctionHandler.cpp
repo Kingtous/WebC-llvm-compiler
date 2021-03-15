@@ -33,13 +33,13 @@ EchoFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string
         }
         format_str.append("\n");
         auto symbol_value = ConstantDataArray::getString(context, format_str);
-        auto symbol_mem = Builder.CreateAlloca(symbol_value->getType());
-        Builder.CreateStore(symbol_value, symbol_mem);
-        auto symbol_pointer = Builder.CreateInBoundsGEP(symbol_mem,
+        auto symbol_mem = Builder->CreateAlloca(symbol_value->getType());
+        Builder->CreateStore(symbol_value, symbol_mem);
+        auto symbol_pointer = Builder->CreateInBoundsGEP(symbol_mem,
                                                         {ConstantInt::get(Type::getInt32Ty(context), 0),
                                                          ConstantInt::get(Type::getInt32Ty(context), 0)});
         argV->insert(argV->begin(), symbol_pointer);
-        return Builder.CreateCall(getOrAddPrintfFunc(context, module), *argV, "echo");
+        return Builder->CreateCall(getOrAddPrintfFunc(context, module), *argV, "echo");
     }
     return NIL;
 }
@@ -64,7 +64,7 @@ int ExternFunctionHandler::getPriority() {
 Value *SleepFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName,
                                        std::vector<Value *> *argV) {
     if (callName == "sleep") {
-        return Builder.CreateCall(getOrAddSleepFunc(context, module), *argV);
+        return Builder->CreateCall(getOrAddSleepFunc(context, module), *argV);
     }
     return NIL;
 }
@@ -79,7 +79,7 @@ Value *
 TimeFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) {
     if (callName == "now") {
         auto func = getOrAddTimeFunc(context, module);
-        return Builder.CreateCall(func);
+        return Builder->CreateCall(func);
     }
     return NIL;
 }
@@ -207,19 +207,19 @@ WebFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string 
     // 处理 {@link module/web/web.h}，注意名字要保持一致
     if (callName == "getSocket" && argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddGetSocketFunc(context, module);
-        return Builder.CreateCall(func);
+        return Builder->CreateCall(func);
     } else if (callName == "connectSocket" && !argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddConnectSocketFunc(context, module);
-        return Builder.CreateCall(func, *argV);
+        return Builder->CreateCall(func, *argV);
     } else if (callName == "closeSocket" && !argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddCloseSocketFunc(context, module);
-        return Builder.CreateCall(func, *argV);
+        return Builder->CreateCall(func, *argV);
     } else if (callName == "getRequest" && !argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddGetRequestFunc(context, module);
-        return Builder.CreateCall(func, *argV);
+        return Builder->CreateCall(func, *argV);
     } else if (callName == "isSocketConnected" && !argV->empty()){
         auto func = ExternFunctionHandler::getOrAddIsSocketConnectedFunc(context,module);
-        return Builder.CreateCall(func,*argV);
+        return Builder->CreateCall(func,*argV);
     }
     return NIL;
 }

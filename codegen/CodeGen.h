@@ -77,6 +77,11 @@ public:
     Function *function;
     BasicBlock *retBB;
     Value *retV;
+    bool is_aborted = false;
+
+    bool isAborted() const;
+
+    void setIsAborted(bool isAborted);
 
     void push_block(BasicBlock *block);
 
@@ -99,6 +104,8 @@ public:
     void setRetV(Value *retV);
 
     void setRetBb(BasicBlock *retBb);
+
+    void reset();
 
     /**
      * 获取顶部符合type的block

@@ -14,8 +14,9 @@
 #include "IFileReader.h"
 #include "FileReader.h"
 #include "Parser.hpp"
+#include "StringReader.h"
 
-#define NEXTCHAR (LastChar=getchar())
+#define NEXTCHAR (last_char=getchar())
 
 class Lexer {
 public:
@@ -26,7 +27,7 @@ public:
 
     /// lexer构造函数：传入代码
     /// params: rawStr 代码全文
-    explicit Lexer(FileReader fileReader) : reader(std::move(fileReader)) {}
+    explicit Lexer(IFileReader *fileReader) : reader(fileReader) {}
 
     /// 获取下一个token
     int getNextToken();
@@ -37,7 +38,9 @@ public:
 
 private:
     /// 当前的Token
-    FileReader reader;
+    IFileReader* reader;
+
+    int last_char = ' ';
 
     int _getNextToken();
 

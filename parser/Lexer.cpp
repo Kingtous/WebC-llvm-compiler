@@ -5,23 +5,22 @@
 #include "Lexer.h"
 
 int Lexer::_getNextToken() {
-    static int LastChar = ' ';
-    while (isspace(LastChar)) {
+    while (isspace(last_char)) {
         NEXTCHAR;
     }
-    if (LastChar == ',') {
+    if (last_char == ',') {
         NEXTCHAR;
         return T_COMMA;
     }
-    if (LastChar == ';') {
+    if (last_char == ';') {
         // 分号直接return
         NEXTCHAR;
         return ';';
     }
-    if (LastChar == '\''){
+    if (last_char == '\''){
         string str = "";
-        while ((LastChar = getchar()) != '\''){
-            str.insert(str.end(),LastChar);
+        while ((last_char = getchar()) != '\''){
+            str.insert(str.end(),last_char);
         }
         // 吃掉'
         NEXTCHAR;
@@ -29,10 +28,10 @@ int Lexer::_getNextToken() {
         return T_STR;
     }
     // 判断是否是标识符
-    if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
-        identifierStr = char(LastChar);
-        while (isalnum((LastChar = getchar())) || LastChar == '_')
-            identifierStr += LastChar;
+    if (isalpha(last_char)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
+        identifierStr = char(last_char);
+        while (isalnum((last_char = getchar())) || last_char == '_')
+            identifierStr += last_char;
 
         if (identifierStr == "if") {
             return T_IF;
@@ -61,42 +60,42 @@ int Lexer::_getNextToken() {
     }
 
     // 是符号
-    if (ispunct(LastChar)) {
+    if (ispunct(last_char)) {
         // 特判
-        if (LastChar == '(') {
+        if (last_char == '(') {
             NEXTCHAR;
             return T_L_SPAR;
-        } else if (LastChar == ')') {
+        } else if (last_char == ')') {
             NEXTCHAR;
             return T_R_SPAR;
-        } else if (LastChar == '[') {
+        } else if (last_char == '[') {
             NEXTCHAR;
             return T_L_MPAR;
-        } else if (LastChar == ']') {
+        } else if (last_char == ']') {
             NEXTCHAR;
             return T_R_MPAR;
-        } else if (LastChar == '{') {
+        } else if (last_char == '{') {
             NEXTCHAR;
             return T_L_LPAR;
-        } else if (LastChar == '}') {
+        } else if (last_char == '}') {
             NEXTCHAR;
             return T_R_LPAR;
-        } else if (LastChar == '+') {
+        } else if (last_char == '+') {
             NEXTCHAR;
             return T_ADD;
-        } else if (LastChar == '-' && isspace(seek())) {
+        } else if (last_char == '-' && isspace(seek())) {
             NEXTCHAR;
             return T_SUB;
-        } else if (LastChar == '*') {
+        } else if (last_char == '*') {
             NEXTCHAR;
             return T_MUL;
-        } else if (LastChar == '/' && seek() != '/') {
+        } else if (last_char == '/' && seek() != '/') {
             NEXTCHAR;
             return T_DIV;
-        } else if (LastChar == '%') {
+        } else if (last_char == '%') {
             NEXTCHAR;
             return T_MOD;
-        } else if (LastChar == '=') {
+        } else if (last_char == '=') {
             if (seek() == '=') {
                 getchar();
                 NEXTCHAR;
@@ -105,7 +104,7 @@ int Lexer::_getNextToken() {
                 NEXTCHAR;
                 return T_ASSIGN;
             }
-        } else if (LastChar == '<') {
+        } else if (last_char == '<') {
             if (seek() == '=') {
                 getchar();
                 NEXTCHAR;
@@ -114,7 +113,7 @@ int Lexer::_getNextToken() {
                 NEXTCHAR;
                 return T_LESS;
             }
-        } else if (LastChar == '>') {
+        } else if (last_char == '>') {
             if (seek() == '=') {
                 getchar();
                 NEXTCHAR;
@@ -123,7 +122,7 @@ int Lexer::_getNextToken() {
                 NEXTCHAR;
                 return T_GREATER;
             }
-        } else if (LastChar == '!') {
+        } else if (last_char == '!') {
             if (seek() == '=') {
                 getchar();
                 NEXTCHAR;
@@ -133,14 +132,14 @@ int Lexer::_getNextToken() {
             return T_REVERSE;
         }
 
-        identifierStr = char(LastChar);
+        identifierStr = char(last_char);
 
 
-        while (ispunct((LastChar = getchar())))
-            identifierStr += LastChar;
+        while (ispunct((last_char = getchar())))
+            identifierStr += last_char;
         // 注释
         if (identifierStr == "//") {
-            while ((LastChar = getchar()) != '\n' && LastChar != EOF);
+            while ((last_char = getchar()) != '\n' && last_char != EOF);
             NEXTCHAR;
             return _getNextToken();
         }
@@ -168,12 +167,12 @@ int Lexer::_getNextToken() {
         return T_IDENTIFIER;
     }
 
-    if (isdigit(LastChar) || LastChar == '.') {   // Number: [0-9.]+
+    if (isdigit(last_char) || last_char == '.') {   // Number: [0-9.]+
         std::string NumStr;
         do {
-            NumStr += LastChar;
+            NumStr += last_char;
             NEXTCHAR;
-        } while (isdigit(LastChar) || LastChar == '.');
+        } while (isdigit(last_char) || last_char == '.');
         if (NumStr.find('.') == string::npos) {
             yylval.int_value = stoi(NumStr);
 #ifdef DEBUG_FLAG
@@ -188,21 +187,21 @@ int Lexer::_getNextToken() {
             return T_DOUBLE;
         }
     }
-    if (LastChar == '#') {
+    if (last_char == '#') {
         // Comment until end of line.
         do
             NEXTCHAR;
-        while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
+        while (last_char != EOF && last_char != '\n' && last_char != '\r');
 
-        if (LastChar != EOF)
+        if (last_char != EOF)
             return getNextToken();
     }
     // Check for end of file.  Don't eat the EOF.
-    if (LastChar == EOF)
+    if (last_char == EOF)
         return 0;
 
     // Otherwise, just return the character as its ascii value.
-    int ThisChar = LastChar;
+    int ThisChar = last_char;
     NEXTCHAR;
     return ThisChar;
 }
@@ -222,19 +221,19 @@ int Lexer::getNextToken() {
 }
 
 char Lexer::getchar() {
-    return reader.getchar();
+    return reader->getchar();
 }
 
 char Lexer::seek() {
-    return reader.seek();
+    return reader->seek();
 }
 
 unsigned int Lexer::getCLineNumber() {
-    return reader.getLineNo() + 1;
+    return reader->getLineNo() + 1;
 }
 
 unsigned int Lexer::getCCol() {
-    return reader.getCCol();
+    return reader->getCCol();
 }
 
 Lexer *TheLexer = nullptr;

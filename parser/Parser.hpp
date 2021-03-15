@@ -112,7 +112,7 @@ using std::vector;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 21 "Parser.y"
+#line 28 "Parser.y"
 
 	NodeAST* node;
 	ExpressionAST* expr;

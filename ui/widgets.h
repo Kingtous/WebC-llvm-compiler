@@ -10,6 +10,11 @@
 #include <gtkmm.h>
 #include <gtksourceviewmm/view.h>
 #include <giomm/simpleactiongroup.h>
+#include <vector>
+#include <boost/thread.hpp>
+#include <boost/asio.hpp>
+#include <boost/chrono.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "compiler/Compiler.h"
 
@@ -18,6 +23,7 @@
 using namespace Gtk;
 using namespace Glib;
 using namespace Gio;
+namespace pt = boost::posix_time;
 
 extern Glib::RefPtr<Gtk::Application> m_app;
 
@@ -41,7 +47,7 @@ int initWindow(int argc,
  * @param content
  * @return
  */
-long writeFile(RefPtr<File> file_ptr,const std::string& content);
+long writeFile(RefPtr<File> file_ptr, const std::string &content);
 
 /**
  *
@@ -50,7 +56,7 @@ long writeFile(RefPtr<File> file_ptr,const std::string& content);
  * @param sz
  * @return
  */
-long writeFile(RefPtr<File> file_ptr,const void* buffer,long sz);
+long writeFile(RefPtr<File> file_ptr, const void *buffer, long sz);
 
 class CompilerWindow : public Gtk::ApplicationWindow {
 public:
@@ -113,16 +119,19 @@ private:
     TextView *m_main_runtime_console;
     TextView *m_main_build_console;
     TextView *m_main_static_analysis_console;
-    ScrolledWindow* m_main_code_window;
-
+    ScrolledWindow *m_main_code_window;
+    Expander* m_main_control_expander;
     // 暂存数据
     RefPtr<Gio::File> m_file;
     // 状态机
     M_STATUS m_state;
     // buffer
-    Gsv::View* m_gsv;
+    Gsv::View *m_gsv;
     RefPtr<Gsv::LanguageManager> m_lm;
-    Pango::FontDescription* m_font_desc;
+    Pango::FontDescription *m_font_desc;
+    boost::asio::thread_pool threads{1};
+    bool m_is_dirty = false;
+    pt::ptime m_last_edit_time;
 };
 
 class CompilerTextView : public Gsv::View {

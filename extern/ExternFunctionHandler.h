@@ -14,6 +14,8 @@
 #define MIN_IMPL 0
 #define MAX_PRI 100
 
+using namespace llvm;
+
 class ExternFunctionHandler {
 private:
 public:

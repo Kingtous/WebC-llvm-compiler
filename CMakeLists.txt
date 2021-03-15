@@ -7,6 +7,11 @@ find_package(LLVM REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+message(STATUS "查找Boost框架")
+find_package(Boost COMPONENTS system filesystem thread chrono REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+link_directories(${Boost_LIBRARY_DIR})
+
 #find_package(PkgConfig REQUIRED)
 #pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 #include_directories(${GTK3_INCLUDE_DIRS})
@@ -97,7 +102,7 @@ message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
 #target_link_libraries(sysyplus_compiler ${llvm_libs})
-target_link_libraries(sysyplus_compiler ${llvm_libs} ${GTKMM_LIBRARIES})
+target_link_libraries(sysyplus_compiler ${llvm_libs} ${GTKMM_LIBRARIES} Boost::thread Boost::chrono)
 
 #message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
 #add_custom_command(TARGET sysyplus_compiler PRE_BUILD

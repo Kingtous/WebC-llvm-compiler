@@ -104,6 +104,24 @@ void CodeGenBlock::setContextType(CodeGenBlockContextType contextType) {
     CodeGenBlock::contextType = contextType;
 }
 
+void CodeGenContext::reset(){
+    if (blocks != nullptr){
+        blocks->clear();
+    }
+    is_aborted = false;
+    function = nullptr;
+    retBB = nullptr;
+    retV = nullptr;
+}
+
+bool CodeGenContext::isAborted() const {
+    return is_aborted;
+}
+
+void CodeGenContext::setIsAborted(bool isAborted) {
+    is_aborted = isAborted;
+}
+
 ForCodeGenBlockContext::ForCodeGenBlockContext(BasicBlock *bbStart, BasicBlock *bbCond, BasicBlock *bbStep,
                                                BasicBlock *bbBody, BasicBlock *bbEndFor) : bbStart(bbStart),
                                                                                            bbCond(bbCond),
