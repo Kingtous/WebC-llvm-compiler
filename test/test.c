@@ -6,7 +6,7 @@ int main(){
     str port = '443';
     echo('url is:',url,' port is:',port);
     int state = connectSocket(socketId,url,port);
-    state = isSocketConnected(socketId);
+    state = isSockeFtConnected(socketId);
     if (state == 0){
         echo('socket connected');
         echo('sending get request');

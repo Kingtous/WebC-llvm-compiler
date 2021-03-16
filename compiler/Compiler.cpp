@@ -132,6 +132,11 @@ void reset() {
 
 int build(std::string *buf, const char* outputPath,const std::set<ArgsParser::Options>& opts) {
     if (analysis(buf) == ROK) {
+        // 初始化外层函数
+        ExternFunctionLinker::registerHandler(new EchoFunctionHandler());
+        ExternFunctionLinker::registerHandler(new SleepFunctionHandler());
+        ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
+        ExternFunctionLinker::registerHandler(new WebFunctionHandler());
         if (program->codegen() != nullptr){
             if (genCode(opts,outputPath) == ROK){
                 return ROK;

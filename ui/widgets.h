@@ -9,6 +9,9 @@
 
 #include <gtkmm.h>
 #include <gtksourceviewmm/view.h>
+#include <gtksourceviewmm/completionprovider.h>
+#include <gtksourceviewmm/completionwords.h>
+#include <gtksourceviewmm/styleschememanager.h>
 #include <giomm/simpleactiongroup.h>
 #include <vector>
 #include <boost/thread.hpp>
@@ -138,13 +141,15 @@ private:
     bool m_is_dirty = false;
     pt::ptime m_last_edit_time;
     Glib::Mutex* log_mutex;
+    RefPtr<TextBuffer> m_tip_buffer;
+    RefPtr<Gsv::CompletionWords> m_completion_words;
+    RefPtr<Gsv::StyleSchemeManager> m_style_scheme_manager;
 };
 
-class CompilerTextView : public Gsv::View {
+class KingtousCompletionProvider : public Gsv::CompletionProvider {
 public:
-    CompilerTextView();
-
-    CompilerTextView(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder);
+private:
+    bool match_vfunc(const RefPtr<const Gsv::CompletionContext> &context) const override;
 };
 
 #endif //SYSYPLUS_COMPILER_WIDGETS_H

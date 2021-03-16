@@ -3,6 +3,14 @@
 <interface>
   <requires lib="gtk+" version="3.20"/>
   <requires lib="gtksourceview" version="4.0"/>
+  <object class="GtkTextBuffer" id="code_suggestion_buffer">
+    <property name="text" translatable="yes">
+        sleep time
+        int long str ret lp wh const nil if el echo()
+        getSocket connectSocket closeSocket
+        isSocketConnected getRequest
+    </property>
+  </object>
   <object class="GtkFileFilter" id="file-filer"/>
   <object class="GtkFileChooserDialog" id="main_file_chooser">
     <property name="can-focus">False</property>
@@ -52,31 +60,6 @@
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <property name="baseline-position">top</property>
-        <child>
-          <object class="GtkBox" id="main_bottom_status_bar">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <child>
-              <object class="GtkLabel" id="main_bottom_status_label">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="margin-left">4</property>
-                <property name="label" translatable="yes">欢迎来到SysyCompiler By Kingtous.</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack-type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
         <child>
           <object class="GtkMenuBar" id="main_menu_bar">
             <property name="visible">True</property>
@@ -208,6 +191,30 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="main_bottom_status_bar">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <child>
+              <object class="GtkLabel" id="main_bottom_status_label">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-left">4</property>
+                <property name="label" translatable="yes">欢迎来到SysyCompiler By Kingtous.</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -220,7 +227,6 @@
               <object class="GtkScrolledWindow" id="main_code_window">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="shadow-type">in</property>
                 <property name="shadow-type">in</property>
               </object>
               <packing>

@@ -201,6 +201,7 @@ CompilerWindow::CompilerWindow(BaseObjectType *cobject,
     builder->get_widget("main_static_analysis_console", m_main_static_analysis_console);
     builder->get_widget("main_runtime_console", m_main_runtime_console);
     builder->get_widget("main_control_expander", m_main_control_expander);
+    m_tip_buffer = RefPtr<TextBuffer>::cast_dynamic(builder->get_object("code_suggestion_buffer"));
 }
 
 void CompilerWindow::on_menu_file_new_activate() {
@@ -244,6 +245,9 @@ void CompilerWindow::initCodeForm() {
     m_gsv->set_visible(true);
     m_gsv->set_hexpand(true);
     m_gsv->set_vexpand(true);
+    m_completion_words = Gsv::CompletionWords::create("代码提示",RefPtr<Gdk::Pixbuf>());
+    m_completion_words->register_provider(m_tip_buffer);
+    m_gsv->get_completion()->add_provider(m_completion_words);
     // 展示函数
     m_gsv->set_show_line_numbers(true);
     // 高亮
@@ -256,6 +260,11 @@ void CompilerWindow::initCodeForm() {
     auto lan = m_lm->get_language("c");
     m_gsv->get_source_buffer()->set_language(lan);
     m_gsv->get_source_buffer()->set_highlight_syntax(true);
+    m_style_scheme_manager = Gsv::StyleSchemeManager::get_default();
+    // TO
+    auto schemes =m_style_scheme_manager->get_scheme_ids();
+    auto scheme = m_style_scheme_manager->get_scheme("tango");
+    m_gsv->get_source_buffer()->set_style_scheme(scheme);
     // TODO 增加字体可修改
     try {
         auto style_context = get_style_context();
@@ -331,9 +340,6 @@ void CompilerWindow::log(const char *str, const M_STATUS &state) {
     });
 }
 
-CompilerWindow::CompilerWindow() {
-}
-
 void CompilerWindow::setStatus(M_STATUS status) {
     this->m_state = status;
 }
@@ -342,8 +348,6 @@ CompilerWindow::M_STATUS CompilerWindow::getMState() const {
     return m_state;
 }
 
-CompilerTextView::CompilerTextView() {
-}
-
-CompilerTextView::CompilerTextView(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) {
+bool KingtousCompletionProvider::match_vfunc(const RefPtr<const Gsv::CompletionContext> &context) const {
+    // TODO 代码提示
 }

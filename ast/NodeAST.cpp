@@ -629,6 +629,10 @@ llvm::Value *VariableDeclarationAST::codegen() {
                                           GlobalVariable::LinkageTypes::ExternalLinkage,
                                           Constant::getNullValue(getTypeFromStr(type)), identifier->identifier);
             if (expr != nullptr) {
+                auto v = expr->codegen();
+                if (IS_COMPILE_ABORTED){
+                    return NIL;
+                }
                 auto val = dyn_cast<Constant>(expr->codegen());
                 gv->setInitializer(val);
             }
@@ -641,6 +645,9 @@ llvm::Value *VariableDeclarationAST::codegen() {
 //            auto mem = Builder->CreateAlloca(getTypeFromStr(type),)
             if (expr != nullptr) {
                 auto v = expr->codegen();
+                if (IS_COMPILE_ABORTED){
+                    return NIL;
+                }
                 if (v->getType()->isIntegerTy() && v->getType() != getTypeFromStr(type)) {
                     // 不同，尝试进行修剪
                     v = Builder->CreateZExtOrTrunc(v, getTypeFromStr(type));
