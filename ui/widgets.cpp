@@ -157,6 +157,7 @@ void CompilerWindow::initMenuBar() {
         }
         if (getMState() == IN_EDIT) {
             setStatus(IN_BUILD);
+            m_main_build_console->get_buffer()->set_text("");
             boost::asio::post(threads, [&]() {
                 m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
                 log("正在编译中\n", M_STATUS::IN_BUILD);
