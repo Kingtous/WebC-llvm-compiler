@@ -106,6 +106,11 @@ public:
 
     void setStatus(M_STATUS status);
 
+    /**
+     * 编译
+     */
+    void buildSrc(const set<ArgsParser::Options>& opts,const ustring& code,const ustring& output_path);
+
     M_STATUS getMState() const;
 
 private:
@@ -118,6 +123,7 @@ private:
     ImageMenuItem *m_menu_help_about;
     ImageMenuItem *m_menu_build_compile;
     ImageMenuItem *m_menu_build_run;
+    ImageMenuItem *m_menu_build_compile_asm;
     TextView *m_textview;
     AboutDialog *m_main_about;
     FileChooserDialog *m_main_filechooserdialog;

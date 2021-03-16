@@ -148,34 +148,40 @@ void CompilerWindow::initMenuBar() {
         });
         dialog->show();
     });
-    // 构建
+    // 构建为目标文件
     m_menu_build_compile->signal_activate().connect([&]() {
         if (m_file.get() == nullptr) {
             // 先调用保存
             m_menu_file_save->activate();
             return;
         }
-        if (getMState() == IN_EDIT) {
-            setStatus(IN_BUILD);
-            m_main_build_console->get_buffer()->set_text("");
-            boost::asio::post(threads, [&]() {
-                m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
-                log("正在编译中\n", M_STATUS::IN_BUILD);
-                auto code_buffer = std::string(m_textview->get_buffer()->begin(), m_textview->get_buffer()->end());
-                auto default_output_path = m_file->get_path() + ".o";
-                std::set<ArgsParser::Options> s;
-                s.insert(ArgsParser::Options::OUTPUT_EXECUTABLE);
-                int res = build(&code_buffer, default_output_path.c_str(), s);
-                if (res == ROK) {
-                    log("编译完成\n", M_STATUS::IN_BUILD);
-                } else {
-                    log("编译失败\n", M_STATUS::IN_BUILD);
-                }
-                setStatus(IN_EDIT);
-            });
-        } else {
-            setLatestMessage("正在编译，稍后再次尝试编译");
+        // ADD
+    });
+    // 构建为目标文件
+    m_menu_build_compile->signal_activate().connect([&]() {
+        if (m_file.get() == nullptr) {
+            // 先调用保存
+            m_menu_file_save->activate();
+            return;
         }
+        std::set<ArgsParser::Options> s;
+        s.insert(ArgsParser::Options::OUTPUT_EXECUTABLE);
+        auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
+        auto path = m_file->get_path() + ".o";
+        buildSrc(s, code_buffer, path);
+    });
+    // 构建为目标文件
+    m_menu_build_compile_asm->signal_activate().connect([&]() {
+        if (m_file.get() == nullptr) {
+            // 先调用保存
+            m_menu_file_save->activate();
+            return;
+        }
+        std::set<ArgsParser::Options> s;
+        s.insert(ArgsParser::Options::OUTPUT_LLVMAS_FILE);
+        auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
+        auto path = m_file->get_path() + ".asm";
+        buildSrc(s, code_buffer, path);
     });
 }
 
@@ -204,6 +210,7 @@ CompilerWindow::CompilerWindow(BaseObjectType *cobject,
     builder->get_widget("main_runtime_console", m_main_runtime_console);
     builder->get_widget("main_control_expander", m_main_control_expander);
     builder->get_widget("main_code_pos_label", m_main_code_pos_label);
+    builder->get_widget("menu_build_compile_asm", m_menu_build_compile_asm);
     m_tip_buffer = RefPtr<TextBuffer>::cast_dynamic(builder->get_object("code_suggestion_buffer"));
 }
 
@@ -356,6 +363,28 @@ void CompilerWindow::setStatus(M_STATUS status) {
 
 CompilerWindow::M_STATUS CompilerWindow::getMState() const {
     return m_state;
+}
+
+void CompilerWindow::buildSrc(const set<ArgsParser::Options> &opts, const ustring &code, const ustring &output_path) {
+    if (getMState() == IN_EDIT) {
+        setStatus(IN_BUILD);
+        m_main_build_console->get_buffer()->set_text("");
+        boost::asio::post(threads, [&, code, output_path, opts]() {
+            m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
+            log("正在编译中\n", M_STATUS::IN_BUILD);
+            auto code_str = new std::string(code);
+            auto default_output_path = m_file->get_path() + ".o";
+            int res = build(code_str, output_path.c_str(), opts);
+            if (res == ROK) {
+                log("编译完成\n", M_STATUS::IN_BUILD);
+            } else {
+                log("编译失败\n", M_STATUS::IN_BUILD);
+            }
+            setStatus(IN_EDIT);
+        });
+    } else {
+        setLatestMessage("正在编译，稍后再次尝试编译");
+    }
 }
 
 bool KingtousCompletionProvider::match_vfunc(const RefPtr<const Gsv::CompletionContext> &context) const {

@@ -142,7 +142,17 @@
                     <property name="can-focus">False</property>
                     <child>
                       <object class="GtkImageMenuItem" id="menu_build_compile">
-                        <property name="label">编译</property>
+                        <property name="label">编译为目标文件(object)</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="image">image1</property>
+                        <property name="use-stock">False</property>
+                        <property name="always-show-image">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="menu_build_compile_asm">
+                        <property name="label">编译为汇编代码(asm)</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="image">image1</property>
