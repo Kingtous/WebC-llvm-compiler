@@ -1,4 +1,3 @@
-code {
-    font-family: Monospace;
-    font-size: 18pt;
+#code {
+    font: 15px "Monospace";
 }

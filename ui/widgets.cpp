@@ -181,6 +181,7 @@ void CompilerWindow::initMenuBar() {
 CompilerWindow::CompilerWindow(BaseObjectType *cobject,
                                const Glib::RefPtr<Gtk::Builder> &builder)
         : Gtk::ApplicationWindow(cobject) {
+    g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", TRUE, NULL);
     builder->get_widget("main_code_window", m_main_code_window);
     // 关于
     builder->get_widget("main_about", m_main_about);
@@ -201,6 +202,7 @@ CompilerWindow::CompilerWindow(BaseObjectType *cobject,
     builder->get_widget("main_static_analysis_console", m_main_static_analysis_console);
     builder->get_widget("main_runtime_console", m_main_runtime_console);
     builder->get_widget("main_control_expander", m_main_control_expander);
+    builder->get_widget("main_code_pos_label", m_main_code_pos_label);
     m_tip_buffer = RefPtr<TextBuffer>::cast_dynamic(builder->get_object("code_suggestion_buffer"));
 }
 
@@ -216,6 +218,8 @@ void CompilerWindow::onFileExit() {
 }
 
 void CompilerWindow::init() {
+    // 设置为居中
+    set_position(Gtk::WindowPosition::WIN_POS_CENTER);
     log_mutex = new Glib::Mutex();
     this->m_state = CompilerWindow::IN_EDIT;
     set_show_menubar(true);
@@ -245,7 +249,7 @@ void CompilerWindow::initCodeForm() {
     m_gsv->set_visible(true);
     m_gsv->set_hexpand(true);
     m_gsv->set_vexpand(true);
-    m_completion_words = Gsv::CompletionWords::create("代码提示",RefPtr<Gdk::Pixbuf>());
+    m_completion_words = Gsv::CompletionWords::create("代码提示", RefPtr<Gdk::Pixbuf>());
     m_completion_words->register_provider(m_tip_buffer);
     m_gsv->get_completion()->add_provider(m_completion_words);
     // 展示函数
@@ -261,20 +265,17 @@ void CompilerWindow::initCodeForm() {
     m_gsv->get_source_buffer()->set_language(lan);
     m_gsv->get_source_buffer()->set_highlight_syntax(true);
     m_style_scheme_manager = Gsv::StyleSchemeManager::get_default();
-    // TO
-    auto schemes =m_style_scheme_manager->get_scheme_ids();
-    auto scheme = m_style_scheme_manager->get_scheme("tango");
+    // style
+    auto scheme = m_style_scheme_manager->get_scheme("oblivion");
     m_gsv->get_source_buffer()->set_style_scheme(scheme);
     // TODO 增加字体可修改
     try {
-        auto style_context = get_style_context();
-        style_context->add_class("");
+        auto style_context = m_gsv->get_style_context();
         auto provider = Gtk::CssProvider::create();
         provider->load_from_path("../ui/css/main.css");
         auto display = Gdk::Display::get_default();
         auto screen = display->get_default_screen();
-        style_context->add_provider(provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
-        style_context->add_provider_for_screen(screen, provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
+        style_context->add_provider(provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
     catch (CssProviderError &e) {
         LogErrorV(e.what().c_str());
@@ -287,6 +288,14 @@ void CompilerWindow::initCodeForm() {
         m_is_dirty = true;
         m_last_edit_time = pt::microsec_clock::local_time();
     });
+    m_gsv->get_source_buffer()->property_cursor_position().signal_changed().connect(
+            [&]() {
+                auto buffer = m_gsv->get_source_buffer();
+                auto v = buffer->property_cursor_position().get_value();
+                auto iter = buffer->get_iter_at_offset(v);
+                string msg = to_string(iter.get_line() + 1) + "行" + to_string(iter.get_line_index()) + "列";
+                m_main_code_pos_label->set_text(msg);
+            });
 
     // 静态分析检查线程
     boost::asio::post(threads, [&]() {

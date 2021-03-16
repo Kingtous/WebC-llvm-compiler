@@ -122,6 +122,7 @@ private:
     AboutDialog *m_main_about;
     FileChooserDialog *m_main_filechooserdialog;
     Label *m_main_bottom_status_label;
+    Label *m_main_code_pos_label;
     Notebook *m_main_build_notebook;
     TextView *m_main_runtime_console;
     TextView *m_main_build_console;

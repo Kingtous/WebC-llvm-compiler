@@ -7,8 +7,8 @@
     <property name="text" translatable="yes">
         sleep time
         int long str ret lp wh const nil if el echo()
-        getSocket connectSocket closeSocket
-        isSocketConnected getRequest
+        getSocket() connectSocket(socketId,'url','port') closeSocket(socketId)
+        isSocketConnected(socketId) getRequest(socketId,'url','path')
     </property>
   </object>
   <object class="GtkFileFilter" id="file-filer"/>
@@ -209,6 +209,18 @@
                 <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="main_code_pos_label">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-end">8</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
