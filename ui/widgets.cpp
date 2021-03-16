@@ -314,27 +314,28 @@ void CompilerWindow::initCodeForm() {
         m_is_dirty = true;
         m_last_edit_time = pt::microsec_clock::local_time();
     });
-    m_gsv->get_source_buffer()->property_cursor_position().signal_changed().connect(
-            [&]() {
-                auto buffer = m_gsv->get_source_buffer();
-                auto v = buffer->property_cursor_position().get_value();
-                auto iter = buffer->get_iter_at_offset(v);
-                string msg = to_string(iter.get_line() + 1) + "行" + to_string(iter.get_line_index()) + "列";
-                m_main_code_pos_label->set_text(msg);
-            });
+        m_gsv->get_source_buffer()->property_cursor_position().signal_changed().connect(
+        [&]() {
+        auto buffer = m_gsv->get_source_buffer();
+        auto v = buffer->property_cursor_position().get_value();
+        auto iter = buffer->get_iter_at_offset(v);
+        string msg = to_string(iter.get_line() + 1) + "行" + to_string(iter.get_line_index()) + "列";
+        m_main_code_pos_label->set_text(msg);
+        });
 
-    // 静态分析检查线程
-    boost::asio::post(threads, [&]() {
+        // 静态分析检查线程
+        auto current_state = m_state;
+        boost::asio::post(threads,[&, current_state]() {
         while (1) {
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
-            if (m_is_dirty) {
-                // 输入完成后，1s再分析
-                auto current_time = pt::microsec_clock::local_time();
-                auto delta_time = current_time - m_last_edit_time;
-                if (delta_time.total_milliseconds() > 1000 && m_state == M_STATUS::IN_EDIT) {
-                    signal_idle().connect_once([&]() {
-                        m_main_build_notebook->set_current_page(STATIC_ANALYSIS_PAGE_ID);
-                    });
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+        if (m_is_dirty) {
+        // 输入完成后，1s再分析
+        auto current_time = pt::microsec_clock::local_time();
+        auto delta_time = current_time - m_last_edit_time;
+        if (delta_time.total_milliseconds() > 1000 && current_state == M_STATUS::IN_EDIT) {
+        signal_idle().connect_once([&]() {
+        m_main_build_notebook->set_current_page(STATIC_ANALYSIS_PAGE_ID);
+        });
                     analysis(new string(m_gsv->get_source_buffer()->begin(), m_gsv->get_source_buffer()->end()));
                     log("分析完成\n");
                     m_is_dirty = false;
