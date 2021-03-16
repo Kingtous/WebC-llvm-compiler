@@ -303,7 +303,8 @@ void CompilerWindow::initCodeForm() {
 void CompilerWindow::log(const char *str, const M_STATUS &state) {
     // 保存调用时log的state
     auto log_state = m_state;
-    signal_idle().connect_once([&, str, state, log_state]() {
+    auto utf8_message = Glib::locale_to_utf8(string(str));
+    signal_idle().connect_once([&, utf8_message, state, log_state]() {
         // 加个大锁，在UI线程执行
         log_mutex->lock();
         auto tmp_state = state;
@@ -313,15 +314,15 @@ void CompilerWindow::log(const char *str, const M_STATUS &state) {
         switch (tmp_state) {
             case M_STATUS::IN_EDIT:
                 m_main_static_analysis_console->get_buffer()
-                        ->insert(m_main_static_analysis_console->get_buffer()->end(), str);
+                        ->insert(m_main_static_analysis_console->get_buffer()->end(), utf8_message);
                 break;
             case M_STATUS::IN_RUNNING:
                 m_main_runtime_console->get_buffer()
-                        ->insert(m_main_runtime_console->get_buffer()->end(), str);
+                        ->insert(m_main_runtime_console->get_buffer()->end(), utf8_message);
                 break;
             case M_STATUS::IN_BUILD:
                 m_main_build_console->get_buffer()
-                        ->insert(m_main_build_console->get_buffer()->end(), str);
+                        ->insert(m_main_build_console->get_buffer()->end(), utf8_message);
                 break;
             default:
                 break;
