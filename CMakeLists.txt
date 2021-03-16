@@ -7,6 +7,11 @@ find_package(LLVM REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+find_package(LLD REQUIRED CONFIG)
+message(STATUS "find lld ${LLD_INCLUDE_DIRS}")
+include_directories(${LLD_INCLUDE_DIRS})
+add_definitions(${LLD_DEFINITIONS})
+
 message(STATUS "查找Boost框架")
 find_package(Boost COMPONENTS system filesystem thread chrono REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})

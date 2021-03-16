@@ -170,7 +170,7 @@ void CompilerWindow::initMenuBar() {
         auto path = m_file->get_path() + ".o";
         buildSrc(s, code_buffer, path);
     });
-    // 构建为目标文件
+    // 构建为汇编文件
     m_menu_build_compile_asm->signal_activate().connect([&]() {
         if (m_file.get() == nullptr) {
             // 先调用保存
@@ -182,6 +182,24 @@ void CompilerWindow::initMenuBar() {
         auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
         auto path = m_file->get_path() + ".asm";
         buildSrc(s, code_buffer, path);
+    });
+    // 执行文件
+    m_menu_build_run->signal_activate().connect([&]() {
+        if (m_file.get() == nullptr) {
+            // 先调用保存
+            m_menu_file_save->activate();
+            return;
+        }
+        // 编译
+        std::set<ArgsParser::Options> s;
+        s.insert(ArgsParser::Options::OUTPUT_EXECUTABLE);
+        auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
+        auto path = m_file->get_path() + ".o";
+        // 生成exe
+        buildSrc(s, code_buffer, path, [](CompilerWindow *window) {
+            // 成功回调
+            window->log("假装成功运行");
+        });
     });
 }
 
@@ -365,11 +383,14 @@ CompilerWindow::M_STATUS CompilerWindow::getMState() const {
     return m_state;
 }
 
-void CompilerWindow::buildSrc(const set<ArgsParser::Options> &opts, const ustring &code, const ustring &output_path) {
+int CompilerWindow::buildSrc(const set<ArgsParser::Options> &opts,
+                             const ustring &code,
+                             const ustring &output_path, void (*onSuccess)(CompilerWindow *)) {
+    auto window_pointer = this;
     if (getMState() == IN_EDIT) {
         setStatus(IN_BUILD);
         m_main_build_console->get_buffer()->set_text("");
-        boost::asio::post(threads, [&, code, output_path, opts]() {
+        boost::asio::post(threads, [&, code, output_path, opts, window_pointer, onSuccess]() {
             m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
             log("正在编译中\n", M_STATUS::IN_BUILD);
             auto code_str = new std::string(code);
@@ -377,14 +398,19 @@ void CompilerWindow::buildSrc(const set<ArgsParser::Options> &opts, const ustrin
             int res = build(code_str, output_path.c_str(), opts);
             if (res == ROK) {
                 log("编译完成\n", M_STATUS::IN_BUILD);
+                if (onSuccess != nullptr) {
+                    onSuccess(window_pointer);
+                }
             } else {
                 log("编译失败\n", M_STATUS::IN_BUILD);
             }
             setStatus(IN_EDIT);
+            return res;
         });
     } else {
         setLatestMessage("正在编译，稍后再次尝试编译");
     }
+    return false;
 }
 
 bool KingtousCompletionProvider::match_vfunc(const RefPtr<const Gsv::CompletionContext> &context) const {

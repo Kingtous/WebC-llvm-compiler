@@ -102,14 +102,15 @@ public:
 
     void setLatestMessage(const ustring &msg);
 
-    void log(const char *string,const M_STATUS& state = M_STATUS::IN_NONE);
+    void log(const char *string, const M_STATUS &state = M_STATUS::IN_NONE);
 
     void setStatus(M_STATUS status);
 
     /**
      * 编译
      */
-    void buildSrc(const set<ArgsParser::Options>& opts,const ustring& code,const ustring& output_path);
+    int buildSrc(const set<ArgsParser::Options> &opts,
+                 const ustring &code, const ustring &output_path, void (*onSuccess)(CompilerWindow*) = nullptr);
 
     M_STATUS getMState() const;
 
@@ -134,7 +135,7 @@ private:
     TextView *m_main_build_console;
     TextView *m_main_static_analysis_console;
     ScrolledWindow *m_main_code_window;
-    Expander* m_main_control_expander;
+    Expander *m_main_control_expander;
     // 暂存数据
     RefPtr<Gio::File> m_file;
     // 状态机
@@ -147,7 +148,7 @@ private:
     boost::asio::thread_pool threads{2};
     bool m_is_dirty = false;
     pt::ptime m_last_edit_time;
-    Glib::Mutex* log_mutex;
+    Glib::Mutex *log_mutex;
     RefPtr<TextBuffer> m_tip_buffer;
     RefPtr<Gsv::CompletionWords> m_completion_words;
     RefPtr<Gsv::StyleSchemeManager> m_style_scheme_manager;
