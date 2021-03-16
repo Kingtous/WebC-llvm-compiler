@@ -305,7 +305,7 @@ void CompilerWindow::initCodeForm() {
                 // 输入完成后，1s再分析
                 auto current_time = pt::microsec_clock::local_time();
                 auto delta_time = current_time - m_last_edit_time;
-                if (delta_time.total_milliseconds() > 1000) {
+                if (delta_time.total_milliseconds() > 1000 && m_state == M_STATUS::IN_EDIT) {
                     signal_idle().connect_once([&]() {
                         m_main_build_notebook->set_current_page(STATIC_ANALYSIS_PAGE_ID);
                     });

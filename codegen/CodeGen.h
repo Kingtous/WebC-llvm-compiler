@@ -79,7 +79,7 @@ public:
     Value *retV;
     bool is_aborted = false;
 
-    bool isAborted() const;
+    [[nodiscard]] bool isAborted() const;
 
     void setIsAborted(bool isAborted);
 

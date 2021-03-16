@@ -108,7 +108,7 @@ void CodeGenContext::reset(){
     if (blocks != nullptr){
         blocks->clear();
     }
-    is_aborted = false;
+    setIsAborted(false);
     function = nullptr;
     retBB = nullptr;
     retV = nullptr;

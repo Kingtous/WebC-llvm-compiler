@@ -4,7 +4,17 @@
 
 #include "Compiler.h"
 
+#include "codegen/CodeGen.h"
+
 Lexer *m_lexer;
+
+void initExternFunc() {
+    // 初始化外层函数
+    ExternFunctionLinker::registerHandler(new EchoFunctionHandler());
+    ExternFunctionLinker::registerHandler(new SleepFunctionHandler());
+    ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
+    ExternFunctionLinker::registerHandler(new WebFunctionHandler());
+}
 
 int startAnalyze(ArgsParser *parser) {
     // 初始化外层函数
@@ -34,7 +44,7 @@ int startAnalyze(ArgsParser *parser) {
     return RERR;
 }
 
-int genCode(const set<ArgsParser::Options>& opts, const char *outputPath) {
+int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     // 生成目标代码，目前只初始化x86
     LLVMInitializeX86TargetInfo();
     LLVMInitializeX86Target();
@@ -94,7 +104,16 @@ int genCode(const set<ArgsParser::Options>& opts, const char *outputPath) {
         return 1;
     }
     pass.run(*TheModule);
+
+#ifdef CGUI
+    std::string ir_buf;
+    raw_string_ostream rfostream(ir_buf);
+    TheModule->print(rfostream, NIL);
+    rfostream.flush();
+    LogInfo(ir_buf.c_str());
+#else
     TheModule->print(outs(), NIL);
+#endif
     dest.flush();
 
     LogInfo("已生成目标文件(.o/.dll)：");
@@ -110,6 +129,7 @@ int analysis(std::string *buf) {
     TheLexer = m_lexer;
     int res = yyparse();
     if (!res) {
+        initExternFunc();
         auto v = program->codegen();
         if (v == nullptr) {
             res = 1; //正数失败
@@ -128,21 +148,13 @@ void reset() {
     TheContext = std::make_unique<llvm::LLVMContext>();
     Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
     TheModule = std::make_unique<llvm::Module>(APPNAME, *TheContext);
+    TheCodeGenContext->reset();
 }
 
-int build(std::string *buf, const char* outputPath,const std::set<ArgsParser::Options>& opts) {
+int build(std::string *buf, const char *outputPath, const std::set<ArgsParser::Options> &opts) {
     if (analysis(buf) == ROK) {
-        // 初始化外层函数
-        ExternFunctionLinker::registerHandler(new EchoFunctionHandler());
-        ExternFunctionLinker::registerHandler(new SleepFunctionHandler());
-        ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
-        ExternFunctionLinker::registerHandler(new WebFunctionHandler());
-        if (program->codegen() != nullptr){
-            if (genCode(opts,outputPath) == ROK){
-                return ROK;
-            } else {
-                return RERR;
-            }
+        if (genCode(opts, outputPath) == ROK) {
+            return ROK;
         } else {
             return RERR;
         }
