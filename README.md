@@ -3,6 +3,8 @@
 使用LLVM框架的SysyPlus语言编译器
 ---
 
+仓库地址：[Github Repo](https://github.com/Kingtous/Sysy2020-llvm-compiler)
+
 当前编译状态：![build status](https://github.com/Kingtous/Sysy2020-llvm-compiler/actions/workflows/cmake.yml/badge.svg)
 
 LLVM框架语言：LLVM 12.0.0
@@ -27,7 +29,7 @@ SysyPlus编译器致力于打造一个简单语法的http服务器，上手即�
 
 以用程序自带访问一次HTTP为例
 
-![](http://img.kingtous.cn/431d63d9-23b7-465e-ac0c-8308b8aaa917.png)
+![](/imgs/ide.png)
 
 - IDE GUI可直接进行代码静态分析（变量不存在，函数重复定义等）
 - IDE GUI拥有丰富的代码提示功能
