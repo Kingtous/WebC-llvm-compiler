@@ -130,7 +130,7 @@ public:
 
     _web_HttpServer &operator=(_web_HttpServer const &) = delete;
 
-    _web_HttpServer(tcp::acceptor &acceptor, const string &basePath);
+//    _web_HttpServer(tcp::acceptor &acceptor, const string &basePath);
 
     /**
      * 接收下一个客户
@@ -142,46 +142,16 @@ private:
 //    using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
     using request_body_t = http::string_body;
     std::string base_path;
-    tcp::socket socket{acceptor.get_executor()};
+    tcp::socket socket;
     boost::optional<http::request_parser<http::string_body>> parser;
     beast::flat_static_buffer<8192> buffer;
-    boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline{
-            acceptor.get_executor(), (std::chrono::steady_clock::time_point::max) ()};
+//    boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline{
+//            acceptor.get_executor(), (std::chrono::steady_clock::time_point::max) ()};
 
     void process_request(http::request<request_body_t> const &request);
 };
 
 
-boost::beast::string_view mime_type(boost::beast::string_view path) {
-    using boost::beast::iequals;
-    auto const ext = [&path] {
-        auto const pos = path.rfind(".");
-        if (pos == boost::beast::string_view::npos)
-            return boost::beast::string_view{};
-        return path.substr(pos);
-    }();
-    if (iequals(ext, ".htm")) return "text/html";
-    if (iequals(ext, ".html")) return "text/html";
-    if (iequals(ext, ".php")) return "text/html";
-    if (iequals(ext, ".css")) return "text/css";
-    if (iequals(ext, ".txt")) return "text/plain";
-    if (iequals(ext, ".js")) return "application/javascript";
-    if (iequals(ext, ".json")) return "application/json";
-    if (iequals(ext, ".xml")) return "application/xml";
-    if (iequals(ext, ".swf")) return "application/x-shockwave-flash";
-    if (iequals(ext, ".flv")) return "video/x-flv";
-    if (iequals(ext, ".png")) return "image/png";
-    if (iequals(ext, ".jpe")) return "image/jpeg";
-    if (iequals(ext, ".jpeg")) return "image/jpeg";
-    if (iequals(ext, ".jpg")) return "image/jpeg";
-    if (iequals(ext, ".gif")) return "image/gif";
-    if (iequals(ext, ".bmp")) return "image/bmp";
-    if (iequals(ext, ".ico")) return "image/vnd.microsoft.icon";
-    if (iequals(ext, ".tiff")) return "image/tiff";
-    if (iequals(ext, ".tif")) return "image/tiff";
-    if (iequals(ext, ".svg")) return "image/svg+xml";
-    if (iequals(ext, ".svgz")) return "image/svg+xml";
-    return "application/text";
-}
+boost::beast::string_view mime_type(boost::beast::string_view path);
 
 #endif //SYSYPLUS_COMPILER_WEB_HPP
