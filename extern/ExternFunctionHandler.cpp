@@ -202,6 +202,19 @@ Function *ExternFunctionHandler::getOrAddGetRequestFunc(LLVMContext &context, Mo
     return func;
 }
 
+Function *ExternFunctionHandler::getOrAddPostRequestFunc(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_callPostRequest");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt32Ty(context),
+                                                                                    Type::getInt8Ty(context)->getPointerTo(),
+                                                                                    Type::getInt8Ty(context)->getPointerTo(),
+                                                                                    Type::getInt8Ty(context)->getPointerTo()}, false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_callPostRequest", module);
+    return func;
+}
+
 Value *
 WebFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) {
     // 处理 {@link module/web/web.h}，注意名字要保持一致
@@ -220,6 +233,9 @@ WebFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string 
     } else if (callName == "isSocketConnected" && !argV->empty()){
         auto func = ExternFunctionHandler::getOrAddIsSocketConnectedFunc(context,module);
         return Builder->CreateCall(func,*argV);
+    } else if (callName == "postRequest" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddPostRequestFunc(context, module);
+        return Builder->CreateCall(func, *argV);
     }
     return NIL;
 }

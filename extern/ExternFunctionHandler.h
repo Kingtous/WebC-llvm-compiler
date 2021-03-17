@@ -55,6 +55,7 @@ public:
 
     static Function *getOrAddGetRequestFunc(LLVMContext &context, Module &module);
 
+    static Function *getOrAddPostRequestFunc(LLVMContext &context, Module &module);
 };
 
 

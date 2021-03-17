@@ -70,12 +70,22 @@ int _web_isSocketConnected(int socketId);
 
 /**
  * 通过GET请求发送HTTP数据
- * @param host
+ * @param hosts
  * @param socketId
  * @param path eg: /index
  * @return
  */
 const char *_web_callGetRequest(int socketId, char *host, char *path);
+
+/**
+* 通过POST请求发送HTTP数据
+* @param socketId
+* @param host
+* @param path
+* @param body
+* @return
+*/
+const char *_web_callPostRequest(int socketId, char *host, char *path, char* body);
 
 /**
  * 获取一个本地HTTP服务器的ID

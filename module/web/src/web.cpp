@@ -91,6 +91,29 @@ const char *_web_callGetRequest(int sId, char *host, char *path) {
     return str;
 }
 
+const char *_web_callPostRequest(int socketId, char *host, char *path, char *body) {
+    auto socketIt = _web_tcp_socket_map.find(socketId);
+    if (socketIt == _web_tcp_socket_map.end()) {
+        return nullptr;
+    }
+    int length = strlen(body);
+    std::stringstream ss;
+    ss<<"Content-Length: "<<length<<"\r\n";
+    ss<<"Content-Type:application/x-www-form-urlencoded\r\n";
+    ss<<body;
+    http::request<http::string_body> request{http::verb::post, path, _web_http_version, ss.str()};
+    request.set(http::field::host, host);
+    request.set(http::field::user_agent, _web_agent);
+//    http::write_header
+    http::write(*socketIt->second,request);
+    boost::beast::flat_buffer buffer;
+    http::response<http::string_body> res;
+    http::read(*socketIt->second,buffer,res);
+    auto string = res.body().c_str();
+    char* str = new char [res.body().size()]{'\0'};
+    memcpy(str,string,res.body().size());
+    return str;
+}
 /// 服务器部分
 
 namespace asio = boost::asio;
