@@ -16,6 +16,8 @@ RefPtr<Glib::IOChannel> io_err_channel;
 RefPtr<Glib::IOChannel> io_output_channel;
 RefPtr<Glib::IOChannel> io_intput_channel;
 
+sigc::connection gcc_compiler_callback;
+
 int initWindow(int argc, char **argv, const char *glade_path, const char *window_name = WINDOW_NAME) {
     m_app = Gtk::Application::create(argc, argv, window_name, Gio::APPLICATION_FLAGS_NONE);
     try {
@@ -202,55 +204,58 @@ void CompilerWindow::initMenuBar() {
         // 生成exe
         buildSrc(s, code_buffer, path, [](CompilerWindow *window) {
 //            window->m_main_build_notebook->set_current_page(RUNTIME_PAGE_ID);
-            // 成功回调,g++链接
+            // 成功回调,g++链接，切换至UI线程
             Glib::signal_idle().connect_once([=]() {
                 auto obj_name = window->m_file->get_path() + ".o";
                 auto exe_name = window->m_file->get_path() + ".exe";
                 const vector<string> argv = {"/usr/bin/g++", obj_name, "../cmake-build-debug/module/web/libweb.a",
-                                             "../cmake-build-debug/module/time/libtime.o", "-o", exe_name};
-                GPid outputId;
-                GPid inputId;
-                GPid errId;
-                GPid pid;
+                                             "../cmake-build-debug/module/time/libtime.a", "-o", exe_name};
+                std::string output;
+                std::string error;
                 try {
-                    Glib::spawn_async_with_pipes("", argv, SPAWN_DEFAULT, SlotSpawnChildSetup(),
-                                                 &pid, &inputId, &outputId, &errId);
-                    Glib::signal_child_watch().connect([=](GPid pid, int status) {
-                        if (status != 0) {
-                            // g++编译出错了
-                            auto uis = Gio::UnixInputStream::create(errId, true);
-                            uis->close();
-                        } else {
+                    Glib::spawn_sync("", argv, SPAWN_DEFAULT, SlotSpawnChildSetup(), &output, &error);
+                    if (!error.empty()) {
+                        window->log(error.c_str(), M_STATUS::IN_BUILD);
+                    }
+                    {
+                        auto f = Gio::File::create_for_path(exe_name);
+                        if (f->query_exists()) {
                             // 运行
                             window->m_main_build_notebook->set_current_page(RUNTIME_PAGE_ID);
-                            const vector<string> argv = {exe_name};
-                            int pid, inputId, outputId, errId;
-                            Glib::spawn_async_with_pipes("", argv, SPAWN_DEFAULT, SlotSpawnChildSetup(),
-                                                         &pid, &inputId, &outputId, &errId);
+                            const vector<string> exe_argv = {exe_name};
+                            int rpid, rinputId, routputId, rerrId;
+                            Glib::spawn_async_with_pipes("", exe_argv, SPAWN_DEFAULT, SlotSpawnChildSetup(),
+                                                         &rpid, &rinputId, &routputId, &rerrId);
                             // 在窗口的线程池执行
-                            boost::asio::post(window->threads,[=](){
-                                try{
-                                    auto uis = Gio::UnixInputStream::create(outputId, true);
+                            window->setStatus(M_STATUS::IN_RUNNING);
+                            boost::asio::post(window->threads, [=]() {
+                                try {
+                                    auto uis = Gio::UnixInputStream::create(routputId, true);
                                     auto buf = new char[INIT_IOBUF];
                                     int read = uis->read(buf, INIT_IOBUF);
                                     while (true) {
-                                        if (read != 0){
-                                            window->log(buf,M_STATUS::IN_RUNNING);
+                                        if (read != 0) {
+                                            window->log(buf, M_STATUS::IN_RUNNING);
                                         }
-                                        memset(buf,0,INIT_IOBUF);
+                                        if (read == 0 && uis->get_close_fd()) {
+                                            break;
+                                        }
+                                        memset(buf, 0, INIT_IOBUF);
                                         read = uis->read(buf, INIT_IOBUF);
                                         // 休眠500ms
                                         boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
                                     }
                                     uis->close();
-                                } catch (Glib::Error& e) {
+                                } catch (Glib::Error &e) {
                                     window->log(e.what().c_str());
                                 }
+                                window->log("运行已完成", M_STATUS::IN_RUNNING);
                                 window->setStatus(M_STATUS::IN_EDIT);
                             });
                         }
-                    }, pid);
+                    }
                 } catch (SpawnError &e) {
+                    fprintf(stderr, "%s", e.what().c_str());
                     window->log(e.what().c_str());
                 }
             });
@@ -432,7 +437,25 @@ void CompilerWindow::log(const char *str, const M_STATUS &state) {
 }
 
 void CompilerWindow::setStatus(M_STATUS status) {
-    this->m_state = status;
+    signal_idle().connect_once([=]() {
+        this->m_state = status;
+        switch (status) {
+            case IN_RUNNING:
+                this->setLatestMessage("running");
+                break;
+            case IN_EDIT:
+                this->setLatestMessage("editing");
+                break;
+            case IN_NONE:
+                this->setLatestMessage("nothing to do");
+                break;
+            case IN_BUILD:
+                this->setLatestMessage("building");
+                break;
+            default:
+                setLatestMessage("unknown status");
+        };
+    });
 }
 
 CompilerWindow::M_STATUS CompilerWindow::getMState() const {
@@ -446,8 +469,8 @@ int CompilerWindow::buildSrc(const set<ArgsParser::Options> &opts,
     if (getMState() == IN_EDIT) {
         setStatus(IN_BUILD);
         m_main_build_console->get_buffer()->set_text("");
+        m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
         boost::asio::post(threads, [&, code, output_path, opts, window_pointer, onSuccess]() {
-            m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
             log("正在编译中\n", M_STATUS::IN_BUILD);
             auto code_str = new std::string(code);
             auto default_output_path = m_file->get_path() + ".o";
