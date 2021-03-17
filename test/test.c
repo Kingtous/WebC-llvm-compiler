@@ -17,3 +17,10 @@ int main(){
     closeSocket(socketId);
     ret 0;
 }
+
+/**
+ * 获取path对应的mime type
+ * @param path
+ * @return mime type
+ */
+boost::beast::string_view mime_type(boost::beast::string_view path);

@@ -95,7 +95,7 @@ const char *_web_callGetRequest(int sId, char *host, char *path) {
 
 namespace asio = boost::asio;
 
-//asio::io_context server_context{1};
+asio::io_context server_context{1};
 
 int _web_getServerId(const char *addr, int port) {
     _web_init();
@@ -105,7 +105,7 @@ int _web_getServerId(const char *addr, int port) {
     return ROK;
 }
 
-int _web_addUrlHandler(int sId, const char *path, const char *(*handler)()) {
+int _web_addUrlHandler(int sId, const char *method, const char *path, const char *(*handler)()) {
     // TODO
     return ROK;
 }
@@ -113,4 +113,29 @@ int _web_addUrlHandler(int sId, const char *path, const char *(*handler)()) {
 int _web_startServe(int sId) {
     // TODO
     return ROK;
+}
+
+_web_HttpServer::_web_HttpServer(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
+                                                                                    base_path(basePath) {
+
+}
+
+void _web_HttpServer::process_request(http::request<request_body_t> const & request){
+
+}
+
+void _web_HttpServer::accept() {
+    parser.emplace();
+    http::async_read(
+            socket,
+            buffer,
+            *parser,
+            [this](beast::error_code ec) {
+                if (ec){
+                    accept();
+                } else {
+                    process_request();
+                }
+            }
+    )
 }

@@ -24,6 +24,7 @@
 using namespace std;
 using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;
+namespace beast = boost::beast;
 
 extern boost::asio::io_context *_web_io_context;
 extern tcp::resolver *_web_resolver;
@@ -82,16 +83,16 @@ const char *_web_callGetRequest(int socketId, char *host, char *path);
  * @param port 端口号
  * @return server id
  */
-int _web_getServerId(const char* addr,int port);
+int _web_getServerId(const char *addr, int port);
 
 /**
- *
  * @param sId server id
  * @param path URL path，如：/index
+ * @param method 方法
  * @param handler 函数指针，用于返回一个const char*内容
  * @return 状态
  */
-int _web_addUrlHandler(int sId, const char *path, const char *handler());
+int _web_addUrlHandler(int sId, const char *method, const char *path, const char *handler());
 
 /**
  * 开启服务器，程序进入阻塞状态
@@ -99,6 +100,78 @@ int _web_addUrlHandler(int sId, const char *path, const char *handler());
  * @return 状态
  */
 int _web_startServe(int sId);
+}
+
+typedef const char *HandlerFunction();
+
+/**
+ * handler结构
+ */
+typedef struct web_http_handler {
+    int sId;
+    const char *method;
+    const char *path;
+    HandlerFunction function;
+} web_http_handler;
+
+class _web_HttpServer {
+public:
+    _web_HttpServer(_web_HttpServer const &) = delete;
+
+    _web_HttpServer &operator=(_web_HttpServer const &) = delete;
+
+    _web_HttpServer(tcp::acceptor &acceptor, const string &basePath);
+
+    /**
+     * 接收下一个客户
+     */
+    void accept();
+
+private:
+    tcp::acceptor &acceptor;
+//    using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
+    using request_body_t = http::string_body;
+    std::string base_path;
+    tcp::socket socket{acceptor.get_executor()};
+    boost::optional<http::request_parser<http::string_body>> parser;
+    beast::flat_static_buffer<8192> buffer;
+    boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline{
+            acceptor.get_executor(), (std::chrono::steady_clock::time_point::max) ()};
+
+    void process_request(http::request<request_body_t> const &request);
+};
+
+
+boost::beast::string_view mime_type(boost::beast::string_view path) {
+    using boost::beast::iequals;
+    auto const ext = [&path] {
+        auto const pos = path.rfind(".");
+        if (pos == boost::beast::string_view::npos)
+            return boost::beast::string_view{};
+        return path.substr(pos);
+    }();
+    if (iequals(ext, ".htm")) return "text/html";
+    if (iequals(ext, ".html")) return "text/html";
+    if (iequals(ext, ".php")) return "text/html";
+    if (iequals(ext, ".css")) return "text/css";
+    if (iequals(ext, ".txt")) return "text/plain";
+    if (iequals(ext, ".js")) return "application/javascript";
+    if (iequals(ext, ".json")) return "application/json";
+    if (iequals(ext, ".xml")) return "application/xml";
+    if (iequals(ext, ".swf")) return "application/x-shockwave-flash";
+    if (iequals(ext, ".flv")) return "video/x-flv";
+    if (iequals(ext, ".png")) return "image/png";
+    if (iequals(ext, ".jpe")) return "image/jpeg";
+    if (iequals(ext, ".jpeg")) return "image/jpeg";
+    if (iequals(ext, ".jpg")) return "image/jpeg";
+    if (iequals(ext, ".gif")) return "image/gif";
+    if (iequals(ext, ".bmp")) return "image/bmp";
+    if (iequals(ext, ".ico")) return "image/vnd.microsoft.icon";
+    if (iequals(ext, ".tiff")) return "image/tiff";
+    if (iequals(ext, ".tif")) return "image/tiff";
+    if (iequals(ext, ".svg")) return "image/svg+xml";
+    if (iequals(ext, ".svgz")) return "image/svg+xml";
+    return "application/text";
 }
 
 #endif //SYSYPLUS_COMPILER_WEB_HPP
