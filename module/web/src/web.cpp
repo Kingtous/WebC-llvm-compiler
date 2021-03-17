@@ -58,7 +58,7 @@ int _web_closeSocket(int sId) {
         return SOCKET_NOT_EXISTS;
     }
     boost::system::error_code ec;
-    socketIt->second->shutdown(tcp::socket::shutdown_both,ec);
+    socketIt->second->shutdown(tcp::socket::shutdown_both, ec);
     return ROK;
 }
 
@@ -86,7 +86,31 @@ const char *_web_callGetRequest(int sId, char *host, char *path) {
     // Receive the HTTP response
     http::read(*socketIt->second, buffer, res);
     auto string = res.body().c_str();
-    char* str = new char[res.body().size()]{'\0'};
-    memcpy(str,string,res.body().size());
+    char *str = new char[res.body().size()]{'\0'};
+    memcpy(str, string, res.body().size());
     return str;
+}
+
+/// 服务器部分
+
+namespace asio = boost::asio;
+
+//asio::io_context server_context{1};
+
+int _web_getServerId(const char *addr, int port) {
+    _web_init();
+    auto address = boost::asio::ip::make_address(addr);
+    // TODO
+//    asio::
+    return ROK;
+}
+
+int _web_addUrlHandler(int sId, const char *path, const char *(*handler)()) {
+    // TODO
+    return ROK;
+}
+
+int _web_startServe(int sId) {
+    // TODO
+    return ROK;
 }

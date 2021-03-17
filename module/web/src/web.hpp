@@ -10,11 +10,15 @@
 #include <boost/beast.hpp>
 #include <boost/asio.hpp>
 
+/// 客户端状态码
 #define NOT_INITIALIZED -1
 #define RESOLVE_FAILED -2
 #define CONNECT_FAILED -3
 #define SOCKET_NOT_EXISTS -3
 #define NOT_CONNECTED -4
+/// 服务器状态码
+#define PORT_IS_IN_USE -5
+/// 通用状态码
 #define ROK 0
 
 using namespace std;
@@ -71,7 +75,30 @@ int _web_isSocketConnected(int socketId);
  * @return
  */
 const char *_web_callGetRequest(int socketId, char *host, char *path);
-}
 
+/**
+ * 获取一个本地HTTP服务器的ID
+ * @param addr 地址
+ * @param port 端口号
+ * @return server id
+ */
+int _web_getServerId(const char* addr,int port);
+
+/**
+ *
+ * @param sId server id
+ * @param path URL path，如：/index
+ * @param handler 函数指针，用于返回一个const char*内容
+ * @return 状态
+ */
+int _web_addUrlHandler(int sId, const char *path, const char *handler());
+
+/**
+ * 开启服务器，程序进入阻塞状态
+ * @param sId server id
+ * @return 状态
+ */
+int _web_startServe(int sId);
+}
 
 #endif //SYSYPLUS_COMPILER_WEB_HPP
