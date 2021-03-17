@@ -13,6 +13,8 @@
 #include <gtksourceviewmm/completionwords.h>
 #include <gtksourceviewmm/styleschememanager.h>
 #include <giomm/simpleactiongroup.h>
+#include <giomm/unixoutputstream.h>
+#include <giomm/unixinputstream.h>
 #include <vector>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
@@ -110,9 +112,11 @@ public:
      * 编译
      */
     int buildSrc(const set<ArgsParser::Options> &opts,
-                 const ustring &code, const ustring &output_path, void (*onSuccess)(CompilerWindow*) = nullptr);
+                 const ustring &code, const ustring &output_path, void (*onSuccess)(CompilerWindow *) = nullptr);
 
     M_STATUS getMState() const;
+
+    ~CompilerWindow() noexcept override;
 
 private:
     RefPtr<SimpleActionGroup> file_action_group;
@@ -144,8 +148,8 @@ private:
     Gsv::View *m_gsv;
     RefPtr<Gsv::LanguageManager> m_lm;
     Pango::FontDescription *m_font_desc;
-    // 1个守护线程，1个编译线程
-    boost::asio::thread_pool threads{2};
+    // 1个守护线程，1个编译线程，一个运行监测线程
+    boost::asio::thread_pool threads{3};
     bool m_is_dirty = false;
     pt::ptime m_last_edit_time;
     Glib::Mutex *log_mutex;

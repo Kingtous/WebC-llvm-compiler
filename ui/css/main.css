@@ -1,3 +1,7 @@
-#code {
-    font: 15px "Monospace";
+/*#code {*/
+/*    font: 15px "Monospace";*/
+/*}*/
+
+* {
+    font-size: 1.25em;
 }

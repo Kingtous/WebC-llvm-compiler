@@ -12,6 +12,10 @@ Glib::RefPtr<Gtk::Application> m_app;
 RefPtr<Gtk::Builder> builder;
 CompilerWindow *window = nullptr;
 
+RefPtr<Glib::IOChannel> io_err_channel;
+RefPtr<Glib::IOChannel> io_output_channel;
+RefPtr<Glib::IOChannel> io_intput_channel;
+
 int initWindow(int argc, char **argv, const char *glade_path, const char *window_name = WINDOW_NAME) {
     m_app = Gtk::Application::create(argc, argv, window_name, Gio::APPLICATION_FLAGS_NONE);
     try {
@@ -197,8 +201,59 @@ void CompilerWindow::initMenuBar() {
         auto path = m_file->get_path() + ".o";
         // 生成exe
         buildSrc(s, code_buffer, path, [](CompilerWindow *window) {
-            // 成功回调
-            window->log("假装成功运行");
+//            window->m_main_build_notebook->set_current_page(RUNTIME_PAGE_ID);
+            // 成功回调,g++链接
+            Glib::signal_idle().connect_once([=]() {
+                auto obj_name = window->m_file->get_path() + ".o";
+                auto exe_name = window->m_file->get_path() + ".exe";
+                const vector<string> argv = {"/usr/bin/g++", obj_name, "../cmake-build-debug/module/web/libweb.a",
+                                             "../cmake-build-debug/module/time/libtime.o", "-o", exe_name};
+                GPid outputId;
+                GPid inputId;
+                GPid errId;
+                GPid pid;
+                try {
+                    Glib::spawn_async_with_pipes("", argv, SPAWN_DEFAULT, SlotSpawnChildSetup(),
+                                                 &pid, &inputId, &outputId, &errId);
+                    Glib::signal_child_watch().connect([=](GPid pid, int status) {
+                        if (status != 0) {
+                            // g++编译出错了
+                            auto uis = Gio::UnixInputStream::create(errId, true);
+                            uis->close();
+                        } else {
+                            // 运行
+                            window->m_main_build_notebook->set_current_page(RUNTIME_PAGE_ID);
+                            const vector<string> argv = {exe_name};
+                            int pid, inputId, outputId, errId;
+                            Glib::spawn_async_with_pipes("", argv, SPAWN_DEFAULT, SlotSpawnChildSetup(),
+                                                         &pid, &inputId, &outputId, &errId);
+                            // 在窗口的线程池执行
+                            boost::asio::post(window->threads,[=](){
+                                try{
+                                    auto uis = Gio::UnixInputStream::create(outputId, true);
+                                    auto buf = new char[INIT_IOBUF];
+                                    int read = uis->read(buf, INIT_IOBUF);
+                                    while (true) {
+                                        if (read != 0){
+                                            window->log(buf,M_STATUS::IN_RUNNING);
+                                        }
+                                        memset(buf,0,INIT_IOBUF);
+                                        read = uis->read(buf, INIT_IOBUF);
+                                        // 休眠500ms
+                                        boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
+                                    }
+                                    uis->close();
+                                } catch (Glib::Error& e) {
+                                    window->log(e.what().c_str());
+                                }
+                                window->setStatus(M_STATUS::IN_EDIT);
+                            });
+                        }
+                    }, pid);
+                } catch (SpawnError &e) {
+                    window->log(e.what().c_str());
+                }
+            });
         });
     });
 }
@@ -296,7 +351,7 @@ void CompilerWindow::initCodeForm() {
     m_gsv->get_source_buffer()->set_style_scheme(scheme);
     // TODO 增加字体可修改
     try {
-        auto style_context = m_gsv->get_style_context();
+        auto style_context = get_style_context();
         auto provider = Gtk::CssProvider::create();
         provider->load_from_path("../ui/css/main.css");
         auto display = Gdk::Display::get_default();
@@ -412,6 +467,10 @@ int CompilerWindow::buildSrc(const set<ArgsParser::Options> &opts,
         setLatestMessage("正在编译，稍后再次尝试编译");
     }
     return false;
+}
+
+CompilerWindow::~CompilerWindow() noexcept {
+
 }
 
 bool KingtousCompletionProvider::match_vfunc(const RefPtr<const Gsv::CompletionContext> &context) const {
