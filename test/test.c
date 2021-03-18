@@ -1,35 +1,19 @@
-str example_func(int a){
-    return 'this is server response string';
+str hi() {
+    str a = 'hello from kingtous compiler';
+    ret a;
 }
 
-void call_func(func<str,int> f){
-    str resp = f(5);
-    echo('resp is',resp);
-}
-
-int main(){
-    echo('init web framework', '123', '345');
-    int socketId = getSocket();
-    echo('socket id is',socketId);
-    str url = 'file.kingtous.cn';
-    str port = '443';
-    echo('url is:',url,' port is:',port);
-    int state = connectSocket(socketId,url,port);
-    state = isSocketConnected(socketId);
-    if (state == 0){
-        echo('socket connected');
-        echo('sending get request');
-        str response = getRequest(socketId,url,'/');
-        echo('response is:');
-        echo(response);
-    }
-    closeSocket(socketId);
+int main() {
+    echo('init...');
+    echo(hi());
+    str host = '127.0.0.1';
+    int port = 9000;
+    int core = 2;
+    echo('get server...');
+    int server_id = getServer(host, port, core);
+    echo('server id is', server_id);
+    addUrlHandler(server_id, 'POST', '/compiler', hi);
+    echo('start server in host', host, ',port is', port);
+    startServer(server_id);
     ret 0;
 }
-
-/**
- * 获取path对应的mime type
- * @param path
- * @return mime type
- */
-boost::beast::string_view mime_type(boost::beast::string_view path);

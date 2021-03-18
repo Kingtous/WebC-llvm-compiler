@@ -33,6 +33,7 @@ namespace beast = boost::beast;
 extern boost::asio::io_context *_web_io_context;
 extern tcp::resolver *_web_resolver;
 extern map<int, tcp::socket *> _web_tcp_socket_map;
+extern boost::asio::io_context* _server_context;
 
 // Keep 函数名，方便Linking
 extern "C" {
@@ -114,7 +115,7 @@ int _web_addUrlHandler(int sId, const char *method, const char *path, const char
  * @param sId server id
  * @return 状态
  */
-int _web_startServe(int sId, int core);
+int _web_startServe(int sId);
 }
 
 typedef const char *HandlerFunction();

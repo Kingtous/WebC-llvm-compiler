@@ -8,7 +8,8 @@
         sleep time
         int long str ret lp wh const nil if el echo()
         getSocket() connectSocket(socketId,'url','port') closeSocket(socketId)
-        isSocketConnected(socketId) getRequest(socketId,'url','path')
+        isSocketConnected(socketId) getRequest(socketId,'url','path') postRequest
+        addUrlHandler startServer getServer
     </property>
   </object>
   <object class="GtkFileFilter" id="file-filer"/>

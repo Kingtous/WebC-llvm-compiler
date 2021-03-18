@@ -5,6 +5,7 @@
 #include "web.hpp"
 
 boost::asio::io_context *_web_io_context = nullptr;
+boost::asio::io_context *_server_context = nullptr;
 tcp::resolver *_web_resolver = nullptr;
 map<int, tcp::socket *> _web_tcp_socket_map;
 map<int, std::vector<_web_HttpWorker *>> _web_http_server_map;
@@ -124,15 +125,15 @@ const char *_web_callPostRequest(int socketId, char *host, char *path, char *bod
 
 namespace asio = boost::asio;
 
-asio::io_context server_context{1};
-
 int _web_getServerId(const char *addr, int port, int core) {
-    _web_init();
+    if (_server_context == nullptr){
+        _server_context = new boost::asio::io_context();
+    }
     auto address = boost::asio::ip::make_address(addr);
-    auto acceptor = new tcp::acceptor{server_context, {address, static_cast<unsigned short>(port)}};
+    auto acceptor = new tcp::acceptor{*_server_context, {address, static_cast<unsigned short>(port)}};
     char *path = new char[BUFSIZ];
     getcwd(path, BUFSIZ);
-    auto servers = new std::vector<_web_HttpWorker *>(core);
+    auto servers = new std::vector<_web_HttpWorker *>;
     while (core--) {
         auto server = new _web_HttpWorker(*acceptor, std::string(path));
         servers->push_back(server);
@@ -170,7 +171,7 @@ int _web_startServe(int sId) {
         (*worker)->start();
         worker++;
     }
-    server_context.run();
+    _server_context->run();
     return ROK;
 }
 
@@ -271,7 +272,7 @@ void _web_HttpWorker::sendNotExistResponse() {
     str_resp->keep_alive(false);
     str_resp->set(http::field::server, SERVER_NAME);
     str_resp->set(http::field::content_type, "application/json");
-    str_resp->body() = "您可能访问了一个错误的地址|URL requested not mapped.";
+    str_resp->body() = "您可能访问了一个错误的地址 | URL requested not mapped.";
     // 计算相应长度
     str_resp->prepare_payload();
     str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);

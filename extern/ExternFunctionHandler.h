@@ -56,6 +56,12 @@ public:
     static Function *getOrAddGetRequestFunc(LLVMContext &context, Module &module);
 
     static Function *getOrAddPostRequestFunc(LLVMContext &context, Module &module);
+
+    static Function *getOrAddGetServerFunc(LLVMContext &context, Module &module);
+
+    static Function *getOrAddUrlHandler(LLVMContext &context, Module &module);
+
+    static Function *getOrAddStartServer(LLVMContext &context, Module &module);
 };
 
 

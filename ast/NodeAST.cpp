@@ -228,7 +228,7 @@ llvm::Value *CallExprAST::codegen() {
         Value *av = args[i]->codegen();
         if (av == NIL) {
             ABORT_COMPILE;
-            return LogErrorV(("函数形参解析失败：" + av->getName()).str().c_str());
+            return LogErrorV(("函数形参解析失败：" + args[i]->toString()).c_str());
         }
         argsV.push_back(av);
     }
@@ -508,9 +508,9 @@ llvm::Function *FunctionAST::codegen() {
             LogError(("function '" + Proto->getName() + "' not valid\n").c_str());
             errs() << "function ll codes:\n";
             function->print(errs());
+            ABORT_COMPILE;
             goto clean;
         } else {
-            ABORT_COMPILE;
             cleanCodeGenContext();
         }
         return function;
@@ -705,10 +705,14 @@ llvm::Value *IdentifierExprAST::codegen() {
     auto gv = TheModule->getNamedGlobal(identifier);
     if (gv) {
         return Builder->CreateLoad(gv);
-    } else {
-        ABORT_COMPILE;
-        return LogErrorV((identifier + " is not defined!!!").c_str());
     }
+    // 可能是函数指针
+    auto func = TheModule->getFunction(identifier);
+    if (func != NIL){
+        return func;
+    }
+    ABORT_COMPILE;
+    return LogErrorV((identifier + " is not defined!!!").c_str());
 }
 
 IdentifierExprAST::IdentifierExprAST() {

@@ -36,8 +36,8 @@ EchoFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string
         auto symbol_mem = Builder->CreateAlloca(symbol_value->getType());
         Builder->CreateStore(symbol_value, symbol_mem);
         auto symbol_pointer = Builder->CreateInBoundsGEP(symbol_mem,
-                                                        {ConstantInt::get(Type::getInt32Ty(context), 0),
-                                                         ConstantInt::get(Type::getInt32Ty(context), 0)});
+                                                         {ConstantInt::get(Type::getInt32Ty(context), 0),
+                                                          ConstantInt::get(Type::getInt32Ty(context), 0)});
         argV->insert(argV->begin(), symbol_pointer);
         return Builder->CreateCall(getOrAddPrintfFunc(context, module), *argV, "echo");
     }
@@ -196,8 +196,11 @@ Function *ExternFunctionHandler::getOrAddGetRequestFunc(LLVMContext &context, Mo
         return func;
     }
     FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt32Ty(context),
-                                                                     Type::getInt8Ty(context)->getPointerTo(),
-                                                                     Type::getInt8Ty(context)->getPointerTo()}, false);
+                                                                                    Type::getInt8Ty(
+                                                                                            context)->getPointerTo(),
+                                                                                    Type::getInt8Ty(
+                                                                                            context)->getPointerTo()},
+                                         false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_callGetRequest", module);
     return func;
 }
@@ -208,10 +211,54 @@ Function *ExternFunctionHandler::getOrAddPostRequestFunc(LLVMContext &context, M
         return func;
     }
     FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt32Ty(context),
-                                                                                    Type::getInt8Ty(context)->getPointerTo(),
-                                                                                    Type::getInt8Ty(context)->getPointerTo(),
-                                                                                    Type::getInt8Ty(context)->getPointerTo()}, false);
+                                                                                    Type::getInt8Ty(
+                                                                                            context)->getPointerTo(),
+                                                                                    Type::getInt8Ty(
+                                                                                            context)->getPointerTo(),
+                                                                                    Type::getInt8Ty(
+                                                                                            context)->getPointerTo()},
+                                         false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_callPostRequest", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddGetServerFunc(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_getServerId");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context),
+                                         {Type::getInt8PtrTy(context),
+                                          Type::getInt32Ty(context),
+                                          Type::getInt32Ty(context)}, false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_getServerId", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddUrlHandler(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_addUrlHandler");
+    if (func != NIL) {
+        return func;
+    }
+    auto func_param_type = FunctionType::get(Type::getInt8PtrTy(context),false);
+
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context),
+                                         {Type::getInt32Ty(context),
+                                          Type::getInt8Ty(context)->getPointerTo(),
+                                          Type::getInt8Ty(context)->getPointerTo(),
+                                          func_param_type->getPointerTo()}, false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_addUrlHandler", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddStartServer(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_web_startServe");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context),
+                                         Type::getInt32Ty(context), false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_startServe", module);
     return func;
 }
 
@@ -230,11 +277,20 @@ WebFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string 
     } else if (callName == "getRequest" && !argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddGetRequestFunc(context, module);
         return Builder->CreateCall(func, *argV);
-    } else if (callName == "isSocketConnected" && !argV->empty()){
-        auto func = ExternFunctionHandler::getOrAddIsSocketConnectedFunc(context,module);
-        return Builder->CreateCall(func,*argV);
+    } else if (callName == "isSocketConnected" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddIsSocketConnectedFunc(context, module);
+        return Builder->CreateCall(func, *argV);
     } else if (callName == "postRequest" && !argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddPostRequestFunc(context, module);
+        return Builder->CreateCall(func, *argV);
+    } else if (callName == "getServer" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddGetServerFunc(context, module);
+        return Builder->CreateCall(func, *argV);
+    } else if (callName == "addUrlHandler" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddUrlHandler(context, module);
+        return Builder->CreateCall(func, *argV);
+    } else if (callName == "startServer" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddStartServer(context, module);
         return Builder->CreateCall(func, *argV);
     }
     return NIL;
