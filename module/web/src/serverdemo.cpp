@@ -15,7 +15,7 @@ const char *say_hi() {
 
 void startServer() {
     int id = _web_getServerId("127.0.0.1",9000,2);
-    _web_addUrlHandler(id,"POST","/compiler",say_hi);
+    _web_addUrlHandler(id, "POST", "/compiler", "text/html", say_hi);
     _web_startServe(id);
 }
 
