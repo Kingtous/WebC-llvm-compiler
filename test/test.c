@@ -1,3 +1,7 @@
+str example_func(){
+    return 'this is server response string';
+}
+
 int main(){
     echo('init web framework', '123', '345');
     int socketId = getSocket();

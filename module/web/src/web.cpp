@@ -98,20 +98,20 @@ const char *_web_callPostRequest(int socketId, char *host, char *path, char *bod
     }
     int length = strlen(body);
     std::stringstream ss;
-    ss<<"Content-Length: "<<length<<"\r\n";
-    ss<<"Content-Type:application/x-www-form-urlencoded\r\n";
-    ss<<body;
+    ss << "Content-Length: " << length << "\r\n";
+    ss << "Content-Type:application/x-www-form-urlencoded\r\n";
+    ss << body;
     http::request<http::string_body> request{http::verb::post, path, _web_http_version, ss.str()};
     request.set(http::field::host, host);
     request.set(http::field::user_agent, _web_agent);
 //    http::write_header
-    http::write(*socketIt->second,request);
+    http::write(*socketIt->second, request);
     boost::beast::flat_buffer buffer;
     http::response<http::string_body> res;
-    http::read(*socketIt->second,buffer,res);
+    http::read(*socketIt->second, buffer, res);
     auto string = res.body().c_str();
-    char* str = new char [res.body().size()]{'\0'};
-    memcpy(str,string,res.body().size());
+    char *str = new char[res.body().size()]{'\0'};
+    memcpy(str, string, res.body().size());
     return str;
 }
 /// 服务器部分
@@ -138,29 +138,79 @@ int _web_startServe(int sId) {
     return ROK;
 }
 
-//_web_HttpServer::_web_HttpServer(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
-//                                                                                    base_path(basePath) {
-//
-//}
-
-void _web_HttpServer::process_request(http::request<request_body_t> const &request) {
+_web_HttpServer::_web_HttpServer(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
+                                                                                    base_path(basePath) {
 
 }
 
+void _web_HttpServer::process_request(http::request<request_body_t> const &request) {
+    str_resp = std::make_unique<http::response<http::string_body>>();
+    str_resp->result(200);
+    str_resp->keep_alive(false);
+    str_resp->set(http::field::server, "Beast");
+    str_resp->set(http::field::content_type, "text/plain");
+    str_resp->body() = "Hello Beast.";
+    // 计算相应长度
+    str_resp->prepare_payload();
+    str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
+    http::async_write(
+            socket,
+            *str_serializer,
+            [this](beast::error_code ec, std::size_t) {
+                socket.shutdown(tcp::socket::shutdown_send, ec);
+                accept();
+            }
+    );
+}
+
 void _web_HttpServer::accept() {
+    beast::error_code ec;
+    socket.close(ec);
+    buffer.consume(buffer.size());
+
+    acceptor.async_accept(
+            socket,
+            [this](beast::error_code ec) {
+                if (ec) {
+                    accept();
+                } else {
+                    request_deadline.expires_after(std::chrono::seconds(60));
+                    readRequest();
+                }
+            }
+    );
+}
+
+void _web_HttpServer::readRequest() {
     parser.emplace();
-//    http::async_read(
-//            socket,
-//            buffer,
-//            *parser,
-//            [this](beast::error_code ec) {
-//                if (ec){
-//                    accept();
-//                } else {
-////                    process_request();
-//                }
-//            }
-//    );
+    http::async_read(
+            socket,
+            buffer,
+            *parser,
+            [this](beast::error_code ec, std::size_t) {
+                if (ec) {
+                    accept();
+                } else {
+                    process_request(parser->get());
+                }
+            }
+    );
+}
+
+void _web_HttpServer::start() {
+    accept();
+    checkDeadline();
+}
+
+void _web_HttpServer::checkDeadline() {
+    if (request_deadline.expiry() <= std::chrono::steady_clock::now()) {
+        socket.close();
+        request_deadline.expires_at(std::chrono::steady_clock::time_point::max());
+    }
+
+    request_deadline.async_wait([this](beast::error_code) {
+        checkDeadline();
+    });
 }
 
 boost::beast::string_view mime_type(boost::beast::string_view path) {

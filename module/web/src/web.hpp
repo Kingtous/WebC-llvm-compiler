@@ -85,7 +85,7 @@ const char *_web_callGetRequest(int socketId, char *host, char *path);
 * @param body
 * @return
 */
-const char *_web_callPostRequest(int socketId, char *host, char *path, char* body);
+const char *_web_callPostRequest(int socketId, char *host, char *path, char *body);
 
 /**
  * 获取一个本地HTTP服务器的ID
@@ -130,23 +130,42 @@ public:
 
     _web_HttpServer &operator=(_web_HttpServer const &) = delete;
 
-//    _web_HttpServer(tcp::acceptor &acceptor, const string &basePath);
+    _web_HttpServer(tcp::acceptor &acceptor, const string &basePath);
+
+    std::unique_ptr<http::response_serializer<http::string_body>> str_serializer;
+
+    std::unique_ptr<http::response<http::string_body>> str_resp;
 
     /**
      * 接收下一个客户
      */
     void accept();
 
+    /**
+     * 开启服务器
+     */
+    void start();
+
+    /**
+     * 读取一个request
+     */
+    void readRequest();
+
+    /**
+     * 检查死连接
+     */
+    void checkDeadline();
+
 private:
     tcp::acceptor &acceptor;
 //    using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
     using request_body_t = http::string_body;
     std::string base_path;
-    tcp::socket socket;
+    tcp::socket socket{acceptor.get_executor()};
     boost::optional<http::request_parser<http::string_body>> parser;
     beast::flat_static_buffer<8192> buffer;
-//    boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline{
-//            acceptor.get_executor(), (std::chrono::steady_clock::time_point::max) ()};
+    boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline{
+            acceptor.get_executor(), (std::chrono::steady_clock::time_point::max) ()};
 
     void process_request(http::request<request_body_t> const &request);
 };
