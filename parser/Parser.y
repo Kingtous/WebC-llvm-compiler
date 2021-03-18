@@ -54,10 +54,11 @@ logOnUi((string(s)+" 在 " + to_string(TheLexer->getCLineNumber())+" 行 "+to_st
 %token <token> T_ADD T_SUB T_MUL T_DIV T_MOD T_ASSIGN
 // 比较符
 %token <token> T_EQU T_N_EQU T_LESS T_GREATER T_REVERSE T_LESS_EQU T_GREATER_EQU
-// , ; () [] {}
+// , ; () [] {} <>
 %token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR T_CONST
 // ' "
 %token <token> T_STR T_NULL
+%token <token> T_FUNC_PTR
 // 循环
 %token <token> T_FOR T_WHILE T_OUT T_CONTINUE
 %token <token> T_IF T_ELSE

@@ -139,12 +139,26 @@ int _web_getServerId(const char *addr, int port) {
 }
 
 int _web_addUrlHandler(int sId, const char *method, const char *path, const char *(*handler)()) {
-    // TODO
+    auto it = _web_http_server_map.find(sId);
+    if (it == _web_http_server_map.end()) {
+        return SERVER_NOT_EXISTS;
+    }
+    auto http_handler = new WebHttpHandler();
+    http_handler->method = new std::string(method);
+    http_handler->path = new std::string(path);
+    http_handler->function = handler;
+    it->second->addHandler(*http_handler);
     return ROK;
 }
 
 int _web_startServe(int sId) {
-    // TODO
+    auto it = _web_http_server_map.find(sId);
+    if (it == _web_http_server_map.end()) {
+        return SERVER_NOT_EXISTS;
+    }
+    // 开启
+    it->second->start();
+    server_context.run();
     return ROK;
 }
 

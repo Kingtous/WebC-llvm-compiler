@@ -19,6 +19,7 @@
 #define NOT_CONNECTED -4
 /// 服务器状态码
 #define PORT_IS_IN_USE -5
+#define SERVER_NOT_EXISTS -6
 /// 通用状态码
 #define ROK 0
 
