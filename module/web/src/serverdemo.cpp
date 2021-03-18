@@ -32,12 +32,16 @@ void startServer() {
 
     boost::asio::io_context ioc{1};
     tcp::acceptor acceptor{ioc, {address, port}};
-    _web_HttpServer server(acceptor,root);
+    _web_HttpWorker httpWorker1(acceptor, root);
+    _web_HttpWorker httpWorker2(acceptor, root);
 
-    server.addHandler(*handler1);
-    server.addHandler(*handler2);
+    httpWorker1.addHandler(*handler1);
+    httpWorker1.addHandler(*handler2);
+    httpWorker2.addHandler(*handler1);
+    httpWorker2.addHandler(*handler2);
 
-    server.start();
+    httpWorker1.start();
+    httpWorker2.start();
     ioc.run();
 }
 

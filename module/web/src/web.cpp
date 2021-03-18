@@ -7,7 +7,7 @@
 boost::asio::io_context *_web_io_context = nullptr;
 tcp::resolver *_web_resolver = nullptr;
 map<int, tcp::socket *> _web_tcp_socket_map;
-map<int, _web_HttpServer *> _web_http_server_map;
+map<int, std::vector<_web_HttpWorker *>> _web_http_server_map;
 /**
  * HTTP 1.1
  */
@@ -126,14 +126,18 @@ namespace asio = boost::asio;
 
 asio::io_context server_context{1};
 
-int _web_getServerId(const char *addr, int port) {
+int _web_getServerId(const char *addr, int port, int core) {
     _web_init();
     auto address = boost::asio::ip::make_address(addr);
     auto acceptor = new tcp::acceptor{server_context, {address, static_cast<unsigned short>(port)}};
     char *path = new char[BUFSIZ];
     getcwd(path, BUFSIZ);
-    auto server = new _web_HttpServer(*acceptor, std::string(path));
-    auto pair = make_pair(serverId++, server);
+    auto servers = new std::vector<_web_HttpWorker *>(core);
+    while (core--) {
+        auto server = new _web_HttpWorker(*acceptor, std::string(path));
+        servers->push_back(server);
+    }
+    auto pair = make_pair(serverId++, *servers);
     _web_http_server_map.insert(pair);
     return pair.first;
 }
@@ -147,7 +151,11 @@ int _web_addUrlHandler(int sId, const char *method, const char *path, const char
     http_handler->method = new std::string(method);
     http_handler->path = new std::string(path);
     http_handler->function = handler;
-    it->second->addHandler(*http_handler);
+    auto worker = it->second.begin();
+    while (worker != it->second.end()) {
+        (*worker)->addHandler(*http_handler);
+        worker++;
+    }
     return ROK;
 }
 
@@ -157,21 +165,25 @@ int _web_startServe(int sId) {
         return SERVER_NOT_EXISTS;
     }
     // 开启
-    it->second->start();
+    auto worker = it->second.begin();
+    while (worker != it->second.end()) {
+        (*worker)->start();
+        worker++;
+    }
     server_context.run();
     return ROK;
 }
 
-_web_HttpServer::_web_HttpServer(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
+_web_HttpWorker::_web_HttpWorker(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
                                                                                     base_path(basePath) {
 
 }
 
-void _web_HttpServer::addHandler(WebHttpHandler &handler) {
+void _web_HttpWorker::addHandler(WebHttpHandler &handler) {
     this->handlers.push_back(handler);
 }
 
-void _web_HttpServer::process_request(http::request<request_body_t> const &request) {
+void _web_HttpWorker::process_request(http::request<request_body_t> const &request) {
     auto target = request.target();
     auto handlers_it = this->handlers.begin();
     while (handlers_it != this->handlers.end()) {
@@ -203,7 +215,7 @@ void _web_HttpServer::process_request(http::request<request_body_t> const &reque
     sendNotExistResponse();
 }
 
-void _web_HttpServer::accept() {
+void _web_HttpWorker::accept() {
     beast::error_code ec;
     socket.close(ec);
     buffer.consume(buffer.size());
@@ -221,7 +233,7 @@ void _web_HttpServer::accept() {
     );
 }
 
-void _web_HttpServer::readRequest() {
+void _web_HttpWorker::readRequest() {
     parser.emplace();
     http::async_read(
             socket,
@@ -237,12 +249,12 @@ void _web_HttpServer::readRequest() {
     );
 }
 
-void _web_HttpServer::start() {
+void _web_HttpWorker::start() {
     accept();
     checkDeadline();
 }
 
-void _web_HttpServer::checkDeadline() {
+void _web_HttpWorker::checkDeadline() {
     if (request_deadline.expiry() <= std::chrono::steady_clock::now()) {
         socket.close();
         request_deadline.expires_at(std::chrono::steady_clock::time_point::max());
@@ -253,7 +265,7 @@ void _web_HttpServer::checkDeadline() {
     });
 }
 
-void _web_HttpServer::sendNotExistResponse() {
+void _web_HttpWorker::sendNotExistResponse() {
     str_resp = std::make_unique<http::response<http::string_body>>();
     str_resp->result(http::status::not_found);
     str_resp->keep_alive(false);

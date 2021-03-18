@@ -95,9 +95,10 @@ const char *_web_callPostRequest(int socketId, char *host, char *path, char *bod
  * 获取一个本地HTTP服务器的ID
  * @param addr 地址
  * @param port 端口号
+ * @param core 线程数
  * @return server id
  */
-int _web_getServerId(const char *addr, int port);
+int _web_getServerId(const char *addr, int port, int core);
 
 /**
  * @param sId server id
@@ -113,7 +114,7 @@ int _web_addUrlHandler(int sId, const char *method, const char *path, const char
  * @param sId server id
  * @return 状态
  */
-int _web_startServe(int sId);
+int _web_startServe(int sId, int core);
 }
 
 typedef const char *HandlerFunction();
@@ -127,13 +128,13 @@ typedef struct WebHttpHandler {
     HandlerFunction* function;
 } WebHttpHandler;
 
-class _web_HttpServer {
+class _web_HttpWorker {
 public:
-    _web_HttpServer(_web_HttpServer const &) = delete;
+    _web_HttpWorker(_web_HttpWorker const &) = delete;
 
-    _web_HttpServer &operator=(_web_HttpServer const &) = delete;
+    _web_HttpWorker &operator=(_web_HttpWorker const &) = delete;
 
-    _web_HttpServer(tcp::acceptor &acceptor, const string &basePath);
+    _web_HttpWorker(tcp::acceptor &acceptor, const string &basePath);
 
     std::unique_ptr<http::response_serializer<http::string_body>> str_serializer;
 
