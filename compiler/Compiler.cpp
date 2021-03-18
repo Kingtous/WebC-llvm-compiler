@@ -14,14 +14,12 @@ void initExternFunc() {
     ExternFunctionLinker::registerHandler(new SleepFunctionHandler());
     ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
     ExternFunctionLinker::registerHandler(new WebFunctionHandler());
+    ExternFunctionLinker::registerHandler(new KStringFunctionHandler());
 }
 
 int startAnalyze(ArgsParser *parser) {
     // 初始化外层函数
-    ExternFunctionLinker::registerHandler(new EchoFunctionHandler());
-    ExternFunctionLinker::registerHandler(new SleepFunctionHandler());
-    ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
-    ExternFunctionLinker::registerHandler(new WebFunctionHandler());
+    initExternFunc();
     for (const auto &file : parser->getFiles()) {
         outs() << "正在分析 " << file << "...\n";
         auto reader = new FileReader(file);

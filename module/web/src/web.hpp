@@ -104,11 +104,15 @@ int _web_getServerId(const char *addr, int port, int core);
 /**
  * @param sId server id
  * @param path URL path，如：/index
+ * @param content_type content_type
  * @param method 方法
  * @param handler 函数指针，用于返回一个const char*内容
  * @return 状态
  */
-int _web_addUrlHandler(int sId, const char *method, const char *path, const char *handler());
+int _web_addUrlHandler(int sId, const char *method,
+                       const char *path,
+                       const char *content_type,
+                       const char *handler());
 
 /**
  * 开启服务器，程序进入阻塞状态
@@ -126,6 +130,7 @@ typedef const char *HandlerFunction();
 typedef struct WebHttpHandler {
     std::string *method;
     std::string *path;
+    std::string *content_type;
     HandlerFunction* function;
 } WebHttpHandler;
 

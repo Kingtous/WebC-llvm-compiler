@@ -62,6 +62,8 @@ public:
     static Function *getOrAddUrlHandler(LLVMContext &context, Module &module);
 
     static Function *getOrAddStartServer(LLVMContext &context, Module &module);
+
+    static Function *getOrAddtoString(LLVMContext &context, Module &module);
 };
 
 
@@ -97,6 +99,16 @@ class WebFunctionHandler : public ExternFunctionHandler{
 public:
 
     WebFunctionHandler();
+
+    Value *tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
+
+    int getPriority() override;
+};
+
+class KStringFunctionHandler : public ExternFunctionHandler{
+public:
+
+    KStringFunctionHandler();
 
     Value *tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
 

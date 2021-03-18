@@ -143,7 +143,7 @@ int _web_getServerId(const char *addr, int port, int core) {
     return pair.first;
 }
 
-int _web_addUrlHandler(int sId, const char *method, const char *path, const char *(*handler)()) {
+int _web_addUrlHandler(int sId, const char *method, const char *path,const char *content_type, const char *(*handler)()) {
     auto it = _web_http_server_map.find(sId);
     if (it == _web_http_server_map.end()) {
         return SERVER_NOT_EXISTS;
@@ -151,6 +151,7 @@ int _web_addUrlHandler(int sId, const char *method, const char *path, const char
     auto http_handler = new WebHttpHandler();
     http_handler->method = new std::string(method);
     http_handler->path = new std::string(path);
+    http_handler->content_type = new std::string(content_type);
     http_handler->function = handler;
     auto worker = it->second.begin();
     while (worker != it->second.end()) {
@@ -196,7 +197,7 @@ void _web_HttpWorker::process_request(http::request<request_body_t> const &reque
             str_resp->result(http::status::not_found);
             str_resp->keep_alive(false);
             str_resp->set(http::field::server, SERVER_NAME);
-            str_resp->set(http::field::content_type, "application/json");
+            str_resp->set(http::field::content_type, *(handlers_it->content_type));
             str_resp->body() = resp;
             // 计算相应长度
             str_resp->prepare_payload();

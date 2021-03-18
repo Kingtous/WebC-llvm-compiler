@@ -5,18 +5,15 @@
 #include <time.h>
 #include <unistd.h>
 #include <stack>
-const char* hi(){
-    auto hi_sententce = "hi";
-    return hi_sententce;
+
+void func(void* a){
+    int* num = static_cast<int*>(a);
+    printf("%d",*num);
 }
 
-int test(const char *handler()){
-    const char* test = handler();
-    return 0;
-}
-
-int main(){
-    return test(hi);
+int main() {
+    int a = 5;
+    func(&a);
 }
 
 //class A {

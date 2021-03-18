@@ -240,10 +240,11 @@ Function *ExternFunctionHandler::getOrAddUrlHandler(LLVMContext &context, Module
     if (func != NIL) {
         return func;
     }
-    auto func_param_type = FunctionType::get(Type::getInt8PtrTy(context),false);
+    auto func_param_type = FunctionType::get(Type::getInt8PtrTy(context), false);
 
     FunctionType *ty = FunctionType::get(Type::getInt32Ty(context),
                                          {Type::getInt32Ty(context),
+                                          Type::getInt8Ty(context)->getPointerTo(),
                                           Type::getInt8Ty(context)->getPointerTo(),
                                           Type::getInt8Ty(context)->getPointerTo(),
                                           func_param_type->getPointerTo()}, false);
@@ -259,6 +260,19 @@ Function *ExternFunctionHandler::getOrAddStartServer(LLVMContext &context, Modul
     FunctionType *ty = FunctionType::get(Type::getInt32Ty(context),
                                          Type::getInt32Ty(context), false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_web_startServe", module);
+    return func;
+}
+
+Function *ExternFunctionHandler::getOrAddtoString(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("toString");
+    if (func != NIL) {
+        return func;
+    }
+    // const char* func(void* a,int type) void* 也为i8*
+    FunctionType *ty = FunctionType::get(Type::getInt8PtrTy(context),
+                                         {Type::getInt8PtrTy(context),
+                                          Type::getInt32Ty(context)}, false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "toString", module);
     return func;
 }
 
@@ -301,4 +315,48 @@ int WebFunctionHandler::getPriority() {
 }
 
 WebFunctionHandler::WebFunctionHandler() {
+}
+
+KStringFunctionHandler::KStringFunctionHandler() {
+
+}
+
+int KStringFunctionHandler::getPriority() {
+    return INTERNAL_IMPL;
+}
+
+/// 从kstring.h中拷贝过来的，注意保持一致
+#define SYSYTYPE_INT 0
+#define SYSYTYPE_LONG 1
+#define SYSYTYPE_DOUBLE 2
+
+Value *KStringFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName,
+                                         std::vector<Value *> *argV) {
+    if (callName == "toStr" && !argV->empty()) {
+        if (argV->size() > 1) {
+            LogWarn("toStr参数超过1个，目前只识别第一个");
+            argV->erase(argV->begin() + 1, argV->end());
+        }
+        auto arg = argV->at(0);
+        if (arg->getType()->isIntegerTy(32)) {
+            // int
+            argV->push_back(ConstantInt::get(getTypeFromStr("int"), SYSYTYPE_INT));
+        } else if (arg->getType()->isIntegerTy(64)) {
+            // long
+            argV->push_back(ConstantInt::get(getTypeFromStr("int"), SYSYTYPE_LONG));
+        } else if (arg->getType()->isDoubleTy()) {
+            // double
+            argV->push_back(ConstantInt::get(getTypeFromStr("int"), SYSYTYPE_DOUBLE));
+        } else {
+            return NIL;
+        }
+        auto arg_mem = Builder->CreateAlloca(arg->getType());
+        Builder->CreateStore(arg,arg_mem);
+        arg = Builder->CreateBitCast(arg_mem, Type::getInt8PtrTy(context));
+        argV->erase(argV->begin());
+        argV->insert(argV->begin(), arg);
+        auto func = ExternFunctionHandler::getOrAddtoString(context, module);
+        return Builder->CreateCall(func, *argV);
+    }
+    return NIL;
 }
