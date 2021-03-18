@@ -7,6 +7,7 @@
 boost::asio::io_context *_web_io_context = nullptr;
 tcp::resolver *_web_resolver = nullptr;
 map<int, tcp::socket *> _web_tcp_socket_map;
+map<int, _web_HttpServer *> _web_http_server_map;
 /**
  * HTTP 1.1
  */
@@ -17,6 +18,11 @@ auto _web_agent = "kingtous_web_agent";
  * 递增的SocketId
  */
 volatile int socketId = 0;
+
+/**
+ * 递增的ServerId
+ */
+volatile int serverId = 0;
 
 int _web_getSocket() {
     _web_init();
@@ -123,9 +129,13 @@ asio::io_context server_context{1};
 int _web_getServerId(const char *addr, int port) {
     _web_init();
     auto address = boost::asio::ip::make_address(addr);
-    // TODO
-//    asio::
-    return ROK;
+    auto acceptor = new tcp::acceptor{server_context, {address, static_cast<unsigned short>(port)}};
+    char *path = new char[BUFSIZ];
+    getcwd(path, BUFSIZ);
+    auto server = new _web_HttpServer(*acceptor, std::string(path));
+    auto pair = make_pair(serverId++, server);
+    _web_http_server_map.insert(pair);
+    return pair.first;
 }
 
 int _web_addUrlHandler(int sId, const char *method, const char *path, const char *(*handler)()) {
@@ -143,24 +153,40 @@ _web_HttpServer::_web_HttpServer(tcp::acceptor &acceptor, const string &basePath
 
 }
 
+void _web_HttpServer::addHandler(WebHttpHandler &handler) {
+    this->handlers.push_back(handler);
+}
+
 void _web_HttpServer::process_request(http::request<request_body_t> const &request) {
-    str_resp = std::make_unique<http::response<http::string_body>>();
-    str_resp->result(200);
-    str_resp->keep_alive(false);
-    str_resp->set(http::field::server, "Beast");
-    str_resp->set(http::field::content_type, "text/plain");
-    str_resp->body() = "Hello Beast.";
-    // 计算相应长度
-    str_resp->prepare_payload();
-    str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
-    http::async_write(
-            socket,
-            *str_serializer,
-            [this](beast::error_code ec, std::size_t) {
-                socket.shutdown(tcp::socket::shutdown_send, ec);
-                accept();
-            }
-    );
+    auto target = request.target();
+    auto handlers_it = this->handlers.begin();
+    while (handlers_it != this->handlers.end()) {
+        if ((*(*handlers_it).path) == target && (*(*handlers_it).method) == request.method_string()) {
+            auto func = *(handlers_it->function);
+            auto resp = func();
+//            std::string resp_str(resp);
+            str_resp = std::make_unique<http::response<http::string_body>>();
+            str_resp->result(http::status::not_found);
+            str_resp->keep_alive(false);
+            str_resp->set(http::field::server, SERVER_NAME);
+            str_resp->set(http::field::content_type, "application/json");
+            str_resp->body() = resp;
+            // 计算相应长度
+            str_resp->prepare_payload();
+            str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
+            http::async_write(
+                    socket,
+                    *str_serializer,
+                    [this](beast::error_code ec, std::size_t) {
+                        socket.shutdown(tcp::socket::shutdown_send, ec);
+                        accept();
+                    }
+            );
+            return;
+        }
+        handlers_it++;
+    }
+    sendNotExistResponse();
 }
 
 void _web_HttpServer::accept() {
@@ -211,6 +237,26 @@ void _web_HttpServer::checkDeadline() {
     request_deadline.async_wait([this](beast::error_code) {
         checkDeadline();
     });
+}
+
+void _web_HttpServer::sendNotExistResponse() {
+    str_resp = std::make_unique<http::response<http::string_body>>();
+    str_resp->result(http::status::not_found);
+    str_resp->keep_alive(false);
+    str_resp->set(http::field::server, SERVER_NAME);
+    str_resp->set(http::field::content_type, "application/json");
+    str_resp->body() = "您可能访问了一个错误的地址|URL requested not mapped.";
+    // 计算相应长度
+    str_resp->prepare_payload();
+    str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
+    http::async_write(
+            socket,
+            *str_serializer,
+            [this](beast::error_code ec, std::size_t) {
+                socket.shutdown(tcp::socket::shutdown_send, ec);
+                accept();
+            }
+    );
 }
 
 boost::beast::string_view mime_type(boost::beast::string_view path) {

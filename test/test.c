@@ -1,5 +1,10 @@
-str example_func(){
+str example_func(int a){
     return 'this is server response string';
+}
+
+void call_func(func<str,int> f){
+    str resp = f(5);
+    echo('resp is',resp);
 }
 
 int main(){

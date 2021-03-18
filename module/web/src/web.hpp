@@ -6,6 +6,7 @@
 #define SYSYPLUS_COMPILER_WEB_HPP
 
 #include <map>
+#include <set>
 
 #include <boost/beast.hpp>
 #include <boost/asio.hpp>
@@ -20,6 +21,8 @@
 #define PORT_IS_IN_USE -5
 /// 通用状态码
 #define ROK 0
+
+#define SERVER_NAME "Kingtous WebServer"
 
 using namespace std;
 using tcp = boost::asio::ip::tcp;
@@ -117,12 +120,11 @@ typedef const char *HandlerFunction();
 /**
  * handler结构
  */
-typedef struct web_http_handler {
-    int sId;
-    const char *method;
-    const char *path;
-    HandlerFunction function;
-} web_http_handler;
+typedef struct WebHttpHandler {
+    std::string *method;
+    std::string *path;
+    HandlerFunction* function;
+} WebHttpHandler;
 
 class _web_HttpServer {
 public:
@@ -135,6 +137,8 @@ public:
     std::unique_ptr<http::response_serializer<http::string_body>> str_serializer;
 
     std::unique_ptr<http::response<http::string_body>> str_resp;
+
+    std::vector<WebHttpHandler> handlers;
 
     /**
      * 接收下一个客户
@@ -156,7 +160,18 @@ public:
      */
     void checkDeadline();
 
+    /**
+     * 添加Handler
+     */
+    void addHandler(WebHttpHandler& handler);
+
 private:
+
+    /**
+     * 发送url未map的信息
+     */
+    void sendNotExistResponse();
+
     tcp::acceptor &acceptor;
 //    using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
     using request_body_t = http::string_body;

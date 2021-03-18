@@ -8,13 +8,35 @@ const char *say_hello() {
     return "hello_world";
 }
 
+const char *say_hi() {
+    return "hi";
+}
+
+
 void startServer() {
     auto const address = boost::asio::ip::make_address("127.0.0.1");
     unsigned short port = 9000;
     std::string root = "~/";
+
+    auto handler1 = new WebHttpHandler();
+    auto handler2 = new WebHttpHandler();
+
+    handler1->path = new std::string("/hello");
+    handler2->path = new std::string("/hi");
+
+    handler1->method = new std::string("GET");
+    handler2->method = new std::string("POST");
+
+    handler1->function = say_hello;
+    handler2->function = say_hi;
+
     boost::asio::io_context ioc{1};
     tcp::acceptor acceptor{ioc, {address, port}};
     _web_HttpServer server(acceptor,root);
+
+    server.addHandler(*handler1);
+    server.addHandler(*handler2);
+
     server.start();
     ioc.run();
 }
