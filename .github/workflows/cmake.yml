@@ -32,6 +32,9 @@ jobs:
     - name: Installing mysql-connector-c++
       run: sudo apt install -y libmysqlcppconn-dev
 
+    - name: Installing openssl
+      run: sudo apt install -y openssl
+
     - name: Installing pkgconfig
       run: sudo apt install -y pkg-config
 

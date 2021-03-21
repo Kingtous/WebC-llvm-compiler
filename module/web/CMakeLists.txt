@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
 set(LOCATION ".")
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SSLLib openssl)
+message(STATUS "found ssl lib in ${SSLLib_INCLUDE_DIRS}")
+include_directories(${SSLLib_INCLUDE_DIRS})
+link_directories(${SSLLib_LIBRARY_DIRS})
+
 # Boost
 message(STATUS "查找Boost框架")
 find_package(Boost COMPONENTS system filesystem REQUIRED)

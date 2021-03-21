@@ -121,7 +121,7 @@ public:
     }
 
 private:
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket> socket_{,};
+    boost::asio::ssl::stream<boost::asio::ip::tcp::socket> socket_;
     enum {
         max_length = 1024
     };
@@ -283,8 +283,8 @@ int _web_startServe(int sId) {
 
 _web_HttpWorker::_web_HttpWorker(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
                                                                                     base_path(basePath) {
-    ssl_context.use_certificate_chain(_web_cert_buf);
-    ssl_context.use_private_key(_web_key_buf, boost::asio::ssl::context::pem);
+//    ssl_context.use_certificate_chain(_web_cert_buf);
+//    ssl_context.use_private_key(_web_key_buf, boost::asio::ssl::context::pem);
 }
 
 void _web_HttpWorker::addHandler(WebHttpHandler &handler) {
@@ -324,7 +324,7 @@ void _web_HttpWorker::process_request(http::request<request_body_t> const &reque
 }
 
 void _web_HttpWorker::accept() {
-    _web_Session *new_session = new _web_Session(io_)
+//    _web_Session *new_session = new _web_Session(io_)
     beast::error_code ec;
     socket.close(ec);
     buffer.consume(buffer.size());
@@ -335,8 +335,8 @@ void _web_HttpWorker::accept() {
                 if (ec) {
                     accept();
                 } else {
-                    socket.
-                            request_deadline.expires_after(std::chrono::seconds(60));
+//                    socket.
+//                            request_deadline.expires_after(std::chrono::seconds(60));
                     readRequest();
                 }
             }
