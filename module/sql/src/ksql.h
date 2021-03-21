@@ -8,8 +8,6 @@
 #include <mysqlx/xapi.h>
 
 extern "C" {
-
-int
 };
 
 #endif //SYSYPLUS_COMPILER_KSQL_H
