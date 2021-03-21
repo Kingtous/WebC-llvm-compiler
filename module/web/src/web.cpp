@@ -9,6 +9,48 @@ boost::asio::io_context *_server_context = nullptr;
 tcp::resolver *_web_resolver = nullptr;
 map<int, tcp::socket *> _web_tcp_socket_map;
 map<int, std::vector<_web_HttpWorker *>> _web_http_server_map;
+
+std::string _web_cert = "-----BEGIN CERTIFICATE-----\n"
+                        "MIIECjCCAvKgAwIBAgIBATANBgkqhkiG9w0BAQsFADCBiDELMAkGA1UEBhMCQ04x\n"
+                        "EDAOBgNVBAgMB0ppYW5nWGkxDzANBgNVBAcMBllpQ2h1bjERMA8GA1UECgwIS2lu\n"
+                        "Z3RvdXMxETAPBgNVBAsMCEtpbmd0b3VzMREwDwYDVQQDDAhLaW5ndG91czEdMBsG\n"
+                        "CSqGSIb3DQEJARYObWVAa2luZ3RvdXMuY24wHhcNMjEwMzIwMTMwNzI4WhcNMjIw\n"
+                        "MzIwMTMwNzI4WjB3MQswCQYDVQQGEwJDTjEQMA4GA1UECAwHSmlhbmdYaTERMA8G\n"
+                        "A1UECgwIS2luZ3RvdXMxETAPBgNVBAsMCEtpbmd0b3VzMREwDwYDVQQDDAhLaW5n\n"
+                        "dG91czEdMBsGCSqGSIb3DQEJARYObWVAa2luZ3RvdXMuY24wgZ8wDQYJKoZIhvcN\n"
+                        "AQEBBQADgY0AMIGJAoGBALfmSJY9hzcuzkf6xfwhLYwaZMB6VRDFcK+Zl7tsOrGz\n"
+                        "/8dofgRwoaFcd2F1hQf13luw6t23GrdlvBt1W9Fwl/zHro6YVtbGwguepPFW7sKC\n"
+                        "56oFTVrwNp2M6kc/fV8zc/GhOBPI98We+Y4+9Uy4KpxYtJwbtYa2/Pt4fW5G1INL\n"
+                        "AgMBAAGjggERMIIBDTAJBgNVHRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NM\n"
+                        "IEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4EFgQU4GLOIH0yicdDXoWXeH1d\n"
+                        "M67y3hIwgbIGA1UdIwSBqjCBp6GBjqSBizCBiDELMAkGA1UEBhMCQ04xEDAOBgNV\n"
+                        "BAgMB0ppYW5nWGkxDzANBgNVBAcMBllpQ2h1bjERMA8GA1UECgwIS2luZ3RvdXMx\n"
+                        "ETAPBgNVBAsMCEtpbmd0b3VzMREwDwYDVQQDDAhLaW5ndG91czEdMBsGCSqGSIb3\n"
+                        "DQEJARYObWVAa2luZ3RvdXMuY26CFDW66CGdWzzHmQ3a2kyYh4+/aaabMA0GCSqG\n"
+                        "SIb3DQEBCwUAA4IBAQAVfFTW5XHhVe9AG/3ZKc/gcz/xOW0WVt7WtF4wyoAsvwWW\n"
+                        "jJoB4rwJGRyTsqhBPgD02dvKfO3NmotkZ0jhfyfbSek3abft5uUJbnCHUmJvCJC/\n"
+                        "25W8KSYc/SIxpClSrS5MXT+SEVUE14lvHCEbU5rI4u0hYiOJYSXFlKt8AQTw4BI0\n"
+                        "4c+xyef4bfTMFIZfEh9/2WNbL59LBOEkcz/v53lrhkhc9Z7BXNb28P82ekFWAtwe\n"
+                        "W3+E4j9N13M3Xyg08JP0KN2SmfoGUueZiQV4Jfdt/q8R/9hJEKL0J4LVraivZ+nv\n"
+                        "hAArz815vWGNu86xAvQt8rXI7ebZW7bH0s+VfIWF\n"
+                        "-----END CERTIFICATE-----";
+std::string _web_default_key = "-----BEGIN RSA PRIVATE KEY-----\n"
+                               "MIICXQIBAAKBgQC35kiWPYc3Ls5H+sX8IS2MGmTAelUQxXCvmZe7bDqxs//HaH4E\n"
+                               "cKGhXHdhdYUH9d5bsOrdtxq3ZbwbdVvRcJf8x66OmFbWxsILnqTxVu7CgueqBU1a\n"
+                               "8DadjOpHP31fM3PxoTgTyPfFnvmOPvVMuCqcWLScG7WGtvz7eH1uRtSDSwIDAQAB\n"
+                               "AoGBAJ9D6x1i0BX0jWY9QvYm7cFmolcoGz/ZHsyVopkJFJQOJbjXQDwsJ28OG73l\n"
+                               "/35za03RnLbD+3lVvGGzc/+hGZ60mmtleACtXtqF5xKwjJBRO/RzvadrCudmWFlk\n"
+                               "IqBtHfqb3N8EjtKZBeKboYBF606C++De3DWf/m5pky9HWNnBAkEA3EVQFFessIot\n"
+                               "CekS+28Mi+vuYqozme6Pnx6z6GGncuk2cGpcweNF62WK1vjFuV3vc8X4OePCNZyS\n"
+                               "D/w19U6DGwJBANW6qmCVfp+EKJDZBV+3BaxO7HvrdXQhMzS+nSlkGQh4uh4tlWRP\n"
+                               "b2tyL+hjKnjX2/H5dOquk1B08O+elCW305ECQQDQWyAsneJT++Auh7HU9G5BzKJp\n"
+                               "4eV9rhNcyIYVQopKQB+mpnWnUXxJ9nsmbZtahGiEcrciyzZh0AC57jB8IhARAkAs\n"
+                               "ujK7oa1tDog6v9/7Bt8+Dwo4aK8czXHc4OMc7WC7wCAa/qkb4+/KSYwzEsWpomrZ\n"
+                               "+b14+23C0aY2TzZrqkuxAkBl0QZp+1AbgXFleq7WhzHhe1Tl5v+YXTJJMa7o301o\n"
+                               "rF+dQabkzpaJaKOVCpIpN37jIjjls4rg9zuA+zeCoY8h\n"
+                               "-----END RSA PRIVATE KEY-----";
+auto _web_cert_buf = boost::asio::const_buffer(_web_cert.c_str(), _web_cert.size());
+auto _web_key_buf = boost::asio::const_buffer(_web_default_key.c_str(), _web_default_key.size());
 /**
  * HTTP 1.1
  */
@@ -24,6 +66,68 @@ volatile int socketId = 0;
  * 递增的ServerId
  */
 volatile int serverId = 0;
+
+class _web_Session {
+public:
+    _web_Session(boost::asio::io_service &io_service,
+                 boost::asio::ssl::context &context)
+            : socket_(io_service, context) {
+    }
+
+    boost::asio::ssl::stream<boost::asio::ip::tcp::socket>::lowest_layer_type &socket() {
+        return socket_.lowest_layer();
+    }
+
+    void start() {
+        socket_.async_handshake(boost::asio::ssl::stream_base::server,
+                                boost::bind(&_web_Session::handle_handshake, this,
+                                            boost::asio::placeholders::error));
+    }
+
+    void handle_handshake(const boost::system::error_code &error) {
+        if (!error) {
+            printf("handshake");
+            socket_.async_read_some(boost::asio::buffer(data_, max_length),
+                                    boost::bind(&_web_Session::handle_read, this,
+                                                boost::asio::placeholders::error,
+                                                boost::asio::placeholders::bytes_transferred));
+        } else {
+            printf("handshake failer");
+            delete this;
+        }
+    }
+
+    void handle_read(const boost::system::error_code &error,
+                     size_t bytes_transferred) {
+        if (!error) {
+            boost::asio::async_write(socket_,
+                                     boost::asio::buffer(data_, bytes_transferred),
+                                     boost::bind(&_web_Session::handle_write, this,
+                                                 boost::asio::placeholders::error));
+        } else {
+            delete this;
+        }
+    }
+
+    void handle_write(const boost::system::error_code &error) {
+        if (!error) {
+            socket_.async_read_some(boost::asio::buffer(data_, max_length),
+                                    boost::bind(&_web_Session::handle_read, this,
+                                                boost::asio::placeholders::error,
+                                                boost::asio::placeholders::bytes_transferred));
+        } else {
+            delete this;
+        }
+    }
+
+private:
+    boost::asio::ssl::stream<boost::asio::ip::tcp::socket> socket_{,};
+    enum {
+        max_length = 1024
+    };
+    char data_[max_length];
+};
+
 
 int _web_getSocket() {
     _web_init();
@@ -126,7 +230,7 @@ const char *_web_callPostRequest(int socketId, char *host, char *path, char *bod
 namespace asio = boost::asio;
 
 int _web_getServerId(const char *addr, int port, int core) {
-    if (_server_context == nullptr){
+    if (_server_context == nullptr) {
         _server_context = new boost::asio::io_context();
     }
     auto address = boost::asio::ip::make_address(addr);
@@ -143,7 +247,8 @@ int _web_getServerId(const char *addr, int port, int core) {
     return pair.first;
 }
 
-int _web_addUrlHandler(int sId, const char *method, const char *path,const char *content_type, const char *(*handler)()) {
+int
+_web_addUrlHandler(int sId, const char *method, const char *path, const char *content_type, const char *(*handler)()) {
     auto it = _web_http_server_map.find(sId);
     if (it == _web_http_server_map.end()) {
         return SERVER_NOT_EXISTS;
@@ -178,7 +283,8 @@ int _web_startServe(int sId) {
 
 _web_HttpWorker::_web_HttpWorker(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
                                                                                     base_path(basePath) {
-
+    ssl_context.use_certificate_chain(_web_cert_buf);
+    ssl_context.use_private_key(_web_key_buf, boost::asio::ssl::context::pem);
 }
 
 void _web_HttpWorker::addHandler(WebHttpHandler &handler) {
@@ -218,17 +324,19 @@ void _web_HttpWorker::process_request(http::request<request_body_t> const &reque
 }
 
 void _web_HttpWorker::accept() {
+    _web_Session *new_session = new _web_Session(io_)
     beast::error_code ec;
     socket.close(ec);
     buffer.consume(buffer.size());
 
     acceptor.async_accept(
-            socket,
+            socket.lowest_layer(),
             [this](beast::error_code ec) {
                 if (ec) {
                     accept();
                 } else {
-                    request_deadline.expires_after(std::chrono::seconds(60));
+                    socket.
+                            request_deadline.expires_after(std::chrono::seconds(60));
                     readRequest();
                 }
             }
