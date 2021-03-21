@@ -40,7 +40,7 @@ add_executable(serverdemo src/serverdemo.cpp src/web.hpp src/web.cpp)
 
 target_link_libraries(webdemo Boost::filesystem Boost::system pthread)
 
-target_link_libraries(serverdemo Boost::filesystem Boost::system pthread)
+target_link_libraries(serverdemo Boost::filesystem Boost::system pthread ${SSLLib_LIBRARIES})
 
 install(TARGETS web
         ARCHIVE DESTINATION ${LOCATION}
