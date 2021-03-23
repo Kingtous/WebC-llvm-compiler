@@ -23,7 +23,7 @@ string DoubleExprAST::toString() {
 llvm::Value *VariableExprAST::codegen() {
     // 从符号表中取出
     llvm::Value *v = FINDLOCAL(Name);
-    if (!v){
+    if (!v) {
         ABORT_COMPILE;
         LogErrorV((std::string("未知变量名:") + Name).c_str());
     }
@@ -41,7 +41,7 @@ llvm::Value *BinaryExprAST::codegen() {
     } else {
         llvm::Value *L = LEA->codegen();
         llvm::Value *R = REA->codegen();
-        if (!L || !R){
+        if (!L || !R) {
             ABORT_COMPILE;
             return LogErrorV("二元表达式解析失败");
         }
@@ -58,7 +58,7 @@ llvm::Value *BinaryExprAST::codegen() {
                     return Builder->CreateSDiv(L, R, "divi");
                 case BinaryType::mod:
                     return Builder->CreateSRem(L, R,
-                                              "mod");
+                                               "mod");
                 case BinaryType::less:
                     return Builder->CreateICmpSLT(L, R, "less_than");
                 case BinaryType::greater:
@@ -235,22 +235,33 @@ llvm::Value *CallExprAST::codegen() {
     }
 
     if (func == NIL) {
+        //if find in the local value ,it is the function point
+        if (LOCALSVARS.find(callName) != LOCALSVARS.end()) {
+            auto call_mem = Builder->CreateLoad(LOCALSVARS[callName]);
+            if (call_mem->getType()->isPointerTy() &&
+                call_mem->getType()->getPointerElementType()->getTypeID() ==
+                llvm::Type::FunctionTyID) {
+                // 是函数
+                auto function_type = dyn_cast<FunctionType>(call_mem->getType()->getPointerElementType());
+                return Builder->CreateCall(function_type, call_mem, argsV);
+            }
+        }
+    }
+
+    if (func == NIL) {
         auto ev = ExternFunctionLinker::tryHandleFuncCall(*TheContext, *TheModule, callName, &argsV);
         // Extern直接处理，就直接返回
         if (ev) {
             return ev;
         }
     }
-    //if find in the local value ,it is the function point
-    if (LOCALSVARS.find(callName)!=LOCALSVARS.end()){
-        return Builder->CreateLoad(LOCALSVARS[callName]);
-    }
-    if (!func&&LOCALSVARS.find(callName) == LOCALSVARS.end()){
+
+    if (!func && LOCALSVARS.find(callName) == LOCALSVARS.end()) {
         ABORT_COMPILE;
         return LogErrorV(("使用了未知的函数：" + callName).c_str());
     }
     // If argument mismatch error.
-    if (func->arg_size() != args.size()){
+    if (func->arg_size() != args.size()) {
         ABORT_COMPILE;
         return LogErrorV("Incorrect # arguments passed");
     }
@@ -275,20 +286,20 @@ llvm::Function *PrototypeAST::codegen() {
         if (typeid(*arg) == typeid(VariableArrDeclarationAST)) {
             auto arr_arg = dynamic_cast<VariableArrDeclarationAST *>(arg);
             Args.push_back(arr_arg->buildPointerTy());
-        } else if (typeid(*arg)== typeid(FuncPtrAST)){//如果这种类型是FunctrAST的话
-            auto ptr_arg = dynamic_cast<FuncPtrAST*>(arg);
-            std::vector<llvm::Type*> putArgs;
-            for(int i =1;i<ptr_arg->args.size();i++){
+        } else if (typeid(*arg) == typeid(FuncPtrAST)) {//如果这种类型是FunctrAST的话
+            auto ptr_arg = dynamic_cast<FuncPtrAST *>(arg);
+            std::vector<llvm::Type *> putArgs;
+            for (int i = 1; i < ptr_arg->args.size(); i++) {
                 putArgs.push_back(getTypeFromStr(ptr_arg->args[i]->identifier));
             }
-            llvm::ArrayRef<llvm::Type*> argsRef(putArgs);
-            llvm::FunctionType *funcPtrType= llvm::FunctionType::get(getTypeFromStr(ptr_arg->args[0]->identifier),
-                                                                     argsRef,
-                                                                     false);
+            llvm::ArrayRef<llvm::Type *> argsRef(putArgs);
+            llvm::FunctionType *funcPtrType = llvm::FunctionType::get(getTypeFromStr(ptr_arg->args[0]->identifier),
+                                                                      argsRef,
+                                                                      false);
             Args.push_back(funcPtrType->getPointerTo());
-        }else {
-                Args.push_back(getTypeFromStr(arg->type));
-            }
+        } else {
+            Args.push_back(getTypeFromStr(arg->type));
+        }
     }
     llvm::FunctionType *FT = llvm::FunctionType::get(getTypeFromStr(returnType), Args, false);;
     llvm::Function *F =
@@ -481,7 +492,7 @@ llvm::Function *FunctionAST::codegen() {
     if (!function)
         function = Proto->codegen();
 
-    if (!function){
+    if (!function) {
         ABORT_COMPILE;
         return nullptr;
     }
@@ -552,7 +563,7 @@ Value *BlockAST::codegen() {
         auto iterator = statements.begin();
         Value *lastStatementValue;
         for (; iterator != statements.end(); iterator++) {
-            if (IS_COMPILE_ABORTED){
+            if (IS_COMPILE_ABORTED) {
                 break;
             }
             auto it = (*iterator);
@@ -578,7 +589,7 @@ Value *BlockAST::codegen() {
         auto iterator = statements.begin();
         Value *lastStatementValue;
         for (; iterator != statements.end(); iterator++) {
-            if (IS_COMPILE_ABORTED){
+            if (IS_COMPILE_ABORTED) {
                 break;
             }
             auto it = (*iterator);
@@ -648,7 +659,7 @@ llvm::Value *VariableDeclarationAST::codegen() {
                                           Constant::getNullValue(getTypeFromStr(type)), identifier->identifier);
             if (expr != nullptr) {
                 auto v = expr->codegen();
-                if (IS_COMPILE_ABORTED){
+                if (IS_COMPILE_ABORTED) {
                     return NIL;
                 }
                 auto val = dyn_cast<Constant>(expr->codegen());
@@ -663,7 +674,7 @@ llvm::Value *VariableDeclarationAST::codegen() {
 //            auto mem = Builder->CreateAlloca(getTypeFromStr(type),)
             if (expr != nullptr) {
                 auto v = expr->codegen();
-                if (IS_COMPILE_ABORTED){
+                if (IS_COMPILE_ABORTED) {
                     return NIL;
                 }
                 if (v->getType()->isIntegerTy() && v->getType() != getTypeFromStr(type)) {
@@ -713,7 +724,7 @@ llvm::Value *FuncPtrAST::codegen() {
                                           Constant::getNullValue(getTypeFromStr(type)), identifier->identifier);
             if (expr != nullptr) {
                 auto v = expr->codegen();
-                if (IS_COMPILE_ABORTED){
+                if (IS_COMPILE_ABORTED) {
                     return NIL;
                 }
                 auto val = dyn_cast<Constant>(expr->codegen());
@@ -723,14 +734,14 @@ llvm::Value *FuncPtrAST::codegen() {
         }
     } else {
         if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
-            std::vector<llvm::Type*> putArgs;
-            for(int i =1;i<args.size();i++){
+            std::vector<llvm::Type *> putArgs;
+            for (int i = 1; i < args.size(); i++) {
                 putArgs.push_back(getTypeFromStr(args[i]->identifier));
             }
-            llvm::ArrayRef<llvm::Type*> argsRef(putArgs);
-            llvm::FunctionType *funcPtrType= llvm::FunctionType::get(getTypeFromStr(args[0]->identifier),
-                                                                     argsRef,
-                                                                     false);
+            llvm::ArrayRef<llvm::Type *> argsRef(putArgs);
+            llvm::FunctionType *funcPtrType = llvm::FunctionType::get(getTypeFromStr(args[0]->identifier),
+                                                                      argsRef,
+                                                                      false);
 
             ret = Builder->CreateAlloca(funcPtrType->getPointerTo());
 //            identifier.
@@ -759,8 +770,8 @@ llvm::Value *IdentifierExprAST::codegen() {
                 v->eraseFromParent();
                 // 0取数组，后0为取第一个元素所在地址
                 return Builder->CreateInBoundsGEP(local_mem,
-                                                 {ConstantInt::get(getTypeFromStr("int"), 0),
-                                                  ConstantInt::get(getTypeFromStr("int"), 0)});
+                                                  {ConstantInt::get(getTypeFromStr("int"), 0),
+                                                   ConstantInt::get(getTypeFromStr("int"), 0)});
             }
             return v;
         }
@@ -772,7 +783,7 @@ llvm::Value *IdentifierExprAST::codegen() {
     }
     // 可能是函数指针
     auto func = TheModule->getFunction(identifier);
-    if (func != NIL){
+    if (func != NIL) {
         return func;
     }
     ABORT_COMPILE;
@@ -809,9 +820,9 @@ llvm::Value *ReturnStmtAST::codegen() {
             return LogErrorV("函数返回的值为空，可能是值解析失败，或变量不存在");
         } else {
             // 当返回递归函数
-            if (typeid(*expr) == typeid(CallExprAST)){
+            if (typeid(*expr) == typeid(CallExprAST)) {
                 auto call_expr = dynamic_cast<CallExprAST *>(expr);
-                if (call_expr->getCallName() == TheCodeGenContext->getFunc()->getName()){
+                if (call_expr->getCallName() == TheCodeGenContext->getFunc()->getName()) {
                     dyn_cast<CallInst>(v)->setTailCall(true);
                 }
             }
@@ -849,12 +860,11 @@ Type *getTypeFromStr(const std::string &type) {
     } else if (type == "str") {
         // 8b的指针
         return Type::getInt8Ty(*TheContext)->getPointerTo();
-    } if(type == "fun_c") {
-        return FunctionType::get(Type::getVoidTy(*TheContext)
-                                 ,Type::getInt8Ty(*TheContext)->getPointerTo()
-                                 ,false);
-    }else {
-            return nullptr;
+    }
+    if (type == "fun_c") {
+        return FunctionType::get(Type::getVoidTy(*TheContext), Type::getInt8Ty(*TheContext)->getPointerTo(), false);
+    } else {
+        return nullptr;
     }
 }
 
@@ -1332,7 +1342,7 @@ llvm::Value *StringExprAST::codegen() {
         gv = Builder->CreateGlobalString(*str, StringExprAST::getUniqueId());
     }
     return Builder->CreateInBoundsGEP(gv, {ConstantInt::get(getTypeFromStr("int"), 0),
-                                          ConstantInt::get(getTypeFromStr("int"), 0)});
+                                           ConstantInt::get(getTypeFromStr("int"), 0)});
 }
 
 string StringExprAST::getUniqueId() {

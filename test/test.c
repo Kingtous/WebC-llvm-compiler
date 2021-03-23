@@ -1,7 +1,14 @@
 
-void cal(fun_c<str,int> f){
-    f(5);
+void cal(fun_c<int> f) {
+    f();
 }
-int main(){
-    ret 0;
+
+int handler() {
+    echo('is', 5);
+}
+
+int main() {
+    cal(handler);
+    ret
+    0;
 }
