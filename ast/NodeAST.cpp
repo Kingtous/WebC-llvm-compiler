@@ -236,14 +236,15 @@ llvm::Value *CallExprAST::codegen() {
 
     if (func == NIL) {
         //if find in the local value ,it is the function point
-        if (LOCALSVARS.find(callName) != LOCALSVARS.end()) {
-            auto call_mem = Builder->CreateLoad(LOCALSVARS[callName]);
+        auto call_func_mem = FINDLOCAL(callName);
+        if (call_func_mem != NIL) {
+            auto call_mem = Builder->CreateLoad(call_func_mem);
             if (call_mem->getType()->isPointerTy() &&
                 call_mem->getType()->getPointerElementType()->getTypeID() ==
                 llvm::Type::FunctionTyID) {
                 // 是函数
                 auto function_type = dyn_cast<FunctionType>(call_mem->getType()->getPointerElementType());
-                return Builder->CreateCall(function_type, call_mem, argsV);
+                return Builder->CreateCall(function_type, call_mem, argsV);;
             }
         }
     }
@@ -265,7 +266,7 @@ llvm::Value *CallExprAST::codegen() {
         ABORT_COMPILE;
         return LogErrorV("Incorrect # arguments passed");
     }
-    return Builder->CreateCall(func, argsV, "calltmp");
+    return Builder->CreateCall(func, argsV);
 }
 
 string CallExprAST::toString() {
@@ -579,7 +580,12 @@ Value *BlockAST::codegen() {
                 break;
             }
             lastStatementValue = it->codegen();
+#ifdef DEBUG_FLAG
+            if (lastStatementValue != NIL) {
+                lastStatementValue->print(outs());
+            }
         }
+#endif
         return lastStatementValue;
     } else {
         auto bb = BasicBlock::Create(*TheContext, "blk");
@@ -594,6 +600,11 @@ Value *BlockAST::codegen() {
             }
             auto it = (*iterator);
             lastStatementValue = (*iterator)->codegen();
+#ifdef DEBUG_FLAG
+            if (lastStatementValue != NIL) {
+                lastStatementValue->print(outs());
+            }
+#endif
             if (typeid(*it) == typeid(OutStmtAST)) {
                 if (iterator + 1 != statements.end()) {
                     LogWarn("警告：作用域内break后方的语句无法到达");
@@ -861,11 +872,7 @@ Type *getTypeFromStr(const std::string &type) {
         // 8b的指针
         return Type::getInt8Ty(*TheContext)->getPointerTo();
     }
-    if (type == "fun_c") {
-        return FunctionType::get(Type::getVoidTy(*TheContext), Type::getInt8Ty(*TheContext)->getPointerTo(), false);
-    } else {
-        return nullptr;
-    }
+    return NIL;
 }
 
 // int a[5][6][7] -> vector<Expr>(7,6,5)

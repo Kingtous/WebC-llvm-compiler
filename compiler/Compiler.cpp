@@ -85,10 +85,11 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     }
 
     legacy::PassManager pass;
-    pass.add(createReassociatePass());
-    pass.add(createGVNPass());
-    pass.add(createCFGSimplificationPass());
-    pass.add(createTailCallEliminationPass());
+// 临时关闭这些优化器
+//    pass.add(createReassociatePass());
+//    pass.add(createGVNPass());
+//    pass.add(createCFGSimplificationPass());
+//    pass.add(createTailCallEliminationPass());
     if (opts.find(ArgsParser::Options::PASS_TIME_ANALYSIS) != opts.end()) {
         pass.add(new TimeAnalysisPass());
     }

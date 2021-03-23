@@ -5,8 +5,20 @@
 #include <time.h>
 #include <unistd.h>
 #include <stack>
-void myfunc(int (*my)(int)){
-    my(1);
+
+extern "C" {
+void myfunc(int (*my)()) {
+    my();
+}
+
+int ok() {
+    return 0;
+}
+}
+
+
+int main() {
+    myfunc(ok);
 }
 //class A {
 //    public:

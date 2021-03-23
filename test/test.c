@@ -1,14 +1,20 @@
 
 void cal(fun_c<int> f) {
-    f();
+    echo('output is', f());
 }
 
-int handler() {
-    echo('is', 5);
+int ok() {
+    ret
+    5;
 }
+
+//int ok2(int retv){
+//    ret retv;
+// }
 
 int main() {
-    cal(handler);
+    ok();
+    cal(ok);
     ret
     0;
 }
