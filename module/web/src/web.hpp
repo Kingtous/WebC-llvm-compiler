@@ -9,7 +9,11 @@
 #include <set>
 
 #include <boost/beast.hpp>
+#include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+
+//#include <>
 
 /// 客户端状态码
 #define NOT_INITIALIZED -1
@@ -33,7 +37,7 @@ namespace beast = boost::beast;
 extern boost::asio::io_context *_web_io_context;
 extern tcp::resolver *_web_resolver;
 extern map<int, tcp::socket *> _web_tcp_socket_map;
-extern boost::asio::io_context* _server_context;
+extern boost::asio::io_context *_server_context;
 
 // Keep 函数名，方便Linking
 extern "C" {
@@ -131,7 +135,7 @@ typedef struct WebHttpHandler {
     std::string *method;
     std::string *path;
     std::string *content_type;
-    HandlerFunction* function;
+    HandlerFunction *function;
 } WebHttpHandler;
 
 class _web_HttpWorker {
@@ -171,7 +175,7 @@ public:
     /**
      * 添加Handler
      */
-    void addHandler(WebHttpHandler& handler);
+    void addHandler(WebHttpHandler &handler);
 
 private:
 
@@ -185,6 +189,10 @@ private:
     using request_body_t = http::string_body;
     std::string base_path;
     tcp::socket socket{acceptor.get_executor()};
+
+//    using HTTPS = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
+//     TLS 1.2 context
+//    boost::asio::ssl::context ssl_context{boost::asio::ssl::context::tlsv12};
     boost::optional<http::request_parser<http::string_body>> parser;
     beast::flat_static_buffer<8192> buffer;
     boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline{

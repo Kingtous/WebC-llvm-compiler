@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
 set(LOCATION ".")
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SSLLib openssl)
+message(STATUS "found ssl lib in ${SSLLib_INCLUDE_DIRS}")
+include_directories(${SSLLib_INCLUDE_DIRS})
+link_directories(${SSLLib_LIBRARY_DIRS})
+
 # Boost
 message(STATUS "查找Boost框架")
 find_package(Boost COMPONENTS system filesystem REQUIRED)
@@ -32,9 +38,9 @@ add_executable(webdemo src/webdemo.cpp src/web.hpp src/web.cpp)
 
 add_executable(serverdemo src/serverdemo.cpp src/web.hpp src/web.cpp)
 
-target_link_libraries(webdemo Boost::filesystem Boost::system pthread)
+target_link_libraries(webdemo Boost::filesystem Boost::system pthread ${SSLLib_LIBRARIES})
 
-target_link_libraries(serverdemo Boost::filesystem Boost::system pthread)
+target_link_libraries(serverdemo Boost::filesystem Boost::system pthread ${SSLLib_LIBRARIES})
 
 install(TARGETS web
         ARCHIVE DESTINATION ${LOCATION}

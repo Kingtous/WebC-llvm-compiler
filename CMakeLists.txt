@@ -95,7 +95,7 @@ add_executable(sysyplus_compiler
         )
 
 # CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式
-add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1)
+add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1 CGUI=1)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

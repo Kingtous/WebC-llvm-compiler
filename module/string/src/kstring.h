@@ -6,6 +6,7 @@
 #define SYSYPLUS_COMPILER_KSTRING_H
 
 #include <string>
+#include <cstring>
 
 typedef int sysytype_t;
 
