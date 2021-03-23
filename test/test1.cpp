@@ -5,17 +5,9 @@
 #include <time.h>
 #include <unistd.h>
 #include <stack>
-
-void func(void* a){
-    int* num = static_cast<int*>(a);
-    printf("%d",*num);
+void myfunc(int (*my)(int)){
+    my(1);
 }
-
-int main() {
-    int a = 5;
-    func(&a);
-}
-
 //class A {
 //    public:
 //    int a;

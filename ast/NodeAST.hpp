@@ -181,6 +181,21 @@ public:
     virtual std::string getName();
 
     string toString() override;
+
+};
+class FuncPtrAST:public VariableDeclarationAST{
+public:
+    std::vector<IdentifierExprAST*> args;
+    IdentifierExprAST *identifier;
+    FuncPtrAST(std::vector<IdentifierExprAST*> args,IdentifierExprAST *identifier)
+    :args(std::move(args))
+    ,identifier(std::move(identifier)){}
+
+    llvm::Value *codegen() override;
+
+
+
+    virtual  std::string getName() override;
 };
 
 // 变量声明语句
@@ -342,11 +357,11 @@ class CallExprAST : public ExpressionAST {
     std::vector<ExpressionAST*> args;
 
 public:
-    CallExprAST(std::string callName, std::vector<ExpressionAST*> args) : callName(std::move(callName)),
+       CallExprAST(std::string callName, std::vector<ExpressionAST*> args) : callName(std::move(callName)),
 
                                                                                         args(std::move(args)) {}
 
-    const string &getCallName() const;;
+    const string &getCallName() const;
 
     llvm::Value *codegen() override;
 

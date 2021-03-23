@@ -36,7 +36,9 @@ logOnUi((string(s)+" 在 " + to_string(TheLexer->getCLineNumber())+" 行 "+to_st
 	ConditionAST* cond;
 	ForExprAST* forexpr;
 	WhileStmtAST* whilestmt;
+	FuncPtrAST* funcptr;
 	std::vector<VariableDeclarationAST*> *varvec;
+	std::vector<IdentifierExprAST*> *identvec;
 	std::vector<ExpressionAST*> *exprvec;
 	std::vector<ExpressionAST*> *aivec; // array index vector
 	vector<NodeAST*>* arrayvalvec;
@@ -78,6 +80,7 @@ logOnUi((string(s)+" 在 " + to_string(TheLexer->getCLineNumber())+" 行 "+to_st
 %type <stmt> stmt func_decl
 %type <vdeclar> var_decl
 %type <varvec> func_args
+%type <identvec> func_ptr_args
 %type <exprvec> call_args
 %type <arrayvalvec> array_init_val array_init_list
 %type <aivec> array_index "array index vector"
@@ -153,9 +156,13 @@ var_decl : ident ident {
           		);
           		}
          | ident ident_arr T_ASSIGN array_init_val {$$ = new VariableArrDeclarationAST($1->identifier,$2,$4);}
+	 | ident T_LESS func_ptr_args T_GREATER ident{$$ = new FuncPtrAST(*$3,$5);}
 	;
 
-
+func_ptr_args: ident{$$ = new std::vector<IdentifierExprAST*>();
+                   $$->push_back($1); }
+	|func_ptr_args T_COMMA ident{$1->push_back($3);}
+	;
 // func() func(a,b) func(a)
 // a;
 // a<b
@@ -210,7 +217,7 @@ func_decl : ident ident T_L_SPAR func_args T_R_SPAR block
 	PrototypeAST* proto = new PrototypeAST($1->identifier,$2->identifier,*$4);
 	BlockAST* body = $6;
 	$$ = new FunctionAST(proto,body);
-	// printf("build function %s \n",$2->identifier.c_str());
+	//printf("build function %s \n",$2->identifier.c_str());
 }
 
 func_args : %empty { $$ = new std::vector<VariableDeclarationAST*>(); }

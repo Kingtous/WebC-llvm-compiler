@@ -5,6 +5,7 @@
 #include "NodeAST.hpp"
 
 #include <utility>
+#include <iostream>
 #include "ErrHelper.h"
 #include "codegen/CodeGen.h"
 
@@ -240,11 +241,14 @@ llvm::Value *CallExprAST::codegen() {
             return ev;
         }
     }
-    if (!func){
+    //if find in the local value ,it is the function point
+    if (LOCALSVARS.find(callName)!=LOCALSVARS.end()){
+        return Builder->CreateLoad(LOCALSVARS[callName]);
+    }
+    if (!func&&LOCALSVARS.find(callName) == LOCALSVARS.end()){
         ABORT_COMPILE;
         return LogErrorV(("使用了未知的函数：" + callName).c_str());
     }
-
     // If argument mismatch error.
     if (func->arg_size() != args.size()){
         ABORT_COMPILE;
@@ -268,9 +272,20 @@ llvm::Function *PrototypeAST::codegen() {
         if (typeid(*arg) == typeid(VariableArrDeclarationAST)) {
             auto arr_arg = dynamic_cast<VariableArrDeclarationAST *>(arg);
             Args.push_back(arr_arg->buildPointerTy());
-        } else {
-            Args.push_back(getTypeFromStr(arg->type));
-        }
+        } else if (typeid(*arg)== typeid(FuncPtrAST)){//如果这种类型是FunctrAST的话
+            auto ptr_arg = dynamic_cast<FuncPtrAST*>(arg);
+            std::vector<llvm::Type*> putArgs;
+            for(int i =1;i<ptr_arg->args.size();i++){
+                putArgs.push_back(getTypeFromStr(ptr_arg->args[i]->identifier));
+            }
+            llvm::ArrayRef<llvm::Type*> argsRef(putArgs);
+            llvm::FunctionType *funcPtrType= llvm::FunctionType::get(getTypeFromStr(ptr_arg->args[0]->identifier),
+                                                                     argsRef,
+                                                                     false);
+            Args.push_back(funcPtrType->getPointerTo());
+        }else {
+                Args.push_back(getTypeFromStr(arg->type));
+            }
     }
     llvm::FunctionType *FT = llvm::FunctionType::get(getTypeFromStr(returnType), Args, false);;
     llvm::Function *F =
@@ -477,7 +492,7 @@ llvm::Function *FunctionAST::codegen() {
     TheCodeGenContext->push_block(BB);
     TheCodeGenContext->setFunction(function);
 
-    // Record the function arguments in the NamedValues map.
+    // Record the function argnts in the NamedValues map.
 //    auto funcVars = TheCodeGenContext->get_current_locals()->localVars;
     for (auto &Arg : function->args()) {
         // 分配一片内存
@@ -677,6 +692,52 @@ string VariableDeclarationAST::toString() {
     return s + this->getName();
 }
 
+llvm::Value *FuncPtrAST::codegen() {
+    Value *ret = nullptr;
+    if (this->getName() == "ctotal") {
+        ret = NIL;
+    }
+    if (!HASLOCALS) {
+        // 全局变量
+        auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
+        if (global_variable) {
+            fprintf(stderr, "variable %s redefined", identifier->identifier.c_str());
+            ABORT_COMPILE;
+            return nullptr;
+        } else {
+            auto *gv = new GlobalVariable(*TheModule, getTypeFromStr(type), isConst,
+                                          GlobalVariable::LinkageTypes::ExternalLinkage,
+                                          Constant::getNullValue(getTypeFromStr(type)), identifier->identifier);
+            if (expr != nullptr) {
+                auto v = expr->codegen();
+                if (IS_COMPILE_ABORTED){
+                    return NIL;
+                }
+                auto val = dyn_cast<Constant>(expr->codegen());
+                gv->setInitializer(val);
+            }
+            ret = gv;
+        }
+    } else {
+        if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
+            std::vector<llvm::Type*> putArgs;
+            for(int i =1;i<args.size();i++){
+                putArgs.push_back(getTypeFromStr(args[i]->identifier));
+            }
+            llvm::ArrayRef<llvm::Type*> argsRef(putArgs);
+            llvm::FunctionType *funcPtrType= llvm::FunctionType::get(getTypeFromStr(args[0]->identifier),
+                                                                     argsRef,
+                                                                     false);
+
+            ret = Builder->CreateAlloca(funcPtrType->getPointerTo());
+//            identifier.
+//           auto mem = Builder->CreateAlloca(getTypeFromStr(type),)
+            INSERTLOCAL(identifier->identifier, ret);
+        }
+    }
+    return ret;
+}
+
 llvm::Value *IntegerExprAST::codegen() {
     return ConstantInt::get(Type::getInt32Ty(*TheContext), Val, true);
 }
@@ -785,8 +846,12 @@ Type *getTypeFromStr(const std::string &type) {
     } else if (type == "str") {
         // 8b的指针
         return Type::getInt8Ty(*TheContext)->getPointerTo();
-    } else {
-        return nullptr;
+    } if(type == "fun_c") {
+        return FunctionType::get(Type::getVoidTy(*TheContext)
+                                 ,Type::getInt8Ty(*TheContext)->getPointerTo()
+                                 ,false);
+    }else {
+            return nullptr;
     }
 }
 
@@ -1065,6 +1130,10 @@ string VariableArrDeclarationAST::toString() {
     return identifier->identifier;
 }
 
+string FuncPtrAST::getName() {
+    return identifier->identifier;
+}
+
 VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(
         identifier), expr(expr) {}
 
@@ -1284,3 +1353,4 @@ string NullExprAST::toString() {
 llvm::Value *NullExprAST::codegen() {
     return ConstantExpr::getNullValue(getTypeFromStr("long")->getPointerTo());
 }
+

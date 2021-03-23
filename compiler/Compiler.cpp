@@ -28,7 +28,7 @@ int startAnalyze(ArgsParser *parser) {
         int result = yyparse();
         if (!result) {
             auto ast = program;
-            //std::cout << ast->toString();
+            std::cout << ast->toString();
             auto val = ast->codegen();
             if (val == nullptr) {
                 return RERR;
