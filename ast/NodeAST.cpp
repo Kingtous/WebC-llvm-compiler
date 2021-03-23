@@ -266,6 +266,9 @@ const string &CallExprAST::getCallName() const {
 }
 
 llvm::Function *PrototypeAST::codegen() {
+    // 形参的类型 int*()
+    auto type = FunctionType::get(getTypeFromStr("int"), false);
+
     // Make the function type:  double(double,double) etc.
     std::vector<llvm::Type *> Args;
     for (auto arg : args) {

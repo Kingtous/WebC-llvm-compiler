@@ -9,6 +9,7 @@ set(LOCATION ".")
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SSLLib openssl)
 message(STATUS "found ssl lib in ${SSLLib_INCLUDE_DIRS}")
+message(STATUS "found ssl lib in ${SSLLib_LIBRARY_DIRS}")
 include_directories(${SSLLib_INCLUDE_DIRS})
 link_directories(${SSLLib_LIBRARY_DIRS})
 

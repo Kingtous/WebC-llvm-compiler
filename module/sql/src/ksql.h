@@ -5,9 +5,9 @@
 #ifndef SYSYPLUS_COMPILER_KSQL_H
 #define SYSYPLUS_COMPILER_KSQL_H
 
-//#include <mysqlx/xapi.h>
+//#include "mysql_driver.h"
 
 extern "C" {
-};
+}
 
 #endif //SYSYPLUS_COMPILER_KSQL_H
