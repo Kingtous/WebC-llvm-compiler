@@ -239,7 +239,7 @@ int _web_getServerId(const char *addr, int port, int core) {
     char *path = new char[BUFSIZ];
     getcwd(path, BUFSIZ);
     auto threads = new std::vector<std::thread *>;
-    auto server = new _web_HttpWorker(*acceptor, std::string(path));
+    auto server = new _web_HttpWorker(_server_context, *acceptor, std::string(path));
     server->start();
     auto work_pair = make_pair(server, make_pair(core, threads));
     auto pair = make_pair(serverId++, work_pair);
@@ -280,8 +280,8 @@ int _web_startServe(int sId) {
     return ROK;
 }
 
-_web_HttpWorker::_web_HttpWorker(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
-                                                                                    base_path(basePath) {
+_web_HttpWorker::_web_HttpWorker(boost::asio::io_context *context, tcp::acceptor &acceptor, const string &basePath) :
+        acceptor(acceptor), base_path(basePath), io_context(context) {
     beast::error_code ec;
     acceptor.set_option(asio::socket_base::reuse_address(true), ec);
     ssl_context.set_verify_mode(ssl::verify_none);
@@ -293,7 +293,6 @@ _web_HttpWorker::_web_HttpWorker(tcp::acceptor &acceptor, const string &basePath
     ssl_context.set_options(
             ssl::context::default_workarounds | ssl::context::no_sslv2
     );
-    ssl_stream_ = std::make_shared<ssl_stream>(acceptor.get_executor(), ssl_context);
 }
 
 void _web_HttpWorker::addHandler(WebHttpHandler &handler) {
@@ -333,25 +332,23 @@ void _web_HttpWorker::process_request(http::request<request_body_t> const &reque
 }
 
 void _web_HttpWorker::accept() {
-//    auto new_session = new _web_Session(acceptor, ssl_context);
-    buffer.consume(buffer.size());
-
     acceptor.async_accept(
-            ssl_stream_->lowest_layer(),
-            [this](beast::error_code ec) {
+            asio::make_strand(*io_context),
+            [this](beast::error_code ec, tcp::socket socket) {
                 if (ec) {
                     std::fprintf(stderr, "%s\n", ec.message().c_str());
                 } else {
                     // SSL 握手
+                    ssl_stream_ = std::make_shared<ssl_stream>(std::move(socket), ssl_context);
                     ssl_stream_->async_handshake(ssl::stream_base::server, [this](beast::error_code ec) {
                         if (ec) {
                             std::fprintf(stderr, "%s\n", ec.message().c_str());
-                            doClose();
                         } else {
                             readRequest();
                         }
                     });
                 }
+                accept();
             }
     );
 }
@@ -403,7 +400,7 @@ void _web_HttpWorker::sendNotExistResponse() {
             *ssl_stream_,
             *str_serializer,
             [this](beast::error_code ec, std::size_t) {
-                accept();
+                // ignore
             }
     );
 }

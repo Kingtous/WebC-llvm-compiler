@@ -147,11 +147,13 @@ public:
 
     _web_HttpWorker &operator=(_web_HttpWorker const &) = delete;
 
-    _web_HttpWorker(tcp::acceptor &acceptor, const string &basePath);
+    _web_HttpWorker(boost::asio::io_context *ioc, tcp::acceptor &acceptor, const string &basePath);
 
     std::unique_ptr<http::response_serializer<http::string_body>> str_serializer;
 
     std::unique_ptr<http::response<http::string_body>> str_resp;
+
+    boost::asio::io_context *io_context;
 
     std::vector<WebHttpHandler> handlers;
 
