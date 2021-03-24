@@ -8,8 +8,9 @@ boost::asio::io_context *_web_io_context = nullptr;
 boost::asio::io_context *_server_context = nullptr;
 tcp::resolver *_web_resolver = nullptr;
 map<int, tcp::socket *> _web_tcp_socket_map;
-map<int, std::vector<_web_HttpWorker *>> _web_http_server_map;
+map<int, pair<_web_HttpWorker *, pair<int, std::vector<std::thread *> *>>> _web_http_server_map;
 
+// 默认证书，目前在Safari上会出现stream truncated，在chrome里需要在@link chrome://flags启用本地证书信任
 std::string _web_cert = "-----BEGIN CERTIFICATE-----\n"
                         "MIIECjCCAvKgAwIBAgIBATANBgkqhkiG9w0BAQsFADCBiDELMAkGA1UEBhMCQ04x\n"
                         "EDAOBgNVBAgMB0ppYW5nWGkxDzANBgNVBAcMBllpQ2h1bjERMA8GA1UECgwIS2lu\n"
@@ -69,9 +70,9 @@ volatile int serverId = 0;
 
 class _web_Session {
 public:
-    _web_Session(boost::asio::io_service &io_service,
+    _web_Session(boost::asio::ip::tcp::acceptor &accepter,
                  boost::asio::ssl::context &context)
-            : socket_(io_service, context) {
+            : socket_(accepter.get_executor(), context) {
     }
 
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>::lowest_layer_type &socket() {
@@ -231,20 +232,19 @@ namespace asio = boost::asio;
 
 int _web_getServerId(const char *addr, int port, int core) {
     if (_server_context == nullptr) {
-        _server_context = new boost::asio::io_context();
+        _server_context = new boost::asio::io_context(core);
     }
     auto address = boost::asio::ip::make_address(addr);
     auto acceptor = new tcp::acceptor{*_server_context, {address, static_cast<unsigned short>(port)}};
     char *path = new char[BUFSIZ];
     getcwd(path, BUFSIZ);
-    auto servers = new std::vector<_web_HttpWorker *>;
-    while (core--) {
-        auto server = new _web_HttpWorker(*acceptor, std::string(path));
-        servers->push_back(server);
-    }
-    auto pair = make_pair(serverId++, *servers);
+    auto threads = new std::vector<std::thread *>;
+    auto server = new _web_HttpWorker(*acceptor, std::string(path));
+    server->start();
+    auto work_pair = make_pair(server, make_pair(core, threads));
+    auto pair = make_pair(serverId++, work_pair);
     _web_http_server_map.insert(pair);
-    return pair.first;
+    return 0;
 }
 
 int
@@ -258,11 +258,8 @@ _web_addUrlHandler(int sId, const char *method, const char *path, const char *co
     http_handler->path = new std::string(path);
     http_handler->content_type = new std::string(content_type);
     http_handler->function = handler;
-    auto worker = it->second.begin();
-    while (worker != it->second.end()) {
-        (*worker)->addHandler(*http_handler);
-        worker++;
-    }
+    auto worker = it->second.first;
+    worker->addHandler(*http_handler);
     return ROK;
 }
 
@@ -272,10 +269,12 @@ int _web_startServe(int sId) {
         return SERVER_NOT_EXISTS;
     }
     // 开启
-    auto worker = it->second.begin();
-    while (worker != it->second.end()) {
-        (*worker)->start();
-        worker++;
+    auto cores = it->second.second.first - 1;
+    while (cores--) {
+        auto t = new std::thread([] {
+            _server_context->run();
+        });
+        it->second.second.second->push_back(t);
     }
     _server_context->run();
     return ROK;
@@ -283,8 +282,18 @@ int _web_startServe(int sId) {
 
 _web_HttpWorker::_web_HttpWorker(tcp::acceptor &acceptor, const string &basePath) : acceptor(acceptor),
                                                                                     base_path(basePath) {
-//    ssl_context.use_certificate_chain(_web_cert_buf);
-//    ssl_context.use_private_key(_web_key_buf, boost::asio::ssl::context::pem);
+    beast::error_code ec;
+    acceptor.set_option(asio::socket_base::reuse_address(true), ec);
+    ssl_context.set_verify_mode(ssl::verify_none);
+    ssl_context.use_certificate_chain(_web_cert_buf);
+    ssl_context.use_private_key(_web_key_buf, boost::asio::ssl::context::pem);
+    ssl_context.set_password_callback([](std::size_t, ssl::context_base::password_purpose) {
+        return "kingtous";
+    });
+    ssl_context.set_options(
+            ssl::context::default_workarounds | ssl::context::no_sslv2
+    );
+    ssl_stream_ = std::make_shared<ssl_stream>(acceptor.get_executor(), ssl_context);
 }
 
 void _web_HttpWorker::addHandler(WebHttpHandler &handler) {
@@ -309,11 +318,11 @@ void _web_HttpWorker::process_request(http::request<request_body_t> const &reque
             str_resp->prepare_payload();
             str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
             http::async_write(
-                    socket,
+                    *ssl_stream_,
                     *str_serializer,
                     [this](beast::error_code ec, std::size_t) {
-                        socket.shutdown(tcp::socket::shutdown_send, ec);
                         accept();
+                        std::fprintf(stderr, "%s", ec.message().c_str());
                     }
             );
             return;
@@ -324,20 +333,24 @@ void _web_HttpWorker::process_request(http::request<request_body_t> const &reque
 }
 
 void _web_HttpWorker::accept() {
-//    _web_Session *new_session = new _web_Session(io_)
-    beast::error_code ec;
-    socket.close(ec);
+//    auto new_session = new _web_Session(acceptor, ssl_context);
     buffer.consume(buffer.size());
 
     acceptor.async_accept(
-            socket.lowest_layer(),
+            ssl_stream_->lowest_layer(),
             [this](beast::error_code ec) {
                 if (ec) {
-                    accept();
+                    std::fprintf(stderr, "%s\n", ec.message().c_str());
                 } else {
-//                    socket.
-//                            request_deadline.expires_after(std::chrono::seconds(60));
-                    readRequest();
+                    // SSL 握手
+                    ssl_stream_->async_handshake(ssl::stream_base::server, [this](beast::error_code ec) {
+                        if (ec) {
+                            std::fprintf(stderr, "%s\n", ec.message().c_str());
+                            doClose();
+                        } else {
+                            readRequest();
+                        }
+                    });
                 }
             }
     );
@@ -346,12 +359,12 @@ void _web_HttpWorker::accept() {
 void _web_HttpWorker::readRequest() {
     parser.emplace();
     http::async_read(
-            socket,
+            *ssl_stream_,
             buffer,
             *parser,
             [this](beast::error_code ec, std::size_t) {
                 if (ec) {
-                    accept();
+                    std::fprintf(stderr, "%s", ec.message().c_str());
                 } else {
                     process_request(parser->get());
                 }
@@ -365,14 +378,15 @@ void _web_HttpWorker::start() {
 }
 
 void _web_HttpWorker::checkDeadline() {
-    if (request_deadline.expiry() <= std::chrono::steady_clock::now()) {
-        socket.close();
-        request_deadline.expires_at(std::chrono::steady_clock::time_point::max());
-    }
-
-    request_deadline.async_wait([this](beast::error_code) {
-        checkDeadline();
-    });
+//    if (request_deadline.expiry() <= std::chrono::steady_clock::now()) {
+//        doClose();
+//        accept();
+//        request_deadline.expires_at(std::chrono::steady_clock::time_point::max());
+//    }
+//
+//    request_deadline.async_wait([this](beast::error_code) {
+//        checkDeadline();
+//    });
 }
 
 void _web_HttpWorker::sendNotExistResponse() {
@@ -386,13 +400,22 @@ void _web_HttpWorker::sendNotExistResponse() {
     str_resp->prepare_payload();
     str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
     http::async_write(
-            socket,
+            *ssl_stream_,
             *str_serializer,
             [this](beast::error_code ec, std::size_t) {
-                socket.shutdown(tcp::socket::shutdown_send, ec);
                 accept();
             }
     );
+}
+
+void _web_HttpWorker::doClose() {
+    beast::get_lowest_layer(ssl_stream_)->shutdown();
+    ssl_stream_->async_shutdown([](beast::error_code ec) {
+        // ignore
+        if (ec) {
+            fprintf(stderr, "%s", ec.message().c_str());
+        }
+    });
 }
 
 boost::beast::string_view mime_type(boost::beast::string_view path) {

@@ -32,6 +32,7 @@
 using namespace std;
 using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;
+namespace ssl = boost::asio::ssl;
 namespace beast = boost::beast;
 
 extern boost::asio::io_context *_web_io_context;
@@ -128,6 +129,8 @@ int _web_startServe(int sId);
 
 typedef const char *HandlerFunction();
 
+typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_stream;
+
 /**
  * handler结构
  */
@@ -177,6 +180,11 @@ public:
      */
     void addHandler(WebHttpHandler &handler);
 
+    /**
+     * @brief 关闭连接
+     */
+    void doClose();
+
 private:
 
     /**
@@ -190,9 +198,8 @@ private:
     std::string base_path;
     tcp::socket socket{acceptor.get_executor()};
 
-//    using HTTPS = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
-//     TLS 1.2 context
-//    boost::asio::ssl::context ssl_context{boost::asio::ssl::context::tlsv12};
+    boost::asio::ssl::context ssl_context{boost::asio::ssl::context::tlsv12};
+    std::shared_ptr<ssl_stream> ssl_stream_;
     boost::optional<http::request_parser<http::string_body>> parser;
     beast::flat_static_buffer<8192> buffer;
     boost::asio::basic_waitable_timer<std::chrono::steady_clock> request_deadline{
