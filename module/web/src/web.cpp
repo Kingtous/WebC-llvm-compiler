@@ -4,6 +4,8 @@
 
 #include "web.hpp"
 
+#include <utility>
+
 boost::asio::io_context *_web_io_context = nullptr;
 boost::asio::io_context *_server_context = nullptr;
 tcp::resolver *_web_resolver = nullptr;
@@ -70,9 +72,9 @@ volatile int serverId = 0;
 
 class _web_Session {
 public:
-    _web_Session(boost::asio::ip::tcp::acceptor &accepter,
-                 boost::asio::ssl::context &context)
-            : socket_(accepter.get_executor(), context) {
+    _web_Session(boost::asio::ip::tcp::socket &&socket,
+                 boost::asio::ssl::context &context, std::shared_ptr<std::vector<WebHttpHandler>> handlers)
+            : socket_(std::move(socket), context), handlers(std::move(handlers)) {
     }
 
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>::lowest_layer_type &socket() {
@@ -81,52 +83,100 @@ public:
 
     void start() {
         socket_.async_handshake(boost::asio::ssl::stream_base::server,
-                                boost::bind(&_web_Session::handle_handshake, this,
-                                            boost::asio::placeholders::error));
+                                [this](boost::system::error_code ec) {
+                                    handle_handshake(ec);
+                                });
     }
 
     void handle_handshake(const boost::system::error_code &error) {
         if (!error) {
-            printf("handshake");
-            socket_.async_read_some(boost::asio::buffer(data_, max_length),
-                                    boost::bind(&_web_Session::handle_read, this,
-                                                boost::asio::placeholders::error,
-                                                boost::asio::placeholders::bytes_transferred));
+            // 握手完毕，读取数据进buffer，最多8KB请求
+            parser.emplace();
+            http::async_read(
+                    socket_,
+                    buffer,
+                    *parser,
+                    [this](beast::error_code ec, std::size_t) {
+                        if (ec) {
+                            std::fprintf(stderr, "%s", ec.message().c_str());
+                            close();
+                        } else {
+                            process_request(parser->get());
+                        }
+                    }
+            );
         } else {
-            printf("handshake failer");
-            delete this;
+            close();
         }
     }
 
-    void handle_read(const boost::system::error_code &error,
-                     size_t bytes_transferred) {
-        if (!error) {
-            boost::asio::async_write(socket_,
-                                     boost::asio::buffer(data_, bytes_transferred),
-                                     boost::bind(&_web_Session::handle_write, this,
-                                                 boost::asio::placeholders::error));
-        } else {
-            delete this;
+    void process_request(http::request<request_body_t> const &request) {
+        auto target = request.target();
+        auto handlers_it = this->handlers->begin();
+        while (handlers_it != this->handlers->end()) {
+            if ((*(*handlers_it).path) == target && (*(*handlers_it).method) == request.method_string()) {
+                auto func = *(handlers_it->function);
+                auto resp = func();
+//            std::string resp_str(resp);
+                str_resp = std::make_unique<http::response<http::string_body>>();
+                str_resp->result(http::status::ok);
+                str_resp->keep_alive(false);
+                str_resp->set(http::field::server, SERVER_NAME);
+                str_resp->set(http::field::content_type, *(handlers_it->content_type));
+                str_resp->body() = resp;
+                // 计算相应长度
+                str_resp->prepare_payload();
+                str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
+                http::async_write(
+                        socket_,
+                        *str_serializer,
+                        [this](beast::error_code ec, std::size_t) {
+                            if (ec) {
+                                std::fprintf(stderr, "%s", ec.message().c_str());
+                            }
+                            close();
+                        }
+                );
+                return;
+            }
+            handlers_it++;
         }
+        sendNotExistResponse();
     }
 
-    void handle_write(const boost::system::error_code &error) {
-        if (!error) {
-            socket_.async_read_some(boost::asio::buffer(data_, max_length),
-                                    boost::bind(&_web_Session::handle_read, this,
-                                                boost::asio::placeholders::error,
-                                                boost::asio::placeholders::bytes_transferred));
-        } else {
+    void sendNotExistResponse() {
+        str_resp = std::make_unique<http::response<http::string_body>>();
+        str_resp->result(http::status::not_found);
+        str_resp->keep_alive(false);
+        str_resp->set(http::field::server, SERVER_NAME);
+        str_resp->set(http::field::content_type, "application/json");
+        str_resp->body() = "您可能访问了一个错误的地址 | URL requested not mapped.";
+        // 计算相应长度
+        str_resp->prepare_payload();
+        str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
+        http::async_write(
+                socket_,
+                *str_serializer,
+                [this](beast::error_code ec, std::size_t) {
+                    close();
+                }
+        );
+    }
+
+    void close() {
+        socket_.async_shutdown([this](boost::system::error_code ec) {
+            // ignore
             delete this;
-        }
+        });
     }
 
 private:
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket> socket_;
-    enum {
-        max_length = 1024
-    };
-    char data_[max_length];
+    ssl_stream socket_;
+    beast::flat_static_buffer<8192> buffer;
+    boost::optional<http::request_parser<http::string_body>> parser;
+    std::unique_ptr<http::response_serializer<http::string_body>> str_serializer;
+    std::shared_ptr<std::vector<WebHttpHandler>> handlers;
+    std::unique_ptr<http::response<http::string_body>> str_resp;
 };
 
 
@@ -284,7 +334,7 @@ _web_HttpWorker::_web_HttpWorker(boost::asio::io_context *context, tcp::acceptor
         acceptor(acceptor), base_path(basePath), io_context(context) {
     beast::error_code ec;
     acceptor.set_option(asio::socket_base::reuse_address(true), ec);
-    ssl_context.set_verify_mode(ssl::verify_none);
+    ssl_context.set_verify_mode(ssl::verify_peer);
     ssl_context.use_certificate_chain(_web_cert_buf);
     ssl_context.use_private_key(_web_key_buf, boost::asio::ssl::context::pem);
     ssl_context.set_password_callback([](std::size_t, ssl::context_base::password_purpose) {
@@ -293,42 +343,15 @@ _web_HttpWorker::_web_HttpWorker(boost::asio::io_context *context, tcp::acceptor
     ssl_context.set_options(
             ssl::context::default_workarounds | ssl::context::no_sslv2
     );
+    handlers = make_shared<std::vector<WebHttpHandler>>();
 }
 
 void _web_HttpWorker::addHandler(WebHttpHandler &handler) {
-    this->handlers.push_back(handler);
+    this->handlers->push_back(handler);
 }
 
 void _web_HttpWorker::process_request(http::request<request_body_t> const &request) {
-    auto target = request.target();
-    auto handlers_it = this->handlers.begin();
-    while (handlers_it != this->handlers.end()) {
-        if ((*(*handlers_it).path) == target && (*(*handlers_it).method) == request.method_string()) {
-            auto func = *(handlers_it->function);
-            auto resp = func();
-//            std::string resp_str(resp);
-            str_resp = std::make_unique<http::response<http::string_body>>();
-            str_resp->result(http::status::not_found);
-            str_resp->keep_alive(false);
-            str_resp->set(http::field::server, SERVER_NAME);
-            str_resp->set(http::field::content_type, *(handlers_it->content_type));
-            str_resp->body() = resp;
-            // 计算相应长度
-            str_resp->prepare_payload();
-            str_serializer = std::make_unique<http::response_serializer<http::string_body>>(*str_resp);
-            http::async_write(
-                    *ssl_stream_,
-                    *str_serializer,
-                    [this](beast::error_code ec, std::size_t) {
-                        accept();
-                        std::fprintf(stderr, "%s", ec.message().c_str());
-                    }
-            );
-            return;
-        }
-        handlers_it++;
-    }
-    sendNotExistResponse();
+    // 迁移至_web_Session
 }
 
 void _web_HttpWorker::accept() {
@@ -338,15 +361,9 @@ void _web_HttpWorker::accept() {
                 if (ec) {
                     std::fprintf(stderr, "%s\n", ec.message().c_str());
                 } else {
-                    // SSL 握手
-                    ssl_stream_ = std::make_shared<ssl_stream>(std::move(socket), ssl_context);
-                    ssl_stream_->async_handshake(ssl::stream_base::server, [this](beast::error_code ec) {
-                        if (ec) {
-                            std::fprintf(stderr, "%s\n", ec.message().c_str());
-                        } else {
-                            readRequest();
-                        }
-                    });
+                    // 创建
+                    auto session = new _web_Session(std::move(socket), ssl_context, handlers);
+                    session->start();
                 }
                 accept();
             }

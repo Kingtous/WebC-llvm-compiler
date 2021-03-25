@@ -135,14 +135,18 @@ int Lexer::_getNextToken() {
         identifierStr = char(last_char);
 
 
-        while (ispunct((last_char = getchar())))
+        while (ispunct((last_char = getchar()))) {
             identifierStr += last_char;
-        // 注释
-        if (identifierStr == "//") {
-            while ((last_char = getchar()) != '\n' && last_char != EOF);
-            NEXTCHAR;
-            return _getNextToken();
+            // 注释
+            if (identifierStr == "//") {
+                while (last_char != '\n' && last_char != EOF) {
+                    last_char = getchar();
+                }
+                NEXTCHAR;
+                return _getNextToken();
+            }
         }
+
         if (identifierStr == "&&") {
             return T_AND;
         }

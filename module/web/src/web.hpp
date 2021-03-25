@@ -35,6 +35,8 @@ namespace http = boost::beast::http;
 namespace ssl = boost::asio::ssl;
 namespace beast = boost::beast;
 
+using request_body_t = http::string_body;
+
 extern boost::asio::io_context *_web_io_context;
 extern tcp::resolver *_web_resolver;
 extern map<int, tcp::socket *> _web_tcp_socket_map;
@@ -155,7 +157,7 @@ public:
 
     boost::asio::io_context *io_context;
 
-    std::vector<WebHttpHandler> handlers;
+    std::shared_ptr<std::vector<WebHttpHandler>> handlers;
 
     /**
      * 接收下一个客户
@@ -196,7 +198,6 @@ private:
 
     tcp::acceptor &acceptor;
 //    using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
-    using request_body_t = http::string_body;
     std::string base_path;
     tcp::socket socket{acceptor.get_executor()};
 
