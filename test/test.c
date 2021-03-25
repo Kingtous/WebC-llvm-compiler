@@ -1,20 +1,20 @@
-
-void cal(fun_c<int> f) {
-    echo('output is', f());
+str hi() {
+    str a = '<h1>hello from kingtous compiler</h1>';
+    ret a;
 }
-
-int ok() {
-    ret
-    5;
-}
-
-//int ok2(int retv){
-//    ret retv;
-// }
 
 int main() {
-    ok();
-    cal(ok);
+    echo('init...');
+//}    echo(hi());
+    str host = '127.0.0.1';
+    int port = 9000;
+    int core = 2;
+    echo('get server...');
+    int server_id = getServer(host, port, core);
+    echo('server id is', server_id);
+    addUrlHandler(server_id, 'GET', '/compiler', 'text/html', hi);
+    echo('start server in host', host, ',port is', port);
+    startServer(server_id);
     ret
     0;
 }
