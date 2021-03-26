@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 message(STATUS ${CMAKE_SOURCE_DIR})
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
 set(LOCATION ".")
+include_directories()
+link_directories()
 
 if (APPLE)
     message(STATUS "macOS detected")
@@ -23,8 +25,8 @@ endif ()
 aux_source_directory(src SRC)
 
 add_library(ksql STATIC ${SRC})
-
 add_executable(ksqldemo ${SRC})
+
 target_link_libraries(ksqldemo)
 
 install(TARGETS ksql
