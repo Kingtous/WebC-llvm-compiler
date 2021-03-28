@@ -13,8 +13,11 @@
 #include "cppconn/connection.h"
 #include "cppconn/prepared_statement.h"
 #include "iostream"
-#include "../module/json/src/kjson.h"
+#include "module/json/src/kjson.h"
 
+#include "unordered_map"
+#include "vector"
+#include "hash_set"
 //mysql相关参数
 #define HOST "127.0.0.1""
 #define USER "root"
@@ -48,6 +51,8 @@ extern "C" {
     int _query_db(const char* sqlSentence);
     //将query语句返回值转化为json
     void _print_json(ResultSetMetaData *metaData);
+    //将query语句返回转化为字符串
+    string _resToJson(ResultSet *resultSet);
 }
 
 #endif //SYSYPLUS_COMPILER_KSQL_H

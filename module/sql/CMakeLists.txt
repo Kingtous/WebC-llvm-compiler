@@ -27,7 +27,7 @@ aux_source_directory(src SRC)
 add_library(ksql STATIC ${SRC})
 add_executable(ksqldemo ${SRC})
 
-target_link_libraries(ksqldemo)
+target_link_libraries(ksqldemo mysqlcppconn kjson)
 
 install(TARGETS ksql
         ARCHIVE DESTINATION ${LOCATION}

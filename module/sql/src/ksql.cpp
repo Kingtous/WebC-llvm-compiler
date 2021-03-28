@@ -21,10 +21,6 @@ int _connect_db(const char *host, const char *user, const char *passwd, const ch
     }
     //连接到指定数据库
     conn->setSchema(database);
-    if (conn->getSchema() == NULL) {
-        cout << "连接到指定数据库失败" << endl;
-        return NOT_CONNECT;
-    }
     return SUCCESS;
 }
 
@@ -41,13 +37,51 @@ int _query_db(const char *sqlSentence) {
     statement = conn->createStatement();
 //    statement->executeQuery(sqlSentence);
     resultSet = statement->executeQuery(sqlSentence);
-    ResultSetMetaData *metaData = resultSet->getMetaData();
 //    _print_json(metaData);
-    cout<<metaData;
+    cout<<_resToJson(resultSet);
     return SUCCESS;
 }
 
 void _print_json(ResultSetMetaData *metaData) {
-    cout<<strToJson(reinterpret_cast<SYSY_STR>(metaData->getColumnCount()));
+    cout<<strToJson(reinterpret_cast<SYSY_STR>(metaData));
 }
+
+string _resToJson(ResultSet *result) {
+    string s;
+    s+="[";
+    //列数
+    int count = result->getMetaData()->getColumnCount();
+    vector<string> ans;
+    while (result->next()){
+        string temp;
+        for (int i = 1; i <= count ; ++i) {
+            if(i==1){
+                temp+="{";
+            }
+            temp+="\"";
+            temp+=result->getMetaData()->getColumnLabel(i);
+            temp+="\":";
+            auto type = result->getMetaData()->getColumnTypeName(i);
+            if(type=="VARCHAR"){
+                temp+="\"";
+                temp+=result->getString(i);
+                temp+="\"";
+            }
+            else{
+                temp+=result->getString(i);
+            }
+            if (i==count) temp+="}";
+            temp+=",";
+        }
+        ans.push_back(temp);
+    }
+    ans[ans.size()-1].pop_back();
+    for (auto str:ans){
+        s+=str;
+    }
+    s+="]";
+return s;
+    //获取值
+}
+
 

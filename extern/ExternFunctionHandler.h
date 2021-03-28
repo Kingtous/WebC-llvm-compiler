@@ -64,6 +64,16 @@ public:
     static Function *getOrAddStartServer(LLVMContext &context, Module &module);
 
     static Function *getOrAddtoString(LLVMContext &context, Module &module);
+
+    static Function *getOrAddConnectDB(LLVMContext &context, Module &module);
+
+    static Function *getOrAddFreeConnect(LLVMContext &context, Module &module);
+
+    static Function *getOrAddQueryDB(LLVMContext &context, Module &module);
+
+    static Function *getOrAddPrintJson(LLVMContext &context, Module &module);
+
+    static Function *getOrAddResToJson(LLVMContext &context, Module &module);
 };
 
 
@@ -115,4 +125,12 @@ public:
     int getPriority() override;
 };
 
+class KsqlFunctionHandler : public ExternFunctionHandler{
+public:
+    KsqlFunctionHandler();
+
+    Value *tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
+
+    int getPriority() override;
+};
 #endif //SYSYPLUS_COMPILER_EXTERNFUNCTIONHANDLER_H

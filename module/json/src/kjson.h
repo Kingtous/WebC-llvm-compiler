@@ -33,5 +33,7 @@ SYSY_JSON_DATA strToJson(SYSY_STR str);
  */
 SYSY_STR jsonToStr(SYSY_JSON_DATA json);
 
+
+
 }
 #endif //SYSYPLUS_COMPILER_KJSON_H
