@@ -14,7 +14,7 @@ int main() {
 //    } catch (boost::property_tree::ptree_bad_path &e) {
 //        std::cout << e.what();
 //    }
-    auto string = jsonToStr(data);
-    std::cout << "toString result :" << string;
+    const char *mystring = jsonToStr(data);
+    std::cout << "toString result :" << mystring;
     return 0;
 }
