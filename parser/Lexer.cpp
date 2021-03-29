@@ -139,7 +139,7 @@ int Lexer::_getNextToken() {
             identifierStr += last_char;
             // 注释
             if (identifierStr == "//") {
-                while (last_char != '\n' && last_char != EOF) {
+                while (last_char != '\n' && last_char != END_OF_FILE) {
                     last_char = getchar();
                 }
                 NEXTCHAR;
@@ -195,13 +195,13 @@ int Lexer::_getNextToken() {
         // Comment until end of line.
         do
             NEXTCHAR;
-        while (last_char != EOF && last_char != '\n' && last_char != '\r');
+        while (last_char != END_OF_FILE && last_char != '\n' && last_char != '\r');
 
-        if (last_char != EOF)
+        if (last_char != END_OF_FILE)
             return getNextToken();
     }
-    // Check for end of file.  Don't eat the EOF.
-    if (last_char == EOF)
+    // Check for end of file.  Don't eat the END_OF_FILE.
+    if (last_char == END_OF_FILE)
         return 0;
 
     // Otherwise, just return the character as its ascii value.
@@ -224,11 +224,11 @@ int Lexer::getNextToken() {
     return currToken;
 }
 
-char Lexer::getchar() {
+int Lexer::getchar() {
     return reader->getchar();
 }
 
-char Lexer::seek() {
+int Lexer::seek() {
     return reader->seek();
 }
 

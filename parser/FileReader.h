@@ -19,9 +19,9 @@ class FileReader : public IFileReader {
 public:
     explicit FileReader(const std::string &path);
 
-    char getchar() override;
+    int getchar() override;
 
-    char seek() override;
+    int seek() override;
 
     unsigned long content_length;
 

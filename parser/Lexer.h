@@ -44,9 +44,9 @@ private:
 
     int _getNextToken();
 
-    char getchar();
+    int getchar();
 
-    char seek();
+    int seek();
 };
 
 extern Lexer *TheLexer;

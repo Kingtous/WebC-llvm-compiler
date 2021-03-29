@@ -7,9 +7,9 @@
 
 class IFileReader {
 public:
-    virtual char getchar() = 0;
+    virtual int getchar() = 0;
 
-    virtual char seek() = 0;
+    virtual int seek() = 0;
 
     virtual unsigned int getLineNo() = 0;
 

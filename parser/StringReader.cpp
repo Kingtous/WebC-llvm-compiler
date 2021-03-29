@@ -4,12 +4,12 @@
 
 #include "StringReader.h"
 
-char StringReader::getchar() {
-    if (cindex >= str->length()){
-        return EOF;
+int StringReader::getchar() {
+    if (cindex >= str->length()) {
+        return END_OF_FILE;
     }
     char ch = str->at(cindex++);
-    if (ch == '\n'){
+    if (ch == '\n') {
         lineno++;
         colno = 0;
     } else {
@@ -18,9 +18,9 @@ char StringReader::getchar() {
     return ch;
 }
 
-char StringReader::seek() {
-    if (cindex >= str->length()){
-        return EOF;
+int StringReader::seek() {
+    if (cindex >= str->length()) {
+        return END_OF_FILE;
     }
     return str->at(cindex);
 }

@@ -52,6 +52,7 @@
 #define ABORT_COMPILE TheCodeGenContext->setIsAborted(true)
 #define IS_COMPILE_ABORTED TheCodeGenContext->isAborted()
 #define NIL nullptr
+#define END_OF_FILE -1
 
 extern void yyerror(const char *s);
 

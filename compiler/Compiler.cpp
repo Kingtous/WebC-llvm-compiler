@@ -43,13 +43,26 @@ int startAnalyze(ArgsParser *parser) {
 }
 
 int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
-    // 生成目标代码，目前只初始化x86
+#ifdef SYSY_ARM
+    LLVMInitializeARMTargetInfo();
+    LLVMInitializeARMTarget();
+    LLVMInitializeARMTargetMC();
+    LLVMInitializeARMAsmParser();
+    LLVMInitializeARMAsmPrinter();
+#endif
+#ifdef SYSY_AARCH64
+    LLVMInitializeAArch64TargetInfo();
+    LLVMInitializeAArch64Target();
+    LLVMInitializeAArch64TargetMC();
+    LLVMInitializeAArch64AsmParser();
+    LLVMInitializeAArch64AsmPrinter();
+#else
     LLVMInitializeX86TargetInfo();
     LLVMInitializeX86Target();
     LLVMInitializeX86TargetMC();
     LLVMInitializeX86AsmParser();
     LLVMInitializeX86AsmPrinter();
-
+#endif
     auto TargetTriple = sys::getDefaultTargetTriple();
     TheModule->setTargetTriple(TargetTriple);
 
@@ -62,6 +75,13 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     // TargetRegistry or we have a bogus target triple.
     if (!Target) {
         LogError(err.c_str());
+        auto it = TargetRegistry::targets();
+        errs() << "支持的targets:\n";
+        auto i = it.begin();
+        while (i != it.end()) {
+            errs() << (*i).getName() << "\n";
+            i++;
+        }
         return 1;
     }
 

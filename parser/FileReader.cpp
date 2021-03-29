@@ -20,10 +20,10 @@ FileReader::FileReader(const std::string &path) {
     }
 }
 
-char FileReader::getchar() {
+int FileReader::getchar() {
     if (index < content_length) {
         char ch = content[index++];
-        if (ch == '\n'){
+        if (ch == '\n') {
             lineno++;
             colno = 0;
         } else {
@@ -31,11 +31,11 @@ char FileReader::getchar() {
         }
         return ch;
     } else {
-        return EOF;
+        return END_OF_FILE;
     }
 }
 
-char FileReader::seek() {
+int FileReader::seek() {
     if (index < content_length) {
         return content[index];
     } else {

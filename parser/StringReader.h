@@ -24,9 +24,9 @@ public:
 
 private:
 
-    char getchar() override;
+    int getchar() override;
 
-    char seek() override;
+    int seek() override;
 
     unsigned int getLineNo() override;
 

@@ -97,11 +97,24 @@ add_executable(sysyplus_compiler
 # CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式
 add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1)
 
-# Find the libraries that correspond to the LLVM components
-# that we wish to use
-llvm_map_components_to_libnames(llvm_libs support core irreader
-        x86info x86asmparser x86desc x86codegen x86disassembler #X86
-        )
+message(STATUS "host system is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+
+if (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
+    add_compile_definitions(sysyplus_compiler PUBLIC SYSY_AARCH64=0)
+    llvm_map_components_to_libnames(llvm_libs support core irreader
+            aarch64info aarch64asmparser aarch64desc aarch64codegen aarch64disassembler #X86
+            )
+elseif (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm")
+    add_compile_definitions(sysyplus_compiler PUBLIC SYSY_ARM=0)
+    llvm_map_components_to_libnames(llvm_libs support core irreader
+            arminfo armasmparser armdesc armcodegen armdisassembler #X86
+            )
+else ()
+    add_compile_definitions(sysyplus_compiler PUBLIC SYSY_X86=0)
+    llvm_map_components_to_libnames(llvm_libs support core irreader
+            x86info x86asmparser x86desc x86codegen x86disassembler #X86
+            )
+endif ()
 
 message(STATUS "Found ${llvm_libs}")
 
