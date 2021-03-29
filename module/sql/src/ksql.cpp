@@ -38,12 +38,9 @@ int _query_db(const char *sqlSentence) {
 //    statement->executeQuery(sqlSentence);
     resultSet = statement->executeQuery(sqlSentence);
 //    _print_json(metaData);
-    cout<<_resToJson(resultSet);
+//    cout<<_resToJson(resultSet);
+//    cout<<jsonToStr(strToJson(_resToJson(resultSet).c_str()));
     return SUCCESS;
-}
-
-void _print_json(ResultSetMetaData *metaData) {
-    cout<<strToJson(reinterpret_cast<SYSY_STR>(metaData));
 }
 
 string _resToJson(ResultSet *result) {

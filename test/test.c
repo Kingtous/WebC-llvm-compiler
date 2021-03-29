@@ -19,6 +19,8 @@
 //    0;
 //}
 int main(){
-//    _connect_db('127.0.0.1','root','123456','school');
-    query_db('select subjectname from subject');
+    connect_db('127.0.0.1','root','123456','school');
+    query_db('select * from subject');
+
+    ret 0;
 }

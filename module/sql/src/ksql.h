@@ -49,8 +49,6 @@ extern "C" {
     int _free_connect();
     //查询数据
     int _query_db(const char* sqlSentence);
-    //将query语句返回值转化为json
-    void _print_json(ResultSetMetaData *metaData);
     //将query语句返回转化为字符串
     string _resToJson(ResultSet *resultSet);
 }

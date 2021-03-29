@@ -310,27 +310,27 @@ Function *ExternFunctionHandler::getOrAddQueryDB(LLVMContext &context, Module &m
     if (func != NIL) {
         return func;
     }
-    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt32Ty(context)},
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context)->getPointerTo(), {Type::getInt8Ty(context)->getPointerTo()},
                                          false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_query_db", module);
     return func;
 }
-Function *ExternFunctionHandler::getOrAddPrintJson(LLVMContext &context, Module &module){
-    Function *func = module.getFunction("_print_json");
-    if (func != NIL) {
-        return func;
-    }
-    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), {Type::getInt32Ty(context)->getPointerTo()},
-                                         false);
-    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_print_json", module);
-    return func;
-}
+//Function *ExternFunctionHandler::getOrAddPrintJson(LLVMContext &context, Module &module){
+//    Function *func = module.getFunction("_print_json");
+//    if (func != NIL) {
+//        return func;
+//    }
+//    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), {Type::getInt32Ty(context)->getPointerTo()},
+//                                         false);
+//    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_print_json", module);
+//    return func;
+//}
 Function *ExternFunctionHandler::getOrAddResToJson(LLVMContext &context, Module &module){
     Function *func = module.getFunction("_resToJson");
     if (func != NIL) {
         return func;
     }
-    FunctionType *ty = FunctionType::get(Type::getInt8PtrTy(context), {Type::getInt32Ty(
+    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt32Ty(
                                                                                                 context)->getPointerTo()},
                                          false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_resToJson", module);
@@ -433,9 +433,6 @@ Value *KsqlFunctionHandler::tryhandle(LLVMContext &context, Module &module, std:
         return Builder->CreateCall(func);
     }else if(callName=="query_db"&&!argV->empty()){
         auto func = ExternFunctionHandler::getOrAddQueryDB(context,module);
-        return Builder->CreateCall(func,*argV);
-    }else if(callName=="print_json"&&!argV->empty()){
-        auto func = ExternFunctionHandler::getOrAddPrintJson(context,module);
         return Builder->CreateCall(func,*argV);
     }else if (callName=="resToJson"&&!argV->empty()){
         auto func = ExternFunctionHandler::getOrAddResToJson(context,module);
