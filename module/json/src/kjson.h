@@ -14,7 +14,7 @@ struct JsonData {
     std::shared_ptr<boost::property_tree::ptree> pt;
 };
 typedef JsonData *SYSY_JSON_DATA;
-typedef const char *SYSY_STR;
+typedef std::string SYSY_STR;
 
 extern "C" {
 

@@ -34,52 +34,61 @@ int _free_connect() {
 }
 
 int _query_db(const char *sqlSentence) {
+    string temp = sqlSentence;
+    replace(temp.begin(),temp.end(),'\"','\'');
     statement = conn->createStatement();
 //    statement->executeQuery(sqlSentence);
+    sqlSentence = temp.c_str();
     resultSet = statement->executeQuery(sqlSentence);
+    if (!resultSet) return FAILED;
 //    _print_json(metaData);
 //    cout<<_resToJson(resultSet);
-const char * c = _resToJson(resultSet).c_str();
-    cout<<jsonToStr(strToJson(_resToJson(resultSet).c_str()));
+//    const char * c = _resToJson(resultSet).c_str();
+//    SYSY_JSON_DATA temp = strToJson(c);
+//    cout<<jsonToStr(temp)<<endl;
+    cout << _resToJson(resultSet) << endl;
     return SUCCESS;
 }
 
 string _resToJson(ResultSet *result) {
     string s;
-    s+="[";
+    s += "{";
+    s += "\"result\":";
+    s += "[";
     //列数
     int count = result->getMetaData()->getColumnCount();
     vector<string> ans;
-    while (result->next()){
+    while (result->next()) {
         string temp;
-        for (int i = 1; i <= count ; ++i) {
-            if(i==1){
-                temp+="{";
+        for (int i = 1; i <= count; ++i) {
+            if (i == 1) {
+                temp += "{";
             }
-            temp+="\"";
-            temp+=result->getMetaData()->getColumnLabel(i);
-            temp+="\":";
+            temp += "\"";
+            temp += result->getMetaData()->getColumnLabel(i);
+            temp += "\":";
             auto type = result->getMetaData()->getColumnTypeName(i);
-            if(type=="VARCHAR"){
-                temp+="\"";
-                temp+=result->getString(i);
-                temp+="\"";
+            if (type == "VARCHAR") {
+                temp += "\"";
+                temp += result->getString(i);
+                temp += "\"";
+            } else {
+                temp += result->getString(i);
             }
-            else{
-                temp+=result->getString(i);
-            }
-            if (i==count) temp+="}";
-            temp+=",";
+            if (i == count) temp += "}";
+            temp += ",";
         }
         ans.push_back(temp);
     }
-    ans[ans.size()-1].pop_back();
-    for (auto str:ans){
-        s+=str;
+    ans[ans.size() - 1].pop_back();
+    for (auto str:ans) {
+        s += str;
     }
-    s+="]";
-return s;
-    //获取值
+    s += "]";
+    s += "}";
+//cout<<s<<endl;
+//return jsonToStr(strToJson("{\"data\":[{\"id\":1,\"name\":\"chen\"},{\"id\":2,\"name\":\"zhang\"}]}"));
+    return jsonToStr(strToJson(s));
 }
 
 

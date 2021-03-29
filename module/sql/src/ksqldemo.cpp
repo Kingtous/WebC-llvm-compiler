@@ -6,5 +6,5 @@
 
 int main() {
     _connect_db("127.0.0.1","root","123456","school");
-    _query_db("select subjectname from subject");
+    _query_db("select subjectno from subject where subjectname like '高等数学%'");
 }

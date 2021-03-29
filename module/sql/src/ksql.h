@@ -26,7 +26,7 @@
 
 //mysql连接状态码
 #define NOT_CONNECT -1
-
+#define FAILED -2
 //操作成功状态码
 #define SUCCESS 0
 
