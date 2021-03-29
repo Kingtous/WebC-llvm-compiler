@@ -14,7 +14,7 @@ struct JsonData {
     std::shared_ptr<boost::property_tree::ptree> pt;
 };
 typedef JsonData *SYSY_JSON_DATA;
-typedef const char *SYSY_STR;
+typedef std::string SYSY_STR;
 
 extern "C" {
 
@@ -32,6 +32,8 @@ SYSY_JSON_DATA strToJson(SYSY_STR str);
  * @return string
  */
 SYSY_STR jsonToStr(SYSY_JSON_DATA json);
+
+
 
 }
 #endif //SYSYPLUS_COMPILER_KJSON_H

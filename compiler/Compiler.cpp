@@ -15,6 +15,7 @@ void initExternFunc() {
     ExternFunctionLinker::registerHandler(new TimeFunctionHandler());
     ExternFunctionLinker::registerHandler(new WebFunctionHandler());
     ExternFunctionLinker::registerHandler(new KStringFunctionHandler());
+    ExternFunctionLinker::registerHandler(new KsqlFunctionHandler());
 }
 
 int startAnalyze(ArgsParser *parser) {
