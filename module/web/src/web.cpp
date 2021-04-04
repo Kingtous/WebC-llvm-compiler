@@ -93,7 +93,12 @@ public:
     void start() {
         socket_.async_handshake(boost::asio::ssl::stream_base::server,
                                 [this](boost::system::error_code ec) {
-                                    handle_handshake(ec);
+                                    if (ec) {
+                                        fprintf(stderr, "%s\n", ec.message().c_str());
+                                    } else {
+                                        handle_handshake(ec);
+                                    }
+
                                 });
     }
 
@@ -343,14 +348,15 @@ _web_HttpWorker::_web_HttpWorker(boost::asio::io_context *context, tcp::acceptor
         acceptor(acceptor), base_path(basePath), io_context(context) {
     beast::error_code ec;
     acceptor.set_option(asio::socket_base::reuse_address(true), ec);
-    ssl_context.set_verify_mode(ssl::verify_peer);
+    ssl_context.set_verify_mode(ssl::verify_client_once);
     ssl_context.use_certificate_chain(_web_cert_buf);
     ssl_context.use_private_key(_web_key_buf, boost::asio::ssl::context::pem);
     ssl_context.set_password_callback([](std::size_t, ssl::context_base::password_purpose) {
         return "kingtous";
     });
     ssl_context.set_options(
-            ssl::context::default_workarounds | ssl::context::no_sslv2
+            ssl::context::default_workarounds
+            | ssl::context::no_sslv2
     );
     handlers = make_shared<std::vector<WebHttpHandler>>();
 }
