@@ -35,8 +35,10 @@ SYSY_JSON_DATA strToJson(SYSY_STR str) {
 }
 
 SYSY_STR jsonToStr(SYSY_JSON_DATA json) {
+    char ch[65535];
     std::stringstream ss;
     pt::write_json(ss, *(json->pt), false); // 不要美化
-//    auto str = std::make_shared<std::string>(ss.str());
-    return ss.str();
+    auto str = std::make_shared<std::string>(ss.str());
+    strcpy(ch,str->data());
+    return ch;
 }

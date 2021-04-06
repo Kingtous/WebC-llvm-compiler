@@ -310,7 +310,7 @@ Function *ExternFunctionHandler::getOrAddQueryDB(LLVMContext &context, Module &m
     if (func != NIL) {
         return func;
     }
-    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), {Type::getInt8Ty(context)->getPointerTo()},
+    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt8Ty(context)->getPointerTo()},
                                          false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_query_db", module);
     return func;

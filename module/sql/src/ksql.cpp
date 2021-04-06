@@ -33,25 +33,39 @@ int _free_connect() {
     return SUCCESS;
 }
 
-int _query_db(const char *sqlSentence) {
-    const char *my = "select * from student";
-//    string temp = sqlSentence;
-    string temp = my;
-    replace(temp.begin(),temp.end(),'\"','\'');
+const char *_query_db(const char *sqlSentence) {
+//    cout<<"sqlSentence     "<<sqlSentence<<endl;
+//    const char *my = "select * from today";
+    string temp = sqlSentence;
+//    cout<<"temp"<<temp<<endl;
+//    string temp = my;
+    replace(temp.begin(), temp.end(), '\"', '\'');
     statement = conn->createStatement();
 //    statement->executeQuery(sqlSentence);
     sqlSentence = temp.c_str();
     resultSet = statement->executeQuery(sqlSentence);
+    if (!resultSet->next()){
+        char *resNull="您所查询的表为空\n";
+        return resNull;
+    }
 //    _print_json(metaData);
-    cout<<_resToJson(resultSet);
+//    cout<<_resToJson(resultSet);
 //    const char * c = _resToJson(resultSet).c_str();
 //    SYSY_JSON_DATA temp = strToJson(c);
 //    cout<<jsonToStr(temp)<<endl;
+//    string string1 = _resToJson(resultSet);
+    char  ch[65535];
+//    char *ch = new char[temp.size() + 1];
+    strcpy(ch, _resToJson(resultSet).data());
 //    return _resToJson(resultSet);
-    return 1;
+//    return 1;
+//cout<<ch<<endl;
+    char *cc = ch;
+    return cc;
 }
 
 string _resToJson(ResultSet *result) {
+//    char ch[65535];
     string s;
     s += "{";
     s += "\"result\":";
@@ -81,15 +95,20 @@ string _resToJson(ResultSet *result) {
         }
         ans.push_back(temp);
     }
+    result->close();
     ans[ans.size() - 1].pop_back();
     for (auto str:ans) {
         s += str;
     }
     s += "]";
     s += "}";
-//cout<<s<<endl;
+//    strcpy(ch,s.data());
 //return jsonToStr(strToJson("{\"data\":[{\"id\":1,\"name\":\"chen\"},{\"id\":2,\"name\":\"zhang\"}]}"));
-    return jsonToStr(strToJson(s));
+//    return jsonToStr(strToJson(s.c_str()));
+//    cout<<ch<<endl;
+//    return  ch;
+    ans.clear();
+    return s;
 }
 
 
