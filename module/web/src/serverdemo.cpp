@@ -4,8 +4,11 @@
 
 #include "web.hpp"
 
-const char *say_hello() {
-    return "hello_world";
+string ans="";
+const char * say_hello() {
+    _connect_db("127.0.0.1","root","kcr200123","school");
+    ans=_query_db("select * from student");
+    return ans.c_str();
 }
 
 const char *say_hi() {
@@ -15,7 +18,7 @@ const char *say_hi() {
 
 void startServer() {
     int id = _web_getServerId("127.0.0.1",9000,2);
-    _web_addUrlHandler(id, "POST", "/compiler", "text/html", say_hi);
+    _web_addUrlHandler(id, "GET", "/compiler", "text/html", say_hello);
     _web_startServe(id);
 }
 

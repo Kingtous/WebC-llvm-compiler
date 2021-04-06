@@ -34,20 +34,21 @@ int _free_connect() {
 }
 
 int _query_db(const char *sqlSentence) {
-    string temp = sqlSentence;
+    const char *my = "select * from student";
+//    string temp = sqlSentence;
+    string temp = my;
     replace(temp.begin(),temp.end(),'\"','\'');
     statement = conn->createStatement();
 //    statement->executeQuery(sqlSentence);
     sqlSentence = temp.c_str();
     resultSet = statement->executeQuery(sqlSentence);
-    if (!resultSet) return FAILED;
 //    _print_json(metaData);
-//    cout<<_resToJson(resultSet);
+    cout<<_resToJson(resultSet);
 //    const char * c = _resToJson(resultSet).c_str();
 //    SYSY_JSON_DATA temp = strToJson(c);
 //    cout<<jsonToStr(temp)<<endl;
-    cout << _resToJson(resultSet) << endl;
-    return SUCCESS;
+//    return _resToJson(resultSet);
+    return 1;
 }
 
 string _resToJson(ResultSet *result) {
