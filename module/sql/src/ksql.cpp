@@ -10,7 +10,8 @@ Statement *statement;
 ResultSet *resultSet;
 PreparedStatement *preparedStatement;
 Savepoint *savepoint;
-char *ch;
+//char *ch;
+unique_ptr<char[]> ch;
 vector<string > ans;
 
 int _connect_db(const char *host, const char *user, const char *passwd, const char *database) {
@@ -32,35 +33,29 @@ int _free_connect() {
     delete preparedStatement;
     conn->close();
     delete conn;
-    delete ch;
+    resultSet=NULL;
+    statement=NULL;
+    preparedStatement=NULL;
+    conn=NULL;
+//    delete ch;
     return SUCCESS;
 }
 
 const char *_query_db(const char *sqlSentence) {
-//    cout<<"sqlSentence     "<<sqlSentence<<endl;
-//    const char *my = "select * from today";
     string temp = sqlSentence;
     replace(temp.begin(), temp.end(), '\"', '\'');
     statement = conn->createStatement();
-//    statement->executeQuery(sqlSentence);
     sqlSentence = temp.c_str();
     resultSet = statement->executeQuery(sqlSentence);
     if (!resultSet->next()){
         char *resNull="您所查询的表为空\n";
         return resNull;
     }
-//    int len = _resToJson(resultSet).size();
-//    _print_json(metaData);
-//    cout<<_resToJson(resultSet);
-//    const char * c = _resToJson(resultSet).c_str();
-//    SYSY_JSON_DATA temp = strToJson(c);
-//    cout<<jsonToStr(temp)<<endl;
-//    string string1 = _resToJson(resultSet);
-//    char  ch[65535];
-//    char *ch = new char[temp.size() + 1];
-//    cout<<resultSet->getString(2)<<endl;
-    ch = new char[_resToJson(resultSet).size()+1];
-    strcpy(ch, _resToJson(resultSet).data());
+    if (ch.get()==NULL){
+        ch.reset(new char [_resToJson(resultSet).size()+1]);
+    }
+//    ch = new char[_resToJson(resultSet).size()+1];
+    strcpy(ch.get(), _resToJson(resultSet).data());
 //    if(ans.empty()){
 //        char *resNull="您所查询的表为空\n";
 //        return resNull;
@@ -70,7 +65,7 @@ const char *_query_db(const char *sqlSentence) {
 //    cout<<ch<<endl;
 //    char *cc = ch;
 
-    return ch;
+    return ch.get();
 }
 
 string _resToJson(ResultSet *result) {

@@ -2,6 +2,7 @@ str hi() {
     connect_db('127.0.0.1','root','123456','school');
     str b=query_db('select * from result');
 //    str a = '<h1>hello from kingtous compiler</h1>';
+    free_connect();
     ret b;
 }
 
