@@ -10,6 +10,8 @@ Statement *statement;
 ResultSet *resultSet;
 PreparedStatement *preparedStatement;
 Savepoint *savepoint;
+char *ch;
+vector<string > ans;
 
 int _connect_db(const char *host, const char *user, const char *passwd, const char *database) {
     driver = mysql::get_mysql_driver_instance();
@@ -30,6 +32,7 @@ int _free_connect() {
     delete preparedStatement;
     conn->close();
     delete conn;
+    delete ch;
     return SUCCESS;
 }
 
@@ -48,20 +51,22 @@ const char *_query_db(const char *sqlSentence) {
         char *resNull="您所查询的表为空\n";
         return resNull;
     }
+//    int len = _resToJson(resultSet).size();
 //    _print_json(metaData);
 //    cout<<_resToJson(resultSet);
 //    const char * c = _resToJson(resultSet).c_str();
 //    SYSY_JSON_DATA temp = strToJson(c);
 //    cout<<jsonToStr(temp)<<endl;
 //    string string1 = _resToJson(resultSet);
-    char  ch[65535];
+//    char  ch[65535];
 //    char *ch = new char[temp.size() + 1];
+    ch = new char[_resToJson(resultSet).size()+1];
     strcpy(ch, _resToJson(resultSet).data());
 //    return _resToJson(resultSet);
 //    return 1;
-//cout<<ch<<endl;
-    char *cc = ch;
-    return cc;
+//    cout<<ch<<endl;
+//    char *cc = ch;
+    return ch;
 }
 
 string _resToJson(ResultSet *result) {
@@ -72,31 +77,31 @@ string _resToJson(ResultSet *result) {
     s += "[";
     //列数
     int count = result->getMetaData()->getColumnCount();
-    vector<string> ans;
-    while (result->next()) {
-        string temp;
-        for (int i = 1; i <= count; ++i) {
-            if (i == 1) {
-                temp += "{";
-            }
-            temp += "\"";
-            temp += result->getMetaData()->getColumnLabel(i);
-            temp += "\":";
-            auto type = result->getMetaData()->getColumnTypeName(i);
-            if (type == "VARCHAR") {
+    if (ans.empty()){
+        while (result->next()) {
+            string temp;
+            for (int i = 1; i <= count; ++i) {
+                if (i == 1) {
+                    temp += "{";
+                }
                 temp += "\"";
-                temp += result->getString(i);
-                temp += "\"";
-            } else {
-                temp += result->getString(i);
+                temp += result->getMetaData()->getColumnLabel(i);
+                temp += "\":";
+                auto type = result->getMetaData()->getColumnTypeName(i);
+                if (type == "VARCHAR") {
+                    temp += "\"";
+                    temp += result->getString(i);
+                    temp += "\"";
+                } else {
+                    temp += result->getString(i);
+                }
+                if (i == count) temp += "}";
+                temp += ",";
             }
-            if (i == count) temp += "}";
-            temp += ",";
+            ans.push_back(temp);
         }
-        ans.push_back(temp);
+        ans[ans.size() - 1].pop_back();
     }
-    result->close();
-    ans[ans.size() - 1].pop_back();
     for (auto str:ans) {
         s += str;
     }
@@ -107,7 +112,6 @@ string _resToJson(ResultSet *result) {
 //    return jsonToStr(strToJson(s.c_str()));
 //    cout<<ch<<endl;
 //    return  ch;
-    ans.clear();
     return s;
 }
 
