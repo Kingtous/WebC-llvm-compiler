@@ -40,8 +40,6 @@ const char *_query_db(const char *sqlSentence) {
 //    cout<<"sqlSentence     "<<sqlSentence<<endl;
 //    const char *my = "select * from today";
     string temp = sqlSentence;
-//    cout<<"temp"<<temp<<endl;
-//    string temp = my;
     replace(temp.begin(), temp.end(), '\"', '\'');
     statement = conn->createStatement();
 //    statement->executeQuery(sqlSentence);
@@ -60,17 +58,22 @@ const char *_query_db(const char *sqlSentence) {
 //    string string1 = _resToJson(resultSet);
 //    char  ch[65535];
 //    char *ch = new char[temp.size() + 1];
+//    cout<<resultSet->getString(2)<<endl;
     ch = new char[_resToJson(resultSet).size()+1];
     strcpy(ch, _resToJson(resultSet).data());
+//    if(ans.empty()){
+//        char *resNull="您所查询的表为空\n";
+//        return resNull;
+//    }
 //    return _resToJson(resultSet);
 //    return 1;
 //    cout<<ch<<endl;
 //    char *cc = ch;
+
     return ch;
 }
 
 string _resToJson(ResultSet *result) {
-//    char ch[65535];
     string s;
     s += "{";
     s += "\"result\":";
@@ -78,6 +81,7 @@ string _resToJson(ResultSet *result) {
     //列数
     int count = result->getMetaData()->getColumnCount();
     if (ans.empty()){
+        result->beforeFirst();
         while (result->next()) {
             string temp;
             for (int i = 1; i <= count; ++i) {
@@ -108,7 +112,7 @@ string _resToJson(ResultSet *result) {
     s += "]";
     s += "}";
 //    strcpy(ch,s.data());
-//return jsonToStr(strToJson("{\"data\":[{\"id\":1,\"name\":\"chen\"},{\"id\":2,\"name\":\"zhang\"}]}"));
+//    return jsonToStr(strToJson("{\"data\":[{\"id\":1,\"name\":\"chen\"},{\"id\":2,\"name\":\"zhang\"}]}"));
 //    return jsonToStr(strToJson(s.c_str()));
 //    cout<<ch<<endl;
 //    return  ch;

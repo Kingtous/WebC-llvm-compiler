@@ -7,10 +7,8 @@
 //string ans="";
 const char *say_hello() {
     _connect_db("127.0.0.1", "root", "123456", "school");
-    const char *ans = _query_db("select * from subject");
-//cout<<_query_db("select * from today")<<endl;
-//    cout << ans << endl;
-    _free_connect();
+    const char *ans = _query_db("select * from result");
+//    _free_connect();
     return ans;
 }
 
