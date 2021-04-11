@@ -8,11 +8,8 @@ mysql::MySQL_Driver *driver;
 Connection *conn;
 Statement *statement;
 ResultSet *resultSet;
-PreparedStatement *preparedStatement;
-Savepoint *savepoint;
-//char *ch;
 unique_ptr<char[]> ch;
-vector<string > ans;
+vector<string> ans;
 
 int _connect_db(const char *host, const char *user, const char *passwd, const char *database) {
     driver = mysql::get_mysql_driver_instance();
@@ -30,14 +27,11 @@ int _connect_db(const char *host, const char *user, const char *passwd, const ch
 int _free_connect() {
     delete resultSet;
     delete statement;
-    delete preparedStatement;
     conn->close();
     delete conn;
-    resultSet=NULL;
-    statement=NULL;
-    preparedStatement=NULL;
-    conn=NULL;
-//    delete ch;
+    resultSet = nullptr;
+    statement = nullptr;
+    conn = nullptr;
     return SUCCESS;
 }
 
@@ -47,24 +41,14 @@ const char *_query_db(const char *sqlSentence) {
     statement = conn->createStatement();
     sqlSentence = temp.c_str();
     resultSet = statement->executeQuery(sqlSentence);
-    if (!resultSet->next()){
-        char *resNull="您所查询的表为空\n";
+    if (!resultSet->next()) {
+        char *resNull = "您所查询的表为空\n";
         return resNull;
     }
-    if (ch.get()==NULL){
-        ch.reset(new char [_resToJson(resultSet).size()+1]);
+    if (ch.get() == nullptr) {
+        ch.reset(new char[_resToJson(resultSet).size() + 1]);
     }
-//    ch = new char[_resToJson(resultSet).size()+1];
     strcpy(ch.get(), _resToJson(resultSet).data());
-//    if(ans.empty()){
-//        char *resNull="您所查询的表为空\n";
-//        return resNull;
-//    }
-//    return _resToJson(resultSet);
-//    return 1;
-//    cout<<ch<<endl;
-//    char *cc = ch;
-
     return ch.get();
 }
 
@@ -75,7 +59,7 @@ string _resToJson(ResultSet *result) {
     s += "[";
     //列数
     int count = result->getMetaData()->getColumnCount();
-    if (ans.empty()){
+    if (ans.empty()) {
         result->beforeFirst();
         while (result->next()) {
             string temp;
@@ -106,11 +90,8 @@ string _resToJson(ResultSet *result) {
     }
     s += "]";
     s += "}";
-//    strcpy(ch,s.data());
-//    return jsonToStr(strToJson("{\"data\":[{\"id\":1,\"name\":\"chen\"},{\"id\":2,\"name\":\"zhang\"}]}"));
-//    return jsonToStr(strToJson(s.c_str()));
-//    cout<<ch<<endl;
-//    return  ch;
+    ans.clear();
+    vector<string>().swap(ans);
     return s;
 }
 

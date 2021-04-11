@@ -4,27 +4,29 @@
 
 #include "web.hpp"
 
-//string ans="";
 const char *say_hello() {
-    _connect_db("127.0.0.1", "root", "123456", "school");
-    const char *ans = _query_db("select * from result");
+    const char *ans = _query_db("select * from student");
 //    _free_connect();
     return ans;
 }
 
 const char *say_hi() {
-    return "hi";
+    const char *ans = _query_db("select * from result");
+//    _free_connect();
+    return ans;
 }
 
 
 void startServer() {
     int id = _web_getServerId("127.0.0.1", 9000, 2);
     _web_addUrlHandler(id, "GET", "/hello", "text/html", say_hello);
+    _web_addUrlHandler(id,"GET","/hi","text/html",say_hi);
     _web_startServe(id);
 }
 
 
 int main() {
+    _connect_db("127.0.0.1", "root", "123456", "school");
     startServer();
     // for test interface
 //    int serverId = _web_getServerId("127.0.0.1", 9000);

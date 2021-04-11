@@ -37,8 +37,8 @@ extern mysql::MySQL_Driver *driver;
 extern Connection *conn;
 extern Statement *statement;
 extern ResultSet *resultSet;
-extern PreparedStatement *preparedStatement;
-extern Savepoint *savepoint;
+//extern PreparedStatement *preparedStatement;
+//extern Savepoint *savepoint;
 
 
 
