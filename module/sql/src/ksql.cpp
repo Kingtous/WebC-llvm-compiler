@@ -11,7 +11,7 @@ ResultSet *resultSet;
 unique_ptr<char[]> ch;
 vector<string> ans;
 
-int _connect_db(const char *host, const char *user, const char *passwd, const char *database) {
+int _ksql_connect_db(const char *host, const char *user, const char *passwd, const char *database) {
     driver = mysql::get_mysql_driver_instance();
     //连接到Mysql
     conn = driver->connect(host, user, passwd);
@@ -24,18 +24,22 @@ int _connect_db(const char *host, const char *user, const char *passwd, const ch
     return SUCCESS;
 }
 
-int _free_connect() {
+//int _free_connect() {
+//    delete resultSet;
+//    delete statement;
+//    conn->close();
+//    delete conn;
+//    resultSet = nullptr;
+//    statement = nullptr;
+//    conn = nullptr;
+//    return SUCCESS;
+//}
+
+const char *_ksql_query_db(const char *sqlSentence) {
     delete resultSet;
     delete statement;
-    conn->close();
-    delete conn;
     resultSet = nullptr;
     statement = nullptr;
-    conn = nullptr;
-    return SUCCESS;
-}
-
-const char *_query_db(const char *sqlSentence) {
     string temp = sqlSentence;
     replace(temp.begin(), temp.end(), '\"', '\'');
     statement = conn->createStatement();
@@ -46,13 +50,13 @@ const char *_query_db(const char *sqlSentence) {
         return resNull;
     }
     if (ch.get() == nullptr) {
-        ch.reset(new char[_resToJson(resultSet).size() + 1]);
+        ch.reset(new char[_ksql_resToJson(resultSet).size() + 1]);
     }
-    strcpy(ch.get(), _resToJson(resultSet).data());
+    strcpy(ch.get(), _ksql_resToJson(resultSet).data());
     return ch.get();
 }
 
-string _resToJson(ResultSet *result) {
+string _ksql_resToJson(ResultSet *result) {
     string s;
     s += "{";
     s += "\"result\":";
@@ -88,8 +92,7 @@ string _resToJson(ResultSet *result) {
     for (auto str:ans) {
         s += str;
     }
-    s += "]";
-    s += "}";
+    s += "]}";
     ans.clear();
     vector<string>().swap(ans);
     return s;

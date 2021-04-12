@@ -44,13 +44,13 @@ extern ResultSet *resultSet;
 
 extern "C" {
     //连接到mysql
-    int _connect_db(const char *host,const char *user,const char *passwd,const char *database);
+    int _ksql_connect_db(const char *host,const char *user,const char *passwd,const char *database);
     //释放资源
-    int _free_connect();
+//    int _ksql_free_connect();
     //查询数据
-    const char * _query_db(const char* sqlSentence);
+    const char * _ksql_query_db(const char* sqlSentence);
     //将query语句返回转化为字符串
-    string _resToJson(ResultSet *resultSet);
+    string _ksql_resToJson(ResultSet *resultSet);
 }
 
 #endif //SYSYPLUS_COMPILER_KSQL_H
