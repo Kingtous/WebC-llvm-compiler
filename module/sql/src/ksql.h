@@ -22,7 +22,7 @@
 #define HOST "127.0.0.1"
 #define USER "root"
 #define PASSWD "123456"
-#define DATABASE "test"
+#define DATABASE "school"
 
 //mysql连接状态码
 #define NOT_CONNECT -1
@@ -37,20 +37,17 @@ extern mysql::MySQL_Driver *driver;
 extern Connection *conn;
 extern Statement *statement;
 extern ResultSet *resultSet;
-//extern PreparedStatement *preparedStatement;
-//extern Savepoint *savepoint;
-
 
 
 extern "C" {
-    //连接到mysql
-    int _ksql_connect_db(const char *host,const char *user,const char *passwd,const char *database);
-    //释放资源
-//    int _ksql_free_connect();
-    //查询数据
-    const char * _ksql_query_db(const char* sqlSentence);
-    //将query语句返回转化为字符串
-    string _ksql_resToJson(ResultSet *resultSet);
+//连接到mysql
+int _ksql_connect_db(const char *host, const char *user, const char *passwd, const char *database);
+//释放资源
+int _ksql_free_memory();
+//查询数据
+const char *_ksql_query_db(const char *sqlSentence);
+//将query语句返回转化为字符串
+string _ksql_resToJson(ResultSet *resultSet);
 }
 
 #endif //SYSYPLUS_COMPILER_KSQL_H

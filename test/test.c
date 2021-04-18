@@ -1,21 +1,30 @@
+str hello() {
+    str ans = query_db('select * from student');
+    ret ans;
+}
+
 str hi() {
-    str b=query_db('select * from result');
-//    str a = '<h1>hello from kingtous compiler</h1>';
-//    free_connect();
-    ret b;
+    str ans = query_db('select * from result');
+    ret ans;
+}
+
+str hehe() {
+    str ans = query_db('select * from subject');
+    ret ans;
 }
 
 int main() {
     echo('init...');
-//    echo(hi());
-    connect_db('127.0.0.1','root','123456','school');
+    connect_db('127.0.0.1', 'root', '123456', 'school');
     str host = '127.0.0.1';
     int port = 9000;
     int core = 2;
     echo('get server...');
     int server_id = getServer(host, port, core);
     echo('server id is', server_id);
-    addUrlHandler(server_id, 'GET', '/hello', 'text/html', hi);
+    addUrlHandler(server_id, 'GET', '/hello', 'text/html', hello);
+    addUrlHandler(server_id, 'GET', '/hi', 'text/html', hi);
+    addUrlHandler(server_id, 'GET', '/hehe', 'text/html', hehe);
     echo('start server in host', host, ',port is', port);
     startServer(server_id);
     ret

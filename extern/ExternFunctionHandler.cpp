@@ -74,6 +74,7 @@ SleepFunctionHandler::SleepFunctionHandler() = default;
 int SleepFunctionHandler::getPriority() {
     return INTERNAL_IMPL;
 }
+
 int KsqlFunctionHandler::getPriority() {
     return INTERNAL_IMPL;
 }
@@ -279,23 +280,24 @@ Function *ExternFunctionHandler::getOrAddtoString(LLVMContext &context, Module &
     return func;
 }
 
-Function *ExternFunctionHandler::getOrAddConnectDB(LLVMContext &context, Module &module){
+Function *ExternFunctionHandler::getOrAddConnectDB(LLVMContext &context, Module &module) {
     Function *func = module.getFunction("_ksql_connect_db");
     if (func != NIL) {
         return func;
     }
     FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), {Type::getInt8Ty(context)->getPointerTo(),
-                                                                                    Type::getInt8Ty(
-                                                                                            context)->getPointerTo(),
-                                                                                    Type::getInt8Ty(
-                                                                                            context)->getPointerTo(),
-                                                                                    Type::getInt8Ty(
-                                                                                            context)->getPointerTo()
-                                                                                            },
+                                                                     Type::getInt8Ty(
+                                                                             context)->getPointerTo(),
+                                                                     Type::getInt8Ty(
+                                                                             context)->getPointerTo(),
+                                                                     Type::getInt8Ty(
+                                                                             context)->getPointerTo()
+                                         },
                                          false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_ksql_connect_db", module);
     return func;
 }
+
 //Function *ExternFunctionHandler::getOrAddFreeConnect(LLVMContext &context, Module &module){
 //    Function *func = module.getFunction("_free_connect");
 //    if (func != NIL){
@@ -305,16 +307,18 @@ Function *ExternFunctionHandler::getOrAddConnectDB(LLVMContext &context, Module 
 //    func = Function::Create(ty,llvm::GlobalValue::ExternalLinkage,"_free_connect",module);
 //    return func;
 //}
-Function *ExternFunctionHandler::getOrAddQueryDB(LLVMContext &context, Module &module){
+Function *ExternFunctionHandler::getOrAddQueryDB(LLVMContext &context, Module &module) {
     Function *func = module.getFunction("_ksql_query_db");
     if (func != NIL) {
         return func;
     }
-    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt8Ty(context)->getPointerTo()},
+    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(),
+                                         {Type::getInt8Ty(context)->getPointerTo()},
                                          false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_ksql_query_db", module);
     return func;
 }
+
 //Function *ExternFunctionHandler::getOrAddPrintJson(LLVMContext &context, Module &module){
 //    Function *func = module.getFunction("_print_json");
 //    if (func != NIL) {
@@ -380,6 +384,7 @@ WebFunctionHandler::WebFunctionHandler() {
 KStringFunctionHandler::KStringFunctionHandler() {
 
 }
+
 KsqlFunctionHandler::KsqlFunctionHandler() {
 
 }
@@ -414,7 +419,7 @@ Value *KStringFunctionHandler::tryhandle(LLVMContext &context, Module &module, s
             return NIL;
         }
         auto arg_mem = Builder->CreateAlloca(arg->getType());
-        Builder->CreateStore(arg,arg_mem);
+        Builder->CreateStore(arg, arg_mem);
         arg = Builder->CreateBitCast(arg_mem, Type::getInt8PtrTy(context));
         argV->erase(argV->begin());
         argV->insert(argV->begin(), arg);
@@ -423,19 +428,20 @@ Value *KStringFunctionHandler::tryhandle(LLVMContext &context, Module &module, s
     }
     return NIL;
 }
+
 Value *KsqlFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName,
                                       std::vector<Value *> *argV) {
-    if (callName=="connect_db"&&!argV->empty()){
-        auto func = ExternFunctionHandler::getOrAddConnectDB(context,module);
-        return Builder->CreateCall(func,*argV);
+    if (callName == "connect_db" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddConnectDB(context, module);
+        return Builder->CreateCall(func, *argV);
     }
 //    else if(callName=="free_connect"&&argV->empty()){
 //        auto func = ExternFunctionHandler::getOrAddFreeConnect(context,module);
 //        return Builder->CreateCall(func);
 //    }
-    else if(callName=="query_db"&&!argV->empty()){
-        auto func = ExternFunctionHandler::getOrAddQueryDB(context,module);
-        return Builder->CreateCall(func,*argV);
+    else if (callName == "query_db" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddQueryDB(context, module);
+        return Builder->CreateCall(func, *argV);
     }
 //    else if (callName=="resToJson"&&!argV->empty()){
 //        auto func = ExternFunctionHandler::getOrAddResToJson(context,module);
