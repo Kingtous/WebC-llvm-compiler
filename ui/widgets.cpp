@@ -207,9 +207,10 @@ void CompilerWindow::initMenuBar() {
             // 成功回调,g++链接，切换至UI线程
             Glib::signal_idle().connect_once([=]() {
                 auto obj_name = window->m_file->get_path() + ".o";
-                auto exe_name = window->m_file->get_path() + ".exe";
-                const vector<string> argv = {"/usr/bin/g++", obj_name, "../cmake-build-debug/module/web/libweb.a",
-                                             "../cmake-build-debug/module/time/libtime.a", "-o", exe_name};
+                auto exe_name = window->m_file->get_path() + ".yyz";
+                const vector<string> argv = {"/usr/bin/g++", obj_name, "-no-pie","-pthread","../cmake-build-debug/module/web/libweb.a",
+                                             "-lssl","-lcrypto","../cmake-build-debug/module/sql/libksql.a","-lboost_system","-lboost_filesystem",
+                                             "../cmake-build-debug/module/json/libkjson.a", "-lmysqlcppconn","-o", exe_name};
                 std::string output;
                 std::string error;
                 try {
