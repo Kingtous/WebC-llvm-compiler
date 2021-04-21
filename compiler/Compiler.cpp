@@ -25,6 +25,7 @@ int startAnalyze(ArgsParser *parser) {
         outs() << "正在分析 " << file << "...\n";
         auto reader = new FileReader(file);
         m_lexer = new Lexer(reader);
+
         TheLexer = m_lexer;
         int result = yyparse();
         if (!result) {
