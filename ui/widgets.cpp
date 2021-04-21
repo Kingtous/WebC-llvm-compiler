@@ -208,7 +208,7 @@ void CompilerWindow::initMenuBar() {
             Glib::signal_idle().connect_once([=]() {
                 auto obj_name = window->m_file->get_path() + ".o";
                 auto exe_name = window->m_file->get_path() + ".exe";
-                const vector<string> argv = {"/usr/bin/g++", obj_name, "../cmake-build-debug/module/web/libweb.a",
+                const vector<string> argv = {"/usr/bin/g++", obj_name,"-no-pie" ,"../cmake-build-debug/module/web/libweb.a",
                                              "../cmake-build-debug/module/time/libtime.a", "-o", exe_name};
                 std::string output;
                 std::string error;

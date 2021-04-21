@@ -60,12 +60,12 @@ logOnUi((string(s)+" 在 " + to_string(TheLexer->getCLineNumber())+" 行 "+to_st
 %token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR T_CONST
 // ' "
 %token <token> T_STR T_NULL
-%token <token> T_FUNC_PTR
 // 循环
 %token <token> T_FOR T_WHILE T_OUT T_CONTINUE
 %token <token> T_IF T_ELSE
 %token <token> T_RETURN
 %token <token> T_VOID T_INT
+%token <toeken> T_FUNC_SIGN
 %token END 0 "END OF FILE BY SYSYPLUS COMPILER BY KINGTOUS"
 /// 非终结符
 // type 类型 为此类型的名称
@@ -156,7 +156,7 @@ var_decl : ident ident {
           		);
           		}
          | ident ident_arr T_ASSIGN array_init_val {$$ = new VariableArrDeclarationAST($1->identifier,$2,$4);}
-	 | ident T_LESS func_ptr_args T_GREATER ident{$$ = new FuncPtrAST(*$3,$5);}
+	 | T_FUNC_SIGN T_LESS func_ptr_args T_GREATER ident{$$ = new FuncPtrAST(*$3,$5);}
 	;
 
 func_ptr_args: ident{$$ = new std::vector<IdentifierExprAST*>();
@@ -267,3 +267,4 @@ BlockAST* run_parser(std::string path) {
     fclose(yyin);
     return program;
 }
+

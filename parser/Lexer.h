@@ -27,6 +27,7 @@ public:
 
     /// lexer构造函数：传入代码
     /// params: rawStr 代码全文
+//    explicit代表这个构造函数不能进行隐式的类型转换
     explicit Lexer(IFileReader *fileReader) : reader(fileReader) {}
 
     /// 获取下一个token
