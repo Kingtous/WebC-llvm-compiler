@@ -242,11 +242,12 @@ int build(std::string *buf, const char *outputPath, const std::set<ArgsParser::O
 const vector <string> *getOpenSSLLibDir() {
     vector<const char *> argv;
     auto pkgconfig = sys::findProgramByName("pkg-config");
-    if (pkgconfig.getError()) {
+    if (auto ec = pkgconfig.getError()) {
+        LogError(ec.message().c_str());
         return nullptr;
     }
     argv.push_back(pkgconfig->c_str());
-    argv.push_back("openssl");
+    argv.push_back("openssl2");
     argv.push_back("--libs");
     auto stdoutput = new string();
     auto stderroutput = new string();
@@ -258,6 +259,8 @@ const vector <string> *getOpenSSLLibDir() {
             boost::split(*v, *stdoutput, boost::is_any_of(" "), boost::token_compress_on);
             return v;
         } else {
+            LogError("查找openssl库失败，请确保openssl库已加入系统环境变量");
+            LogError(stderroutput->c_str());
             return nullptr;
         }
     } catch (Glib::SpawnError &err) {
