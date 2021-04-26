@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
-set(LOCATION ".")
+set(LOCATION "lib")
 
 if (APPLE)
     message(STATUS "macOS detected")
@@ -20,10 +20,10 @@ endif ()
 
 aux_source_directory(src SRC)
 
-add_library(time STATIC ${SRC})
+add_library(ktime STATIC ${SRC})
 
 
-install(TARGETS time
+install(TARGETS ktime
         ARCHIVE DESTINATION ${LOCATION}
         LIBRARY DESTINATION ${LOCATION}
         )

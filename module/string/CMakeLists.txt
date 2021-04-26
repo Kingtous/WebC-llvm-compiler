@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
-set(LOCATION ".")
+set(LOCATION "lib")
 
 if (APPLE)
     message(STATUS "macOS detected")

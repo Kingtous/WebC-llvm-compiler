@@ -7,6 +7,11 @@ find_package(LLVM REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+find_package(Clang REQUIRED CONFIG)
+include_directories(${CLANG_INCLUDE_DIRS})
+add_definitions(${ClANG_DEFINITIONS})
+message(STATUS "clang: ${CLANG_INCLUDE_DIRS}")
+
 #find_package(LLD REQUIRED CONFIG)
 #message(STATUS "find lld ${LLD_INCLUDE_DIRS}")
 #include_directories(${LLD_INCLUDE_DIRS})
@@ -120,7 +125,11 @@ message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
 #target_link_libraries(sysyplus_compiler ${llvm_libs})
-target_link_libraries(sysyplus_compiler ${llvm_libs} ${GTKMM_LIBRARIES} Boost::thread Boost::chrono)
+target_link_libraries(sysyplus_compiler
+        ${llvm_libs}
+        ${GTKMM_LIBRARIES}
+        Boost::thread Boost::chrono
+        clangDriver)
 
 #message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
 #add_custom_command(TARGET sysyplus_compiler PRE_BUILD

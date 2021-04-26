@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
-set(LOCATION ".")
+set(LOCATION "lib")
 
 #find_package(PkgConfig REQUIRED)
 #pkg_check_modules(JSONLib jsoncpp)

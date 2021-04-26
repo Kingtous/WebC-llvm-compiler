@@ -6,7 +6,21 @@
 
 #include "codegen/CodeGen.h"
 
+#include <llvm/Support/Program.h>
+#include <llvm/Support/VirtualFileSystem.h>
+#include <clang/Frontend/TextDiagnosticPrinter.h>
+#include <clang/Driver/Driver.h>
+
+#include <glibmm/iochannel.h>
+#include <glibmm/spawn.h>
+
+#include <boost/algorithm/string.hpp>
+
+using namespace clang;
+
 Lexer *m_lexer;
+
+const vector <string> *getOpenSSLLibDir();
 
 void initExternFunc() {
     // 初始化外层函数
@@ -96,7 +110,7 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
 
     TheModule->setDataLayout(TheTargetMachine->createDataLayout());
 
-    const auto &Filename = outputPath;
+    const auto &Filename = (string(outputPath) + ".o");
     std::error_code EC;
     raw_fd_ostream dest(Filename, EC, sys::fs::F_None);
 
@@ -137,7 +151,50 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     dest.flush();
 
     LogInfo("已生成目标文件(.o/.dll)：");
-    LogInfo(Filename);
+    LogInfo(Filename.c_str());
+    LogInfo("开始生成可执行文件");
+    auto clang = llvm::sys::findProgramByName("clang++");
+    if (auto ec = clang.getError()) {
+        LogInfo(ec.message().c_str());
+        return RERR;
+    }
+    LogInfo(clang->c_str());
+    vector<const char *> args;
+    // TODO 支持多文件
+    args.push_back(clang->c_str());
+    args.push_back(Filename.c_str());
+    // 链接openssl
+    auto openssl_libs = getOpenSSLLibDir();
+    if (openssl_libs == nullptr) {
+        LogError("openssl库没找到，无法编译");
+        return RERR;
+    }
+    for (const auto &item : *openssl_libs) {
+        args.push_back(item.c_str());
+    }
+    args.push_back("-L/usr/local/lib");
+    args.push_back("-lksql");
+    args.push_back("-lkweb");
+    args.push_back("-lktime");
+    args.push_back("-lkjson");
+    args.push_back("-lkstring");
+    // 输出文件
+    args.push_back("-o");
+    args.push_back(outputPath);
+    IntrusiveRefCntPtr <clang::DiagnosticIDs> DiagID(new DiagnosticIDs());
+    DiagnosticsEngine diag_engine(DiagID, new DiagnosticOptions());
+    driver::Driver driver(args[0], sys::getDefaultTargetTriple(), diag_engine);
+    auto webc_compilation = driver.BuildCompilation(args);
+    // fallback
+    SmallVector<std::pair<int, const driver::Command *>, 4> failingCommands;
+    const clang::driver::Command *failingCommand = nullptr;
+#ifdef DEBUG_FLAG
+    driver.PrintActions(*webc_compilation);
+#endif
+    int compile_res = driver.ExecuteCompilation(*webc_compilation, failingCommands);
+    if (compile_res < 0) {
+        driver.generateCompilationDiagnostics(*webc_compilation, *failingCommand);
+    }
     return ROK;
 }
 
@@ -180,4 +237,31 @@ int build(std::string *buf, const char *outputPath, const std::set<ArgsParser::O
         }
     }
     return RERR;
+}
+
+const vector <string> *getOpenSSLLibDir() {
+    vector<const char *> argv;
+    auto pkgconfig = sys::findProgramByName("pkg-config");
+    if (pkgconfig.getError()) {
+        return nullptr;
+    }
+    argv.push_back(pkgconfig->c_str());
+    argv.push_back("openssl");
+    argv.push_back("--libs");
+    auto stdoutput = new string();
+    auto stderroutput = new string();
+    try {
+        Glib::spawn_sync("", argv, Glib::SPAWN_DEFAULT, Glib::SlotSpawnChildSetup(), stdoutput, stderroutput);
+        if (stderroutput->empty()) {
+            boost::trim_right(*stdoutput);
+            auto v = new vector<string>();
+            boost::split(*v, *stdoutput, boost::is_any_of(" "), boost::token_compress_on);
+            return v;
+        } else {
+            return nullptr;
+        }
+    } catch (Glib::SpawnError &err) {
+        LogError(err.what().c_str());
+        return nullptr;
+    }
 }

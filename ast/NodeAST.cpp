@@ -47,6 +47,13 @@ llvm::Value *BinaryExprAST::codegen() {
         }
         // 数值计算
         if (L->getType()->isIntegerTy() && R->getType()->isIntegerTy()) {
+            auto l_width = dyn_cast<IntegerType>(L->getType())->getBitWidth();
+            auto r_width = dyn_cast<IntegerType>(R->getType())->getBitWidth();
+            if (l_width > r_width) {
+                R = Builder->CreateZExtOrTrunc(R, L->getType());
+            } else if (l_width < r_width) {
+                L = Builder->CreateZExtOrTrunc(L, R->getType());
+            }
             switch (type) {
                 case BinaryType::add:
                     return Builder->CreateAdd(L, R, "add");
@@ -1371,6 +1378,6 @@ string NullExprAST::toString() {
 }
 
 llvm::Value *NullExprAST::codegen() {
-    return ConstantExpr::getNullValue(getTypeFromStr("long")->getPointerTo());
+    return ConstantExpr::getNullValue(getTypeFromStr("char")->getPointerTo());
 }
 
