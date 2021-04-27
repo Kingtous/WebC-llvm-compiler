@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.13)
 project(sysyplus_compiler)
 
 set(CMAKE_CXX_STANDARD 17)
+# 始终选择最高版本依赖
+SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
+SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
 
 find_package(LLVM REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
