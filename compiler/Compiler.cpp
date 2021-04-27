@@ -155,6 +155,7 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     LogInfo("开始生成可执行文件");
     auto clang = llvm::sys::findProgramByName("clang++");
     if (auto ec = clang.getError()) {
+        LogInfo("clang++未找到");
         LogInfo(ec.message().c_str());
         return RERR;
     }
@@ -174,6 +175,7 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     }
     args.push_back("-L/usr/local/lib");
     args.push_back("-lksql");
+    args.push_back("-lmysqlcppconn");
     args.push_back("-lkweb");
     args.push_back("-lktime");
     args.push_back("-lkjson");
@@ -194,7 +196,10 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     int compile_res = driver.ExecuteCompilation(*webc_compilation, failingCommands);
     if (compile_res < 0) {
         driver.generateCompilationDiagnostics(*webc_compilation, *failingCommand);
+        return RERR;
     }
+    LogInfo("编译完成");
+    LogInfo(outputPath);
     return ROK;
 }
 
@@ -247,7 +252,7 @@ const vector <string> *getOpenSSLLibDir() {
         return nullptr;
     }
     argv.push_back(pkgconfig->c_str());
-    argv.push_back("openssl2");
+    argv.push_back("openssl");
     argv.push_back("--libs");
     auto stdoutput = new string();
     auto stderroutput = new string();

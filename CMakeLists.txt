@@ -129,7 +129,7 @@ message(STATUS "Found ${llvm_libs}")
 # Link against LLVM libraries
 #target_link_libraries(sysyplus_compiler ${llvm_libs})
 target_link_libraries(sysyplus_compiler
-        ${llvm_libs}
+        LLVM
         ${GTKMM_LIBRARIES}
         Boost::thread Boost::chrono
         clangDriver)
