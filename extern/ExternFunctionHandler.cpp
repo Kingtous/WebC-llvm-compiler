@@ -434,8 +434,10 @@ Value *KsqlFunctionHandler::tryhandle(LLVMContext &context, Module &module, std:
     }else if(callName=="query_db"&&!argV->empty()){
         auto func = ExternFunctionHandler::getOrAddQueryDB(context,module);
         return Builder->CreateCall(func,*argV);
-    }else if (callName=="resToJson"&&!argV->empty()){
-        auto func = ExternFunctionHandler::getOrAddResToJson(context,module);
-        return Builder->CreateCall(func,*argV);
+    }else if (callName == "resToJson" && !argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddResToJson(context, module);
+        return Builder->CreateCall(func, *argV);
+    } else {
+        return nullptr;
     }
 }

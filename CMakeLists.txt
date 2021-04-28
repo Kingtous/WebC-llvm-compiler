@@ -102,9 +102,9 @@ add_executable(sysyplus_compiler
         args/utils.hpp args/value_utils.hpp
         )
 # 平台公用宏定义
-add_compile_definitions(sysyplus_compiler PUBLIC ASM_SUFFIX=".asm")
-# CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式
-add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1)
+add_compile_definitions(sysyplus_compiler PUBLIC ASM_SUFFIX=".s")
+# CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式 CLANG_SUPPORT开启可执行文件输出
+add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1 CLANG_SUPPORT=1)
 
 if (WIN32)
     add_compile_definitions(sysyplus_compiler PUBLIC EXECUTABLE_SUFFIX=".exe" OBJ_SUFFIX=".obj")
@@ -139,7 +139,8 @@ target_link_libraries(sysyplus_compiler
         LLVM
         ${GTKMM_LIBRARIES}
         Boost::thread Boost::chrono
-        clangDriver)
+        clangDriver
+        )
 
 #message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
 #add_custom_command(TARGET sysyplus_compiler PRE_BUILD

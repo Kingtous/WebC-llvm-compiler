@@ -189,7 +189,7 @@ void CompilerWindow::initMenuBar() {
         std::set<ArgsParser::Options> s;
         s.insert(ArgsParser::Options::OUTPUT_LLVMAS_FILE);
         auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
-        auto path = m_file->get_path() + ASM_SUFFIX;
+        auto path = m_file->get_path();
         buildSrc(s, code_buffer, path);
     });
     // 执行文件

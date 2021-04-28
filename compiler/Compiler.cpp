@@ -6,17 +6,16 @@
 
 #include "codegen/CodeGen.h"
 
+#ifdef CLANG_SUPPORT
 #include <llvm/Support/Program.h>
 #include <llvm/Support/VirtualFileSystem.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <clang/Driver/Driver.h>
-
-#include <glibmm/iochannel.h>
 #include <glibmm/spawn.h>
-
 #include <boost/algorithm/string.hpp>
 
 using namespace clang;
+#endif
 
 Lexer *m_lexer;
 
@@ -112,12 +111,17 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
 
     auto omit_file_name = (string(outputPath) + OBJ_SUFFIX);
     std::error_code EC;
-    raw_fd_ostream dest(omit_file_name, EC, sys::fs::F_None);
 
     if (EC) {
         LogError(EC.message().c_str());
         return 1;
     }
+    auto file_type = CodeGenFileType::CGFT_ObjectFile;
+    if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()) {
+        file_type = CodeGenFileType::CGFT_AssemblyFile;
+        omit_file_name = string(outputPath) + ASM_SUFFIX;
+    }
+    raw_fd_ostream dest(omit_file_name, EC, sys::fs::F_None);
     legacy::PassManager pass;
 // 临时关闭这些优化器
 #ifdef DEBUG_FLAG
@@ -136,18 +140,12 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
         pass.add(new TimeAnalysisPass());
     }
     pass.add(new RecursiveToLoopPass());
-    auto file_type = CodeGenFileType::CGFT_ObjectFile;
-    if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()) {
-        file_type = CodeGenFileType::CGFT_AssemblyFile;
-        omit_file_name = outputPath;
-    }
-
     if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
         LogError("TheTargetMachine can't emit a file of this type");
         return 1;
     }
     pass.run(*TheModule);
-
+#ifdef DEBUG_FLAG
 #ifdef CGUI
     std::string ir_buf;
     raw_string_ostream rfostream(ir_buf);
@@ -157,11 +155,15 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
 #else
     TheModule->print(outs(), NIL);
 #endif
+#endif
     dest.flush();
+    if (dest.has_error()) {
+        LogError(dest.error().message().c_str());
+    }
 
     LogInfo("已生成目标文件");
     LogInfo(omit_file_name.c_str());
-
+#ifdef CLANG_SUPPORT
     // 不需要生成可执行文件
     if (opts.find(ArgsParser::Options::OUTPUT_EXECUTABLE) == opts.end()) {
         return ROK;
@@ -214,6 +216,7 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     }
     LogInfo("编译完成");
     LogInfo(outputPath);
+#endif
     return ROK;
 }
 
@@ -258,6 +261,7 @@ int build(std::string *buf, const char *outputPath, const std::set<ArgsParser::O
     return RERR;
 }
 
+#ifdef CLANG_SUPPORT
 const vector <string> *getOpenSSLLibDir() {
     vector<const char *> argv;
     auto pkgconfig = sys::findProgramByName("pkg-config");
@@ -287,3 +291,5 @@ const vector <string> *getOpenSSLLibDir() {
         return nullptr;
     }
 }
+
+#endif
