@@ -8,11 +8,12 @@
 using namespace Args;
 
 CmdLine *cmd;
-MultiArg* input_arg;
-Arg* output_arg;
-Arg* is_target_arg;
-Arg* time_analysis_arg;
-Help* help_arg;
+MultiArg *input_arg;
+Arg *output_arg;
+Arg *is_target_arg;
+Arg *is_obj_arg;
+Arg *time_analysis_arg;
+Help *help_arg;
 
 ArgsParser::ArgsParser() {
 
@@ -25,8 +26,10 @@ ArgsParser *ArgsParser::inst(int args, char **argv) {
             ap->files.push_back(v);
         }
         ap->output_path = output_arg->value();
-        if (is_target_arg->isDefined()){
+        if (is_target_arg->isDefined()) {
             ap->opts.insert(Options::OUTPUT_LLVMAS_FILE);
+        } else if (is_obj_arg->isDefined()) {
+            ap->opts.insert(Options::OUTPUT_OBJ_FILE);
         } else {
             ap->opts.insert(Options::OUTPUT_EXECUTABLE);
         }
@@ -48,17 +51,22 @@ bool ArgsParser::verify(int args, char **argv) {
     input_arg->setLongDescription(String("输入源文件（支持多文件）"));
     cmd->addArg(input_arg);
 
-    output_arg = new Arg('o',"output",true,true);
+    output_arg = new Arg('o', "output", true, true);
     input_arg->setDescription(String("输出文件"));
     input_arg->setLongDescription(String("输出文件"));
     cmd->addArg(output_arg);
 
-    is_target_arg = new Arg('s',"as",false,false);
+    is_target_arg = new Arg('s', "as", false, false);
     is_target_arg->setDescription("是否生成可读汇编文件");
-    is_target_arg->setLongDescription("source code -> llvm ir -> assembly file(可视化) -> object file");
+    is_target_arg->setLongDescription("source code -> llvm ir -> assembly file(可视化)");
     cmd->addArg(is_target_arg);
 
-    time_analysis_arg = new Arg('t',"time_analysis",false,false);
+    is_obj_arg = new Arg('j', "object", false, false);
+    is_obj_arg->setDescription("是否只生成目标文件");
+    is_obj_arg->setLongDescription("source code -> llvm ir -> assembly file(可视化) -> object file");
+    cmd->addArg(is_obj_arg);
+
+    time_analysis_arg = new Arg('t', "time_analysis", false, false);
     time_analysis_arg->setDescription("是否在每个函数内加入时间分析");
     time_analysis_arg->setLongDescription("add time analysis into every function");
     cmd->addArg(time_analysis_arg);

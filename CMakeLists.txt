@@ -101,9 +101,16 @@ add_executable(sysyplus_compiler
         args/help_printer.hpp args/help_printer_iface.hpp args/multi_arg.hpp args/types.hpp
         args/utils.hpp args/value_utils.hpp
         )
-
+# 平台公用宏定义
+add_compile_definitions(sysyplus_compiler PUBLIC ASM_SUFFIX=".asm")
 # CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式
 add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1)
+
+if (WIN32)
+    add_compile_definitions(sysyplus_compiler PUBLIC EXECUTABLE_SUFFIX=".exe" OBJ_SUFFIX=".obj")
+else ()
+    add_compile_definitions(sysyplus_compiler PUBLIC EXECUTABLE_SUFFIX=".out" OBJ_SUFFIX=".o")
+endif ()
 
 message(STATUS "host system is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 

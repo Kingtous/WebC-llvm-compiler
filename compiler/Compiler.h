@@ -13,6 +13,7 @@
 #include "Global.h"
 #include "ErrHelper.h"
 #include "pass/TimeAnalysisPass.h"
+#include "pass/RecursiveToLoopPass.h"
 #include "parser/FileReader.h"
 #include "parser/StringReader.h"
 #include "Global.h"

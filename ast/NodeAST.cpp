@@ -509,7 +509,7 @@ llvm::Function *FunctionAST::codegen() {
         return (llvm::Function *) LogErrorV("Function cannot be redefined.");
 
     // Create a new basic block to start insertion into.
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "jintao_entry", function);
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "alloca", function);
     Builder->SetInsertPoint(BB);
     TheCodeGenContext->push_block(BB);
     TheCodeGenContext->setFunction(function);
@@ -522,6 +522,9 @@ llvm::Function *FunctionAST::codegen() {
         Builder->CreateStore(&Arg, mem);
         LOCALSVARS.insert(make_pair(Arg.getName().data(), mem));
     }
+    auto bb_entry = BasicBlock::Create(*TheContext, "neuq_entry", function);
+    Builder->CreateBr(bb_entry);
+    Builder->SetInsertPoint(bb_entry);
     // 把return值alloc一下，如果不是void
     if (!function->getReturnType()->isVoidTy()) {
         Value *ret = Builder->CreateAlloca(function->getReturnType());

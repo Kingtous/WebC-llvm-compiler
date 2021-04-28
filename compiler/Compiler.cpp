@@ -110,27 +110,36 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
 
     TheModule->setDataLayout(TheTargetMachine->createDataLayout());
 
-    const auto &Filename = (string(outputPath) + ".o");
+    auto omit_file_name = (string(outputPath) + OBJ_SUFFIX);
     std::error_code EC;
-    raw_fd_ostream dest(Filename, EC, sys::fs::F_None);
+    raw_fd_ostream dest(omit_file_name, EC, sys::fs::F_None);
 
     if (EC) {
         LogError(EC.message().c_str());
         return 1;
     }
-
     legacy::PassManager pass;
 // 临时关闭这些优化器
-//    pass.add(createReassociatePass());
-//    pass.add(createGVNPass());
-//    pass.add(createCFGSimplificationPass());
-//    pass.add(createTailCallEliminationPass());
+#ifdef DEBUG_FLAG
+
+#else
+    pass.add(createTailCallEliminationPass());
+    pass.add(createReassociatePass());
+    pass.add(createGVNPass());
+    pass.add(createCFGSimplificationPass());
+#endif
+    pass.add(createTailCallEliminationPass());
+    pass.add(createReassociatePass());
+    pass.add(createGVNPass());
+    pass.add(createCFGSimplificationPass());
     if (opts.find(ArgsParser::Options::PASS_TIME_ANALYSIS) != opts.end()) {
         pass.add(new TimeAnalysisPass());
     }
+    pass.add(new RecursiveToLoopPass());
     auto file_type = CodeGenFileType::CGFT_ObjectFile;
     if (opts.find(ArgsParser::Options::OUTPUT_LLVMAS_FILE) != opts.end()) {
         file_type = CodeGenFileType::CGFT_AssemblyFile;
+        omit_file_name = outputPath;
     }
 
     if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
@@ -150,8 +159,13 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
 #endif
     dest.flush();
 
-    LogInfo("已生成目标文件(.o/.dll)：");
-    LogInfo(Filename.c_str());
+    LogInfo("已生成目标文件");
+    LogInfo(omit_file_name.c_str());
+
+    // 不需要生成可执行文件
+    if (opts.find(ArgsParser::Options::OUTPUT_EXECUTABLE) == opts.end()) {
+        return ROK;
+    }
     LogInfo("开始生成可执行文件");
     auto clang = llvm::sys::findProgramByName("clang++");
     if (auto ec = clang.getError()) {
@@ -163,7 +177,7 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     vector<const char *> args;
     // TODO 支持多文件
     args.push_back(clang->c_str());
-    args.push_back(Filename.c_str());
+    args.push_back(omit_file_name.c_str());
     // 链接openssl
     auto openssl_libs = getOpenSSLLibDir();
     if (openssl_libs == nullptr) {
