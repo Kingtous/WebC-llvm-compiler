@@ -29,8 +29,8 @@ void startServer() {
 
 
 int main() {
-//    _ksql_connect_db("127.0.0.1", "root", "123456", "school");
-    _ksql_connect_db(HOST, USER, PASSWD, DATABASE);
+    _ksql_connect_db("127.0.0.1", "root", "123456", "school");
+//    _ksql_connect_db(HOST, USER, PASSWD, DATABASE);
     startServer();
     // for test interface
 //    int serverId = _web_getServerId("127.0.0.1", 9000);
