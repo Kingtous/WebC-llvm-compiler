@@ -47,6 +47,13 @@ llvm::Value *BinaryExprAST::codegen() {
         }
         // 数值计算
         if (L->getType()->isIntegerTy() && R->getType()->isIntegerTy()) {
+            auto l_width = dyn_cast<IntegerType>(L->getType())->getBitWidth();
+            auto r_width = dyn_cast<IntegerType>(R->getType())->getBitWidth();
+            if (l_width > r_width) {
+                R = Builder->CreateZExtOrTrunc(R, L->getType());
+            } else if (l_width < r_width) {
+                L = Builder->CreateZExtOrTrunc(L, R->getType());
+            }
             switch (type) {
                 case BinaryType::add:
                     return Builder->CreateAdd(L, R, "add");
@@ -502,7 +509,7 @@ llvm::Function *FunctionAST::codegen() {
         return (llvm::Function *) LogErrorV("Function cannot be redefined.");
 
     // Create a new basic block to start insertion into.
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "jintao_entry", function);
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "alloca", function);
     Builder->SetInsertPoint(BB);
     TheCodeGenContext->push_block(BB);
     TheCodeGenContext->setFunction(function);
@@ -515,6 +522,9 @@ llvm::Function *FunctionAST::codegen() {
         Builder->CreateStore(&Arg, mem);
         LOCALSVARS.insert(make_pair(Arg.getName().data(), mem));
     }
+    auto bb_entry = BasicBlock::Create(*TheContext, "neuq_entry", function);
+    Builder->CreateBr(bb_entry);
+    Builder->SetInsertPoint(bb_entry);
     // 把return值alloc一下，如果不是void
     if (!function->getReturnType()->isVoidTy()) {
         Value *ret = Builder->CreateAlloca(function->getReturnType());
@@ -1371,6 +1381,6 @@ string NullExprAST::toString() {
 }
 
 llvm::Value *NullExprAST::codegen() {
-    return ConstantExpr::getNullValue(getTypeFromStr("long")->getPointerTo());
+    return ConstantExpr::getNullValue(getTypeFromStr("char")->getPointerTo());
 }
 

@@ -10,8 +10,10 @@
 using namespace llvm;
 
 class RecursiveToLoopPass : public FunctionPass {
-
+    static char ID;
 public:
+    RecursiveToLoopPass();
+
     bool runOnFunction(Function &F) override;
 };
 

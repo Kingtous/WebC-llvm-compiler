@@ -16,9 +16,10 @@ using namespace std::filesystem;
 
 class ArgsParser {
 public:
-    enum Options{
+    enum Options {
         OUTPUT_LLVMAS_FILE,
         OUTPUT_EXECUTABLE,
+        OUTPUT_OBJ_FILE,
         PASS_TIME_ANALYSIS
     };
 

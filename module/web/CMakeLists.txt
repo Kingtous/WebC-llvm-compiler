@@ -4,7 +4,7 @@ message(STATUS "configuring KingtousProject-Web模块")
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
-set(LOCATION ".")
+set(LOCATION "lib")
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SSLLib openssl)
@@ -33,7 +33,7 @@ endif ()
 
 #aux_source_directory(src SRC)
 
-add_library(web STATIC src/web.hpp src/web.cpp)
+add_library(kweb STATIC src/web.hpp src/web.cpp)
 
 add_executable(webdemo src/webdemo.cpp src/web.hpp src/web.cpp)
 
@@ -43,7 +43,7 @@ target_link_libraries(webdemo Boost::filesystem Boost::system pthread ${SSLLib_L
 
 target_link_libraries(serverdemo Boost::filesystem Boost::system pthread ${SSLLib_LIBRARIES} ksql kjson mysqlcppconn )
 
-install(TARGETS web
+install(TARGETS kweb
         ARCHIVE DESTINATION ${LOCATION}
         LIBRARY DESTINATION ${LOCATION}
         )

@@ -13,8 +13,6 @@
 #include <gtksourceviewmm/completionwords.h>
 #include <gtksourceviewmm/styleschememanager.h>
 #include <giomm/simpleactiongroup.h>
-#include <giomm/unixoutputstream.h>
-#include <giomm/unixinputstream.h>
 #include <vector>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
@@ -126,7 +124,8 @@ private:
     ImageMenuItem *m_menu_file_saveas;
     ImageMenuItem *m_menu_file_quit;
     ImageMenuItem *m_menu_help_about;
-    ImageMenuItem *m_menu_build_compile;
+    ImageMenuItem *m_menu_build_compile_only;
+    ImageMenuItem *m_menu_build_compile_obj;
     ImageMenuItem *m_menu_build_run;
     ImageMenuItem *m_menu_build_compile_asm;
     TextView *m_textview;

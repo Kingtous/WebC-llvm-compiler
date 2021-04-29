@@ -2,10 +2,18 @@ cmake_minimum_required(VERSION 3.13)
 project(sysyplus_compiler)
 
 set(CMAKE_CXX_STANDARD 17)
+# 始终选择最高版本依赖
+SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
+SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
 
 find_package(LLVM REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
+
+find_package(Clang REQUIRED CONFIG)
+include_directories(${CLANG_INCLUDE_DIRS})
+add_definitions(${ClANG_DEFINITIONS})
+message(STATUS "clang: ${CLANG_INCLUDE_DIRS}")
 
 #find_package(LLD REQUIRED CONFIG)
 #message(STATUS "find lld ${LLD_INCLUDE_DIRS}")
@@ -93,9 +101,16 @@ add_executable(sysyplus_compiler
         args/help_printer.hpp args/help_printer_iface.hpp args/multi_arg.hpp args/types.hpp
         args/utils.hpp args/value_utils.hpp
         )
+# 平台公用宏定义
+add_compile_definitions(sysyplus_compiler PUBLIC ASM_SUFFIX=".s")
+# CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式 CLANG_SUPPORT开启可执行文件输出
+add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1 CLANG_SUPPORT=1)
 
-# CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式
-add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1)
+if (WIN32)
+    add_compile_definitions(sysyplus_compiler PUBLIC EXECUTABLE_SUFFIX=".exe" OBJ_SUFFIX=".obj")
+else ()
+    add_compile_definitions(sysyplus_compiler PUBLIC EXECUTABLE_SUFFIX=".out" OBJ_SUFFIX=".o")
+endif ()
 
 message(STATUS "host system is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
@@ -120,7 +135,12 @@ message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
 #target_link_libraries(sysyplus_compiler ${llvm_libs})
-target_link_libraries(sysyplus_compiler ${llvm_libs} ${GTKMM_LIBRARIES} Boost::thread Boost::chrono)
+target_link_libraries(sysyplus_compiler
+        LLVM
+        ${GTKMM_LIBRARIES}
+        Boost::thread Boost::chrono
+        clangDriver
+        )
 
 #message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
 #add_custom_command(TARGET sysyplus_compiler PRE_BUILD
