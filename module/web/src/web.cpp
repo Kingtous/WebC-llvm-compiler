@@ -131,7 +131,6 @@ public:
             if ((*(*handlers_it).path) == target && (*(*handlers_it).method) == request.method_string()) {
                 auto func = *(handlers_it->function);
                 auto resp = func();
-//            std::string resp_str(resp);
                 str_resp = std::make_unique<http::response<http::string_body>>();
                 str_resp->result(http::status::ok);
                 str_resp->keep_alive(false);
