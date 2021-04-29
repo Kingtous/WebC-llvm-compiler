@@ -7,7 +7,7 @@
 
 #include <map>
 #include <set>
-
+#include "./module/sql/src/ksql.h"
 #include <boost/beast.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>

@@ -51,6 +51,8 @@ int Lexer::_getNextToken() {
             return T_CONST;
         } else if (identifierStr == "nil"){
             return T_NULL;
+        } else if(identifierStr == "func_ptr"){
+            return T_FUNC_SIGN;
         }
 //        else if (identifierStr == "module"){
 //            return T_MODULE;
@@ -212,7 +214,7 @@ int Lexer::_getNextToken() {
 
 int Lexer::getNextToken() {
     currToken = _getNextToken();
-#ifdef DEBUG_FLAG
+#ifdef DEBUG_FLAG //如果处于DEBUG模式的话，就打印这些字符
     if (currToken == T_IDENTIFIER) {
         std::fprintf(stderr, "KEX: read identifier: %s\n", (*yylval.string).c_str());
     } else if (currToken < 258) {
@@ -220,7 +222,7 @@ int Lexer::getNextToken() {
     } else {
         std::fprintf(stderr, "KEX: read token type: %d\n", currToken);
     }
-#endif
+#endif   //如果不是debug模式的话，就不打印这些字符，直接返回
     return currToken;
 }
 

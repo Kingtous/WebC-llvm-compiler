@@ -87,16 +87,16 @@ using std::vector;
     T_CONST = 282,
     T_STR = 283,
     T_NULL = 284,
-    T_FUNC_PTR = 285,
-    T_FOR = 286,
-    T_WHILE = 287,
-    T_OUT = 288,
-    T_CONTINUE = 289,
-    T_IF = 290,
-    T_ELSE = 291,
-    T_RETURN = 292,
-    T_VOID = 293,
-    T_INT = 294,
+    T_FOR = 285,
+    T_WHILE = 286,
+    T_OUT = 287,
+    T_CONTINUE = 288,
+    T_IF = 289,
+    T_ELSE = 290,
+    T_RETURN = 291,
+    T_VOID = 292,
+    T_INT = 293,
+    T_FUNC_SIGN = 294,
     T_OR = 296,
     T_AND = 297,
     T_MINUS = 298,
@@ -132,16 +132,16 @@ using std::vector;
 #define T_CONST 282
 #define T_STR 283
 #define T_NULL 284
-#define T_FUNC_PTR 285
-#define T_FOR 286
-#define T_WHILE 287
-#define T_OUT 288
-#define T_CONTINUE 289
-#define T_IF 290
-#define T_ELSE 291
-#define T_RETURN 292
-#define T_VOID 293
-#define T_INT 294
+#define T_FOR 285
+#define T_WHILE 286
+#define T_OUT 287
+#define T_CONTINUE 288
+#define T_IF 289
+#define T_ELSE 290
+#define T_RETURN 291
+#define T_VOID 292
+#define T_INT 293
+#define T_FUNC_SIGN 294
 #define T_OR 296
 #define T_AND 297
 #define T_MINUS 298

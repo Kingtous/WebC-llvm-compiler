@@ -82,7 +82,7 @@ void CompilerWindow::initMenuBar() {
     });
     // 打开文件
     m_menu_file_open->signal_activate().connect([&]() {
-        auto dialog = new FileChooserDialog("选择一个WebC语言文件", FileChooserAction::FILE_CHOOSER_ACTION_OPEN);
+        auto dialog = new FileChooserDialog("选择一个Sysy文件", FileChooserAction::FILE_CHOOSER_ACTION_OPEN);
         dialog->set_transient_for(*this);
         dialog->add_button("打开", RESPONSE_OK);
         dialog->add_button("取消", RESPONSE_CANCEL);
@@ -155,19 +155,16 @@ void CompilerWindow::initMenuBar() {
         dialog->show();
     });
     // 构建为目标文件
-    m_menu_build_compile_obj->signal_activate().connect([&]() {
+    m_menu_build_compile->signal_activate().connect([&]() {
         if (m_file.get() == nullptr) {
             // 先调用保存
             m_menu_file_save->activate();
             return;
         }
-        std::set<ArgsParser::Options> s;
-        s.insert(ArgsParser::Options::OUTPUT_OBJ_FILE);
-        auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
-        auto path = m_file->get_path();
-        buildSrc(s, code_buffer, path);
+        // ADD
     });
-    m_menu_build_compile_only->signal_activate().connect([&]() {
+    // 构建为目标文件
+    m_menu_build_compile->signal_activate().connect([&]() {
         if (m_file.get() == nullptr) {
             // 先调用保存
             m_menu_file_save->activate();
@@ -176,7 +173,7 @@ void CompilerWindow::initMenuBar() {
         std::set<ArgsParser::Options> s;
         s.insert(ArgsParser::Options::OUTPUT_EXECUTABLE);
         auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
-        auto path = m_file->get_path() + EXECUTABLE_SUFFIX;
+        auto path = m_file->get_path() + ".o";
         buildSrc(s, code_buffer, path);
     });
     // 构建为汇编文件
@@ -189,7 +186,7 @@ void CompilerWindow::initMenuBar() {
         std::set<ArgsParser::Options> s;
         s.insert(ArgsParser::Options::OUTPUT_LLVMAS_FILE);
         auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
-        auto path = m_file->get_path();
+        auto path = m_file->get_path() + ".asm";
         buildSrc(s, code_buffer, path);
     });
     // 执行文件
@@ -203,17 +200,24 @@ void CompilerWindow::initMenuBar() {
         std::set<ArgsParser::Options> s;
         s.insert(ArgsParser::Options::OUTPUT_EXECUTABLE);
         auto code_buffer = m_gsv->get_buffer()->property_text().get_value();
-        auto path = m_file->get_path() + EXECUTABLE_SUFFIX;
+        auto path = m_file->get_path() + ".o";
         // 生成exe
         buildSrc(s, code_buffer, path, [](CompilerWindow *window) {
 //            window->m_main_build_notebook->set_current_page(RUNTIME_PAGE_ID);
             // 成功回调,g++链接，切换至UI线程
             Glib::signal_idle().connect_once([=]() {
-                auto exe_name = window->m_file->get_path() + EXECUTABLE_SUFFIX;
+                auto obj_name = window->m_file->get_path() + ".o";
+                auto exe_name = window->m_file->get_path() + ".yyz";
+                const vector<string> argv = {"/usr/bin/g++", obj_name, "-no-pie","-pthread","../cmake-build-debug/module/web/libweb.a",
+                                             "-lssl","-lcrypto","../cmake-build-debug/module/sql/libksql.a","-lboost_system","-lboost_filesystem",
+                                             "../cmake-build-debug/module/json/libkjson.a", "-lmysqlcppconn","-o", exe_name};
                 std::string output;
                 std::string error;
                 try {
-                    window->log(error.c_str(), M_STATUS::IN_BUILD);
+                    Glib::spawn_sync("", argv, SPAWN_DEFAULT, SlotSpawnChildSetup(), &output, &error);
+                    if (!error.empty()) {
+                        window->log(error.c_str(), M_STATUS::IN_BUILD);
+                    }
                     {
                         auto f = Gio::File::create_for_path(exe_name);
                         if (f->query_exists()) {
@@ -227,20 +231,18 @@ void CompilerWindow::initMenuBar() {
                             window->setStatus(M_STATUS::IN_RUNNING);
                             boost::asio::post(window->threads, [=]() {
                                 try {
-//                                    auto uis = Gio::UnixInputStream::create(routputId, true);
-                                    auto uis = Glib::IOChannel::create_from_fd(routputId);
-                                    auto output_buf = Glib::ustring();
-                                    auto status = uis->read(output_buf, INIT_IOBUF);
+                                    auto uis = Gio::UnixInputStream::create(routputId, true);
+                                    auto buf = new char[INIT_IOBUF];
+                                    int read = uis->read(buf, INIT_IOBUF);
                                     while (true) {
-                                        auto output_length = output_buf.length();
-                                        if (output_length != 0) {
-                                            window->log(output_buf.c_str(), M_STATUS::IN_RUNNING);
+                                        if (read != 0) {
+                                            window->log(buf, M_STATUS::IN_RUNNING);
                                         }
-                                        if (output_length == 0 && status == IOStatus::IO_STATUS_EOF) {
+                                        if (read == 0 && uis->get_close_fd()) {
                                             break;
                                         }
-                                        output_buf.clear();
-                                        status = uis->read(output_buf, INIT_IOBUF);
+                                        memset(buf, 0, INIT_IOBUF);
+                                        read = uis->read(buf, INIT_IOBUF);
                                         // 休眠500ms
                                         boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
                                     }
@@ -278,8 +280,7 @@ CompilerWindow::CompilerWindow(BaseObjectType *cobject,
     builder->get_widget("menu_file_saveas", m_menu_file_saveas);
     builder->get_widget("menu_file_quit", m_menu_file_quit);
     builder->get_widget("menu_help_about", m_menu_help_about);
-    builder->get_widget("menu_build_compile_only", m_menu_build_compile_only);
-    builder->get_widget("menu_build_compile_obj", m_menu_build_compile_obj);
+    builder->get_widget("menu_build_compile", m_menu_build_compile);
     builder->get_widget("menu_build_run", m_menu_build_run);
     builder->get_widget("main_bottom_status_label", m_main_bottom_status_label);
     builder->get_widget("main_build_notebook", m_main_build_notebook);
@@ -471,7 +472,9 @@ int CompilerWindow::buildSrc(const set<ArgsParser::Options> &opts,
         m_main_build_console->get_buffer()->set_text("");
         m_main_build_notebook->set_current_page(BUILD_PAGE_ID);
         boost::asio::post(threads, [&, code, output_path, opts, window_pointer, onSuccess]() {
+            log("正在编译中\n", M_STATUS::IN_BUILD);
             auto code_str = new std::string(code);
+            auto default_output_path = m_file->get_path() + ".o";
             int res = build(code_str, output_path.c_str(), opts);
             if (res == ROK) {
                 log("编译完成\n", M_STATUS::IN_BUILD);
@@ -496,5 +499,4 @@ CompilerWindow::~CompilerWindow() noexcept {
 
 bool KingtousCompletionProvider::match_vfunc(const RefPtr<const Gsv::CompletionContext> &context) const {
     // TODO 代码提示
-    return false;
 }
