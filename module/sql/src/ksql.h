@@ -14,15 +14,8 @@
 #include "cppconn/prepared_statement.h"
 #include "iostream"
 #include "module/json/src/kjson.h"
-
 #include "unordered_map"
 #include "vector"
-#include "hash_set"
-//mysql相关参数
-#define HOST "127.0.0.1"
-#define USER "root"
-#define PASSWD "123456"
-#define DATABASE "school"
 
 //mysql连接状态码
 #define NOT_CONNECT -1
@@ -46,8 +39,6 @@ int _ksql_connect_db(const char *host, const char *user, const char *passwd, con
 int _ksql_free_memory();
 //查询数据
 const char *_ksql_query_db(const char *sqlSentence);
-//将query语句返回转化为字符串
-string _ksql_resToJson(ResultSet *resultSet);
 }
 
 #endif //SYSYPLUS_COMPILER_KSQL_H

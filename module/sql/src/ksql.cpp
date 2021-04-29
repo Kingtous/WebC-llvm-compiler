@@ -10,7 +10,7 @@ Statement *statement;
 ResultSet *resultSet;
 unique_ptr<char[]> ch;
 vector<string> ans;
-
+string _ksql_resToJson(ResultSet *result);
 int _ksql_connect_db(const char *host, const char *user, const char *passwd, const char *database) {
     try {
         driver = mysql::get_mysql_driver_instance();
@@ -18,7 +18,7 @@ int _ksql_connect_db(const char *host, const char *user, const char *passwd, con
         conn = driver->connect(host, user, passwd);
         if (!conn) {
             cout << "连接Mysql失败" << endl;
-            return NOT_CONNECT;
+            return FAILED;
         }
         //连接到指定数据库
         conn->setSchema(database);
