@@ -137,7 +137,8 @@ int Lexer::_getNextToken() {
         identifierStr = char(last_char);
 
 
-        while (ispunct((last_char = getchar()))) {
+        while (ispunct((seek()))) {
+            NEXTCHAR;
             identifierStr += last_char;
             // 注释
             if (identifierStr == "//") {
@@ -147,17 +148,20 @@ int Lexer::_getNextToken() {
                 NEXTCHAR;
                 return _getNextToken();
             }
+            else if (identifierStr == "&&") {
+                NEXTCHAR;
+                return T_AND;
+            }
+            else if (identifierStr == "||") {
+                NEXTCHAR;
+                return T_OR;
+            }
         }
 
-        if (identifierStr == "&&") {
-            return T_AND;
-        }
-        if (identifierStr == "||") {
-            return T_OR;
-        }
         if (identifierStr == "-") {
             // 负数
             if (isdigit(seek())) {
+                NEXTCHAR;
                 int token = _getNextToken();
                 if (token == T_INTEGER) {
                     yylval.int_value = -yylval.int_value;

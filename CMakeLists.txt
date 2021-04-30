@@ -9,6 +9,7 @@ SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
 find_package(LLVM REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
+message(STATUS "Found llvm in ${LLVM_INCLUDE_DIRS}")
 
 find_package(Clang REQUIRED CONFIG)
 include_directories(${CLANG_INCLUDE_DIRS})
@@ -25,11 +26,11 @@ find_package(Boost COMPONENTS system filesystem thread chrono REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIR})
 
-#find_package(PkgConfig REQUIRED)
-#pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
-#include_directories(${GTK3_INCLUDE_DIRS})
-#link_directories(${GTK3_LIBRARY_DIRS})
-#add_definitions(${GTK3_CFLAGS_OTHER})
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+include_directories(${GTK3_INCLUDE_DIRS})
+link_directories(${GTK3_LIBRARY_DIRS})
+add_definitions(${GTK3_CFLAGS_OTHER})
 # 处理语法分析器
 #find_package(BISON)
 #BISON_TARGET(Parser parser/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser/Parser.cpp
@@ -39,9 +40,9 @@ link_directories(${Boost_LIBRARY_DIR})
 #set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-#message(STATUS "GTK3_INCLUDE_DIRS: ${GTK3_INCLUDE_DIRS}")
-#message(STATUS "GKT3_LIBRARIES: ${GTK3_LIBRARIES}")
-#message(STATUS "GTK3_LINK_LIBRARIES: ${GTK3_LINK_LIBRARIES}")
+message(STATUS "GTK3_INCLUDE_DIRS: ${GTK3_INCLUDE_DIRS}")
+message(STATUS "GKT3_LIBRARIES: ${GTK3_LIBRARIES}")
+message(STATUS "GTK3_LINK_LIBRARIES: ${GTK3_LINK_LIBRARIES}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 message(STATUS "Using defs in: ${LLVM_DEFINITIONS}")
 message(STATUS "CMAKE_CURRENT_BINARY_DIR = ${CMAKE_CURRENT_BINARY_DIR}")
@@ -135,19 +136,29 @@ message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
 #target_link_libraries(sysyplus_compiler ${llvm_libs})
-target_link_libraries(sysyplus_compiler
-        LLVM
-        ${GTKMM_LIBRARIES}
-        Boost::thread Boost::chrono
-        clangDriver
-        )
+if(WIN32)
+    target_link_libraries(sysyplus_compiler
+            LLVM
+            ${GTKMM_LIBRARIES}
+            Boost::thread Boost::chrono
+            clangDriver
+            wsock32
+            )
+else()
+    target_link_libraries(sysyplus_compiler
+            LLVM
+            ${GTKMM_LIBRARIES}
+            Boost::thread Boost::chrono
+            clangDriver
+            )
+endif()
 
 #message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
 #add_custom_command(TARGET sysyplus_compiler PRE_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy_directory
 #        ${CMAKE_SOURCE_DIR}/ui/ui ${CMAKE_CURRENT_BINARY_DIR}/ui)
 
-#message(STATUS "配置目标库")
+message(STATUS "配置目标库")
 #add_subdirectory(module)
 
 # time module

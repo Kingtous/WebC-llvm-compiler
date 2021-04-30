@@ -22,8 +22,8 @@ enum ASTType {
 };
 
 enum VarType {
-    INT,
-    VOID
+    SYSY_INT,
+    SYSY_VOID
 };
 
 enum BinaryType {

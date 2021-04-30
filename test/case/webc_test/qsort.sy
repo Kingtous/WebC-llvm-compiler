@@ -1,0 +1,40 @@
+int qsort(int a[],int left,int right){
+    if (right <= left){
+        ret -1;
+    }
+    int pivot = a[right];
+    int i = left;
+    int j = right - 1;
+    wh(true){
+        wh(a[i] < pivot){
+            i = i + 1;
+        }
+        wh(a[j] > pivot && j >= left){
+            j = j - 1;
+        }
+        if (i < j){
+            int tmp = a[i];
+            a[i] = a[j];
+            a[j] = tmp;
+            i = i + 1;
+            j = j - 1;
+        }
+        el {
+            out;
+        }
+    }
+    int tmp = a[i];
+    a[i] = pivot;
+    pivot = tmp;
+    qsort(a,left,i-1);
+    qsort(a,i+1,right);
+    ret 0;
+}
+
+int main(){
+    int a[5]= {4,7,1,2,3};
+    qsort(a,0,4);
+    lp(int i=0;i<5;i=i+1){
+        echo(a[i]);
+    }
+}
