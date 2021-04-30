@@ -222,7 +222,7 @@ void CompilerWindow::initMenuBar() {
                             const vector<string> exe_argv = {exe_name};
                             int rpid, rinputId, routputId, rerrId;
                             Glib::spawn_async_with_pipes("", exe_argv, SPAWN_DEFAULT, SlotSpawnChildSetup(),
-                                                         &rpid, &rinputId, &routputId, &rerrId);
+                                                         reinterpret_cast<Pid *>(&rpid), &rinputId, &routputId, &rerrId);
                             // 在窗口的线程池执行
                             window->setStatus(M_STATUS::IN_RUNNING);
                             boost::asio::post(window->threads, [=]() {
