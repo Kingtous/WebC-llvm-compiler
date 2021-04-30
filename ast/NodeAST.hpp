@@ -120,6 +120,17 @@ private:
     static long id;
 };
 
+class BoolExprAST : public ExpressionAST {
+public:
+    bool is_true;
+
+    explicit BoolExprAST(bool is_true) : is_true(is_true) {}
+
+    llvm::Value *codegen() override;
+
+    string toString() override;
+};
+
 // 标识符
 class IdentifierExprAST : public ExpressionAST {
 public:

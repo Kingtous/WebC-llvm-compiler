@@ -53,6 +53,10 @@ int Lexer::_getNextToken() {
             return T_NULL;
         } else if(identifierStr == "func_ptr"){
             return T_FUNC_SIGN;
+        } else if(identifierStr == "true"){
+            return T_TRUE;
+        } else if(identifierStr == "false"){
+            return T_FALSE;
         }
 //        else if (identifierStr == "module"){
 //            return T_MODULE;
@@ -209,7 +213,6 @@ int Lexer::_getNextToken() {
     // Check for end of file.  Don't eat the END_OF_FILE.
     if (last_char == END_OF_FILE)
         return 0;
-
     // Otherwise, just return the character as its ascii value.
     int ThisChar = last_char;
     NEXTCHAR;

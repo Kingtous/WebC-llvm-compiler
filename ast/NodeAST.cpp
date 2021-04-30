@@ -336,6 +336,7 @@ Value *ConditionAST::codegen() {
         ABORT_COMPILE;
         return LogErrorV("if没在函数体内使用");
     }
+    TheCodeGenContext->push_block(Builder->GetInsertBlock());
     // 创建三个basic block，先添加IfTrue至函数体里面
     BasicBlock *bbIfTrue = BasicBlock::Create(*TheContext, "neuq_jintao_if_true", theFunction);
     BasicBlock *bbElse = else_stmt == NIL ? NIL : BasicBlock::Create(*TheContext, "neuq_jintao_else");
@@ -392,6 +393,7 @@ Value *ConditionAST::codegen() {
 //    if (elseV){
 //        pn->addIncoming(elseV, bbElse);
 //    }
+    TheCodeGenContext->pop_block();
     return bbIfEnd;
 }
 
@@ -1169,6 +1171,7 @@ VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identif
 
 llvm::Value *VariableArrAssignmentAST::codegen() {
     auto arr_addr = FINDLOCAL(identifier->identifier);
+    arr_addr = Builder->CreateLoad(arr_addr);
     if (arr_addr == nullptr) {
         ABORT_COMPILE;
         return LogErrorV((identifier->identifier + "is not defined").c_str());
@@ -1176,13 +1179,17 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     auto st = identifier->arrIndex->begin();
     Value *ret = arr_addr;
     vector<Value *> vec;
-    // 0取地址
-    vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+    // 0取地址，如果是i8*这种就不用，如果是[i8 x n]*就得加0
+    // FIXME: 不优雅的特判
+    if (arr_addr->getType()->getContainedType(0)->isPointerTy()){
+        vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+    }
     for (; st != identifier->arrIndex->end(); st++) {
         auto v = (*st)->codegen();
         vec.push_back(v);
     }
-    ret = Builder->CreateInBoundsGEP(arr_addr, ArrayRef(vec));
+    auto type = arr_addr->getType()->getContainedType(0);
+    ret = Builder->CreateInBoundsGEP(type,arr_addr, ArrayRef(vec));
     auto newV = expr->codegen();
     ret = Builder->CreateStore(newV, ret);
     return ret;
@@ -1279,6 +1286,7 @@ llvm::Value *WhileStmtAST::codegen() {
         return LogErrorV("while 不能用在非函数体中");
     }
     BasicBlock *bbCond = BasicBlock::Create(*TheContext, "while_cond", function);
+    TheCodeGenContext->push_block(bbCond);
     BasicBlock *bbBody = BasicBlock::Create(*TheContext, "while_body");
     BasicBlock *bbEndWhile = BasicBlock::Create(*TheContext, "while_end");
     LOCALS->setContextType(CodeGenBlockContextType::WHILE);
@@ -1305,6 +1313,7 @@ llvm::Value *WhileStmtAST::codegen() {
     }
     function->getBasicBlockList().push_back(bbEndWhile);
     Builder->SetInsertPoint(bbEndWhile);
+    TheCodeGenContext->pop_block();
     return bbEndWhile;
 }
 
@@ -1384,3 +1393,10 @@ llvm::Value *NullExprAST::codegen() {
     return ConstantExpr::getNullValue(getTypeFromStr("char")->getPointerTo());
 }
 
+llvm::Value *BoolExprAST::codegen() {
+    return is_true ? ConstantInt::get(getTypeFromStr("bool"),1) : ConstantInt::get(getTypeFromStr("bool"),0);
+}
+
+string BoolExprAST::toString() {
+    return std::to_string(is_true);
+}
