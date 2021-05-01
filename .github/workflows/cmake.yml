@@ -64,6 +64,6 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "${{runner.workspace}}/build/sysyplus_compiler,${{runner.workspace}}/build/module/json/libkjson.a,${{runner.workspace}}/build/module/sql/libksql.a,${{runner.workspace}}/build/module/sql/libksql.a,${{runner.workspace}}/build/module/string/libkstring.a,${{runner.workspace}}/build/module/time/libtime.a,${{runner.workspace}}/build/module/web/libweb.a"
+        artifacts: "${{runner.workspace}}/build/sysyplus_compiler,${{runner.workspace}}/build/module/json/libkjson.a,${{runner.workspace}}/build/module/sql/libksql.a,${{runner.workspace}}/build/module/string/libkstring.a,${{runner.workspace}}/build/module/time/libktime.a,${{runner.workspace}}/build/module/web/libkweb.a"
         body: ${{ github.ref }}
         token: ${{ secrets.GITHUB_TOKEN }}
