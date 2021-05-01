@@ -160,13 +160,13 @@ Value *BinaryExprAST::codeGenAnd(NodeAST *l, NodeAST *r) {
     auto bbCond2 = BasicBlock::Create(*TheContext, "and_right");
     auto bbCondEnd = BasicBlock::Create(*TheContext, "and_end");
     auto cond1V = l->codegen();
-    cond1V = Builder->CreateICmpSGT(cond1V, ConstantInt::get(cond1V->getType(), 0));
+    cond1V = Builder->CreateICmpNE(cond1V, ConstantInt::get(cond1V->getType(), 0));
     bbCond1 = Builder->GetInsertBlock();
     Builder->CreateCondBr(cond1V, bbCond2, bbCondEnd); // 如果为true的话接着判断cond2，
     func->getBasicBlockList().push_back(bbCond2);
     Builder->SetInsertPoint(bbCond2);
     auto cond2V = r->codegen();
-    cond2V = Builder->CreateICmpSGT(cond2V, ConstantInt::get(cond2V->getType(), 0));
+    cond2V = Builder->CreateICmpNE(cond2V, ConstantInt::get(cond2V->getType(), 0));
     // 要考虑嵌套
     bbCond2 = Builder->GetInsertBlock();
     Builder->CreateBr(bbCondEnd);
@@ -594,7 +594,7 @@ Value *BlockAST::codegen() {
             lastStatementValue = it->codegen();
 #ifdef DEBUG_FLAG
             if (lastStatementValue != NIL) {
-                lastStatementValue->print(outs());
+//                lastStatementValue->print(outs());
             }
         }
 #endif
@@ -614,7 +614,7 @@ Value *BlockAST::codegen() {
             lastStatementValue = (*iterator)->codegen();
 #ifdef DEBUG_FLAG
             if (lastStatementValue != NIL) {
-                lastStatementValue->print(outs());
+//                lastStatementValue->print(outs());
             }
 #endif
             if (typeid(*it) == typeid(OutStmtAST)) {
@@ -1171,7 +1171,12 @@ VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identif
 
 llvm::Value *VariableArrAssignmentAST::codegen() {
     auto arr_addr = FINDLOCAL(identifier->identifier);
-    arr_addr = Builder->CreateLoad(arr_addr);
+    // 如果是i8*
+    if (arr_addr->getType()->isPointerTy() && arr_addr->getType()->getContainedType(0)->isArrayTy()) {
+        // ignore
+    } else {
+        arr_addr = Builder->CreateLoad(arr_addr);
+    }
     if (arr_addr == nullptr) {
         ABORT_COMPILE;
         return LogErrorV((identifier->identifier + "is not defined").c_str());
@@ -1181,7 +1186,7 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     vector<Value *> vec;
     // 0取地址，如果是i8*这种就不用，如果是[i8 x n]*就得加0
     // FIXME: 不优雅的特判
-    if (arr_addr->getType()->isArrayTy()) {
+    if (arr_addr->getType()->isPointerTy() && arr_addr->getType()->getContainedType(0)->isArrayTy()) {
         vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
     }
     for (; st != identifier->arrIndex->end(); st++) {
