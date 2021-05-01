@@ -60,6 +60,7 @@ logOnUi((string(s)+" 在 " + to_string(TheLexer->getCLineNumber())+" 行 "+to_st
 %token <token> T_COMMA T_SEMICOLON T_L_SPAR T_R_SPAR T_L_MPAR T_R_MPAR T_L_LPAR T_R_LPAR T_CONST
 // ' "
 %token <token> T_STR T_NULL
+%token <token> T_TRUE T_FALSE
 // 循环
 %token <token> T_FOR T_WHILE T_OUT T_CONTINUE
 %token <token> T_IF T_ELSE
@@ -187,6 +188,8 @@ expr : ident T_L_SPAR call_args T_R_SPAR {$$ = new CallExprAST($1->identifier,*$
 	| expr T_OR expr {$$ = new BinaryExprAST(BinaryType::OR,$1,$3);}
 	| str {$$ = $1;}
 	| T_NULL {$$ = new NullExprAST();}
+	| T_TRUE {$$ = new BoolExprAST(true);}
+	| T_FALSE {$$ = new BoolExprAST(false);}
 	;
 //aivec
 array_index : T_L_MPAR T_R_MPAR {$$ = new vector<ExpressionAST*>(); $$->push_back(NIL);}

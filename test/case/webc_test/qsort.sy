@@ -2,39 +2,36 @@ int qsort(int a[],int left,int right){
     if (right <= left){
         ret -1;
     }
-    int pivot = a[right];
-    int i = left;
-    int j = right - 1;
-    wh(true){
-        wh(a[i] < pivot){
-            i = i + 1;
+    int base = a[left];
+    int j = left;
+    int k = right;
+    echo('begin wh');
+    wh(j<k){
+        wh(a[k]>=base && j<k){
+            k = k - 1;
+            echo('k=k-1');
         }
-        wh(a[j] > pivot && j >= left){
-            j = j - 1;
+        a[j] = a[k];
+        wh(a[j]<=base && j<k){
+            j = j + 1;
+            echo('j=j+1');
         }
-        if (i < j){
-            int tmp = a[i];
-            a[i] = a[j];
-            a[j] = tmp;
-            i = i + 1;
-            j = j - 1;
-        }
-        el {
-            out;
-        }
+        a[k] = a[j];
+        echo('j,k,a[j],a[k]',j,k,a[j],a[k]);
     }
-    int tmp = a[i];
-    a[i] = pivot;
-    pivot = tmp;
-    qsort(a,left,i-1);
-    qsort(a,i+1,right);
+    a[k] = base;
+    qsort(a,left,k);
+    qsort(a,left,k- 1);
     ret 0;
 }
 
 int main(){
-    int a[5]= {4,7,1,2,3};
-    qsort(a,0,4);
-    lp(int i=0;i<5;i=i+1){
-        echo(a[i]);
+    int b[5]= {4,7,1,2,3};
+    int max = 4;
+    echo('start qsort');
+    qsort(b,0,max);
+    echo('output qsort result');
+    lp(int i=0;i<=max;i=i+1){
+        echo(b[i]);
     }
 }

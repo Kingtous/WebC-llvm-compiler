@@ -160,13 +160,13 @@ Value *BinaryExprAST::codeGenAnd(NodeAST *l, NodeAST *r) {
     auto bbCond2 = BasicBlock::Create(*TheContext, "and_right");
     auto bbCondEnd = BasicBlock::Create(*TheContext, "and_end");
     auto cond1V = l->codegen();
-    cond1V = Builder->CreateICmpSGT(cond1V, ConstantInt::get(cond1V->getType(), 0));
+    cond1V = Builder->CreateICmpNE(cond1V, ConstantInt::get(cond1V->getType(), 0));
     bbCond1 = Builder->GetInsertBlock();
     Builder->CreateCondBr(cond1V, bbCond2, bbCondEnd); // 如果为true的话接着判断cond2，
     func->getBasicBlockList().push_back(bbCond2);
     Builder->SetInsertPoint(bbCond2);
     auto cond2V = r->codegen();
-    cond2V = Builder->CreateICmpSGT(cond2V, ConstantInt::get(cond2V->getType(), 0));
+    cond2V = Builder->CreateICmpNE(cond2V, ConstantInt::get(cond2V->getType(), 0));
     // 要考虑嵌套
     bbCond2 = Builder->GetInsertBlock();
     Builder->CreateBr(bbCondEnd);
@@ -336,6 +336,7 @@ Value *ConditionAST::codegen() {
         ABORT_COMPILE;
         return LogErrorV("if没在函数体内使用");
     }
+    TheCodeGenContext->push_block(Builder->GetInsertBlock());
     // 创建三个basic block，先添加IfTrue至函数体里面
     BasicBlock *bbIfTrue = BasicBlock::Create(*TheContext, "neuq_jintao_if_true", theFunction);
     BasicBlock *bbElse = else_stmt == NIL ? NIL : BasicBlock::Create(*TheContext, "neuq_jintao_else");
@@ -392,6 +393,7 @@ Value *ConditionAST::codegen() {
 //    if (elseV){
 //        pn->addIncoming(elseV, bbElse);
 //    }
+    TheCodeGenContext->pop_block();
     return bbIfEnd;
 }
 
@@ -592,7 +594,7 @@ Value *BlockAST::codegen() {
             lastStatementValue = it->codegen();
 #ifdef DEBUG_FLAG
             if (lastStatementValue != NIL) {
-                lastStatementValue->print(outs());
+//                lastStatementValue->print(outs());
             }
         }
 #endif
@@ -612,7 +614,7 @@ Value *BlockAST::codegen() {
             lastStatementValue = (*iterator)->codegen();
 #ifdef DEBUG_FLAG
             if (lastStatementValue != NIL) {
-                lastStatementValue->print(outs());
+//                lastStatementValue->print(outs());
             }
 #endif
             if (typeid(*it) == typeid(OutStmtAST)) {
@@ -1169,6 +1171,12 @@ VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identif
 
 llvm::Value *VariableArrAssignmentAST::codegen() {
     auto arr_addr = FINDLOCAL(identifier->identifier);
+    // 如果是i8*
+    if (arr_addr->getType()->isPointerTy() && arr_addr->getType()->getContainedType(0)->isArrayTy()) {
+        // ignore
+    } else {
+        arr_addr = Builder->CreateLoad(arr_addr);
+    }
     if (arr_addr == nullptr) {
         ABORT_COMPILE;
         return LogErrorV((identifier->identifier + "is not defined").c_str());
@@ -1176,8 +1184,11 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     auto st = identifier->arrIndex->begin();
     Value *ret = arr_addr;
     vector<Value *> vec;
-    // 0取地址
-    vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+    // 0取地址，如果是i8*这种就不用，如果是[i8 x n]*就得加0
+    // FIXME: 不优雅的特判
+    if (arr_addr->getType()->isPointerTy() && arr_addr->getType()->getContainedType(0)->isArrayTy()) {
+        vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
+    }
     for (; st != identifier->arrIndex->end(); st++) {
         auto v = (*st)->codegen();
         vec.push_back(v);
@@ -1279,6 +1290,7 @@ llvm::Value *WhileStmtAST::codegen() {
         return LogErrorV("while 不能用在非函数体中");
     }
     BasicBlock *bbCond = BasicBlock::Create(*TheContext, "while_cond", function);
+    TheCodeGenContext->push_block(bbCond);
     BasicBlock *bbBody = BasicBlock::Create(*TheContext, "while_body");
     BasicBlock *bbEndWhile = BasicBlock::Create(*TheContext, "while_end");
     LOCALS->setContextType(CodeGenBlockContextType::WHILE);
@@ -1305,6 +1317,7 @@ llvm::Value *WhileStmtAST::codegen() {
     }
     function->getBasicBlockList().push_back(bbEndWhile);
     Builder->SetInsertPoint(bbEndWhile);
+    TheCodeGenContext->pop_block();
     return bbEndWhile;
 }
 
@@ -1384,3 +1397,10 @@ llvm::Value *NullExprAST::codegen() {
     return ConstantExpr::getNullValue(getTypeFromStr("char")->getPointerTo());
 }
 
+llvm::Value *BoolExprAST::codegen() {
+    return is_true ? ConstantInt::get(getTypeFromStr("bool"),1) : ConstantInt::get(getTypeFromStr("bool"),0);
+}
+
+string BoolExprAST::toString() {
+    return std::to_string(is_true);
+}
