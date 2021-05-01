@@ -31,13 +31,15 @@ int qsort(int a[],int left,int right){
     ret 0;
 }
 
+int b[5]= {4,7,1,2,3};
+
 int main(){
-    int a[5]= {4,7,1,2,3};
+
     int j=0;
     int k=1;
-    a[j] = a[k];
-    qsort(a,0,4);
+    b[j] = b[k];
+    qsort(b,0,4);
     lp(int i=0;i<5;i=i+1){
-        echo(a[i]);
+        echo(b[i]);
     }
 }

@@ -1181,15 +1181,14 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     vector<Value *> vec;
     // 0取地址，如果是i8*这种就不用，如果是[i8 x n]*就得加0
     // FIXME: 不优雅的特判
-    if (arr_addr->getType()->getContainedType(0)->isPointerTy()){
+    if (arr_addr->getType()->isArrayTy()) {
         vec.push_back(ConstantInt::get(getTypeFromStr("int"), 0));
     }
     for (; st != identifier->arrIndex->end(); st++) {
         auto v = (*st)->codegen();
         vec.push_back(v);
     }
-    auto type = arr_addr->getType()->getContainedType(0);
-    ret = Builder->CreateInBoundsGEP(type,arr_addr, ArrayRef(vec));
+    ret = Builder->CreateInBoundsGEP(arr_addr, ArrayRef(vec));
     auto newV = expr->codegen();
     ret = Builder->CreateStore(newV, ret);
     return ret;
