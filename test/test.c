@@ -15,8 +15,8 @@ str hehe() {
 
 int main() {
     echo('init...');
-    connect_db('127.0.0.1', 'root', '123456', 'school');
-    str host = '127.0.0.1';
+    connect_db('127.0.0.1', 'root', '123456', 'school',3306);
+    str host = '0.0.0.0';
     int port = 9000;
     int core = 2;
     echo('get server...');

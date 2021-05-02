@@ -4,6 +4,7 @@
 
 #ifndef SYSYPLUS_COMPILER_EXTERNFUNCTIONHANDLER_H
 #define SYSYPLUS_COMPILER_EXTERNFUNCTIONHANDLER_H
+
 #include <cmath>
 
 #include "Global.h"
@@ -21,10 +22,10 @@ private:
 public:
     ExternFunctionHandler();
 
-    virtual Value* tryhandle(LLVMContext& context,
-                          Module& module,std::string callName,std::vector<Value*>* argV) = 0;
+    virtual Value *tryhandle(LLVMContext &context,
+                             Module &module, std::string callName, std::vector<Value *> *argV) = 0;
 
-    static bool externFunctionHandlerCompRule(ExternFunctionHandler* handler1,ExternFunctionHandler* handler2);
+    static bool externFunctionHandlerCompRule(ExternFunctionHandler *handler1, ExternFunctionHandler *handler2);
 
     virtual int getPriority();
 
@@ -37,7 +38,7 @@ public:
      * @return
      */
     static Function *getExternFunc(LLVMContext &context, Module &module, const std::string &func_name,
-                                   std::vector<Value *>* vector);
+                                   std::vector<Value *> *vector);
 
     static Function *getOrAddPrintfFunc(LLVMContext &context, Module &module);
 
@@ -67,13 +68,11 @@ public:
 
     static Function *getOrAddConnectDB(LLVMContext &context, Module &module);
 
-    static Function *getOrAddFreeConnect(LLVMContext &context, Module &module);
+    static Function *getOrAddFreeMemory(LLVMContext &context, Module &module);
 
     static Function *getOrAddQueryDB(LLVMContext &context, Module &module);
 
-    static Function *getOrAddPrintJson(LLVMContext &context, Module &module);
-
-    static Function *getOrAddResToJson(LLVMContext &context, Module &module);
+    static Function *getOrAddIsMysqlConnected(LLVMContext &context, Module &module);
 };
 
 
@@ -82,7 +81,7 @@ class EchoFunctionHandler : public ExternFunctionHandler {
 public:
     EchoFunctionHandler();
 
-    Value* tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
+    Value *tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
 
     int getPriority() override;
 };
@@ -93,7 +92,7 @@ public:
 
     TimeFunctionHandler();
 
-    Value* tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
+    Value *tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
 };
 
 class SleepFunctionHandler : public ExternFunctionHandler {
@@ -102,10 +101,10 @@ public:
 
     SleepFunctionHandler();
 
-    Value* tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
+    Value *tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) override;
 };
 
-class WebFunctionHandler : public ExternFunctionHandler{
+class WebFunctionHandler : public ExternFunctionHandler {
 public:
 
     WebFunctionHandler();
@@ -115,7 +114,7 @@ public:
     int getPriority() override;
 };
 
-class KStringFunctionHandler : public ExternFunctionHandler{
+class KStringFunctionHandler : public ExternFunctionHandler {
 public:
 
     KStringFunctionHandler();
@@ -125,7 +124,7 @@ public:
     int getPriority() override;
 };
 
-class KsqlFunctionHandler : public ExternFunctionHandler{
+class KsqlFunctionHandler : public ExternFunctionHandler {
 public:
     KsqlFunctionHandler();
 
@@ -133,4 +132,5 @@ public:
 
     int getPriority() override;
 };
+
 #endif //SYSYPLUS_COMPILER_EXTERNFUNCTIONHANDLER_H

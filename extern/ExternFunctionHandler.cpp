@@ -291,22 +291,24 @@ Function *ExternFunctionHandler::getOrAddConnectDB(LLVMContext &context, Module 
                                                                      Type::getInt8Ty(
                                                                              context)->getPointerTo(),
                                                                      Type::getInt8Ty(
-                                                                             context)->getPointerTo()
+                                                                             context)->getPointerTo(),
+                                                                     Type::getInt32Ty(context)
                                          },
                                          false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_ksql_connect_db", module);
     return func;
 }
 
-//Function *ExternFunctionHandler::getOrAddFreeConnect(LLVMContext &context, Module &module){
-//    Function *func = module.getFunction("_free_connect");
-//    if (func != NIL){
-//        return func;
-//    }
-//    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context),false);
-//    func = Function::Create(ty,llvm::GlobalValue::ExternalLinkage,"_free_connect",module);
-//    return func;
-//}
+Function *ExternFunctionHandler::getOrAddFreeMemory(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_ksql_free_memory");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_ksql_free_memory", module);
+    return func;
+}
+
 Function *ExternFunctionHandler::getOrAddQueryDB(LLVMContext &context, Module &module) {
     Function *func = module.getFunction("_ksql_query_db");
     if (func != NIL) {
@@ -319,27 +321,16 @@ Function *ExternFunctionHandler::getOrAddQueryDB(LLVMContext &context, Module &m
     return func;
 }
 
-//Function *ExternFunctionHandler::getOrAddPrintJson(LLVMContext &context, Module &module){
-//    Function *func = module.getFunction("_print_json");
-//    if (func != NIL) {
-//        return func;
-//    }
-//    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), {Type::getInt32Ty(context)->getPointerTo()},
-//                                         false);
-//    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_print_json", module);
-//    return func;
-//}
-//Function *ExternFunctionHandler::getOrAddResToJson(LLVMContext &context, Module &module){
-//    Function *func = module.getFunction("_resToJson");
-//    if (func != NIL) {
-//        return func;
-//    }
-//    FunctionType *ty = FunctionType::get(Type::getInt8Ty(context)->getPointerTo(), {Type::getInt32Ty(
-//                                                                                                context)->getPointerTo()},
-//                                         false);
-//    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_resToJson", module);
-//    return func;
-//}
+Function *ExternFunctionHandler::getOrAddIsMysqlConnected(LLVMContext &context, Module &module) {
+    Function *func = module.getFunction("_ksql_isMysqlConnected");
+    if (func != NIL) {
+        return func;
+    }
+    FunctionType *ty = FunctionType::get(Type::getInt32Ty(context), false);
+    func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_ksql_isMysqlConnected", module);
+    return func;
+}
+
 Value *
 WebFunctionHandler::tryhandle(LLVMContext &context, Module &module, std::string callName, std::vector<Value *> *argV) {
     // 处理 {@link module/web/web.h}，注意名字要保持一致
@@ -434,17 +425,14 @@ Value *KsqlFunctionHandler::tryhandle(LLVMContext &context, Module &module, std:
     if (callName == "connect_db" && !argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddConnectDB(context, module);
         return Builder->CreateCall(func, *argV);
-    }
-//    else if(callName=="free_connect"&&argV->empty()){
-//        auto func = ExternFunctionHandler::getOrAddFreeConnect(context,module);
-//        return Builder->CreateCall(func);
-//    }
-    else if (callName == "query_db" && !argV->empty()) {
+    } else if (callName == "free_memory" && argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddFreeMemory(context, module);
+        return Builder->CreateCall(func);
+    } else if (callName == "query_db" && !argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddQueryDB(context, module);
         return Builder->CreateCall(func, *argV);
+    } else if (callName == "isMysqlConnected" && argV->empty()) {
+        auto func = ExternFunctionHandler::getOrAddIsMysqlConnected(context, module);
+        return Builder->CreateCall(func);
     }
-//    else if (callName=="resToJson"&&!argV->empty()){
-//        auto func = ExternFunctionHandler::getOrAddResToJson(context,module);
-//        return Builder->CreateCall(func,*argV);
-//    }
 }
