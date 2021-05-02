@@ -73,7 +73,7 @@ bool ArgsParser::verify(int args, char **argv) {
 
     help_arg = new Help();
     help_arg->setExecutable(argv[0]);
-    help_arg->setAppDescription("SysyPlus Compiler By Kingtous.");
+    help_arg->setAppDescription("WebC Compiler By Kingtous.");
     cmd->addArg(help_arg);
     try {
         cmd->parse();
