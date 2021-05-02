@@ -5,7 +5,8 @@
 #include "ksql.h"
 
 int main() {
-    _ksql_connect_db("127.0.0.1","root","123456","school");
-    auto a = strToJson(_ksql_query_db("select * from subject"));
-    cout<<jsonToStr(a);
+    _ksql_connect_db("127.0.0.1", "root", "123456", "school", 3306,"GBK");
+//    auto a = strToJson(_ksql_query_db("select * from subject"));
+//    cout<<jsonToStr(a);
+    cout << _ksql_query_db("select * from subject");
 }

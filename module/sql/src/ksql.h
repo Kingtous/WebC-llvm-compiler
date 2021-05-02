@@ -18,27 +18,50 @@
 #include "vector"
 
 //mysql连接状态码
-#define NOT_CONNECT -1
-#define FAILED -2
+#define NOT_CONNECT -2
+#define FAILED -1
 //操作成功状态码
 #define SUCCESS 0
+
 
 using namespace sql;
 using namespace std;
 
-extern mysql::MySQL_Driver *driver;
-extern Connection *conn;
-extern Statement *statement;
-extern ResultSet *resultSet;
+struct SQLData {
+    Statement *statement;
+    ResultSet *resultSet;
+};
 
+typedef SQLData WEBC_SQL_DATA;
 
 extern "C" {
-//连接到mysql
-int _ksql_connect_db(const char *host, const char *user, const char *passwd, const char *database);
-//释放资源
+/**
+ * 连接到MySQL
+ * @param hostname
+ * @param username
+ * @param password
+ * @param schema
+ * @param port 端口
+ * @param charset 字符集
+ * @return
+ */
+int _ksql_connect_db(const char *hostname, const char *username, const char *password, const char *schema, int port,const char *charset);
+/**
+ * 释放内存
+ * @return
+ */
 int _ksql_free_memory();
-//查询数据
+/**
+ * 查询数据
+ * @param sqlSentence select语句
+ * @return
+ */
 const char *_ksql_query_db(const char *sqlSentence);
+/**
+ * 判断mysql是否连接
+ * @return
+ */
+int _ksql_isMysqlConnected();
 }
 
 #endif //SYSYPLUS_COMPILER_KSQL_H
