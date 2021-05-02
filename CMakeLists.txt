@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(sysyplus_compiler)
+project(webc_compiler)
 
 set(CMAKE_CXX_STANDARD 17)
 # 始终选择最高版本依赖
@@ -92,7 +92,7 @@ message(STATUS "编译器：${COMPILER}")
 aux_source_directory(compiler COMPILER)
 message(STATUS "Pass：${COMPILER}")
 
-add_executable(sysyplus_compiler
+add_executable(webc_compiler
         ${ROOT} ${AST} ${PARSER}
         #        ${BISON_Parser_OUTPUTS}
         ${CodeGen} ${UI} ${ARGS} ${PASS} ${EXT} ${COMPILER}
@@ -103,30 +103,30 @@ add_executable(sysyplus_compiler
         args/utils.hpp args/value_utils.hpp
         )
 # 平台公用宏定义
-add_compile_definitions(sysyplus_compiler PUBLIC ASM_SUFFIX=".s")
+add_compile_definitions(webc_compiler PUBLIC ASM_SUFFIX=".s")
 # CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式 CLANG_SUPPORT开启可执行文件输出
-add_compile_definitions(sysyplus_compiler PUBLIC DEBUG_FLAG=1 CLANG_SUPPORT=1)
+add_compile_definitions(webc_compiler PUBLIC DEBUG_FLAG=1 CLANG_SUPPORT=1)
 
 if (WIN32)
-    add_compile_definitions(sysyplus_compiler PUBLIC EXECUTABLE_SUFFIX=".exe" OBJ_SUFFIX=".obj")
+    add_compile_definitions(webc_compiler PUBLIC EXECUTABLE_SUFFIX=".exe" OBJ_SUFFIX=".obj")
 else ()
-    add_compile_definitions(sysyplus_compiler PUBLIC EXECUTABLE_SUFFIX=".out" OBJ_SUFFIX=".o")
+    add_compile_definitions(webc_compiler PUBLIC EXECUTABLE_SUFFIX=".out" OBJ_SUFFIX=".o")
 endif ()
 
 message(STATUS "host system is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
 if (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
-    add_compile_definitions(sysyplus_compiler PUBLIC SYSY_AARCH64=0)
+    add_compile_definitions(webc_compiler PUBLIC SYSY_AARCH64=0)
     llvm_map_components_to_libnames(llvm_libs support core irreader
             aarch64info aarch64asmparser aarch64desc aarch64codegen aarch64disassembler #X86
             )
 elseif (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm")
-    add_compile_definitions(sysyplus_compiler PUBLIC SYSY_ARM=0)
+    add_compile_definitions(webc_compiler PUBLIC SYSY_ARM=0)
     llvm_map_components_to_libnames(llvm_libs support core irreader
             arminfo armasmparser armdesc armcodegen armdisassembler #X86
             )
 else ()
-    add_compile_definitions(sysyplus_compiler PUBLIC SYSY_X86=0)
+    add_compile_definitions(webc_compiler PUBLIC SYSY_X86=0)
     llvm_map_components_to_libnames(llvm_libs support core irreader
             x86info x86asmparser x86desc x86codegen x86disassembler #X86
             )
@@ -135,9 +135,9 @@ endif ()
 message(STATUS "Found ${llvm_libs}")
 
 # Link against LLVM libraries
-#target_link_libraries(sysyplus_compiler ${llvm_libs})
+#target_link_libraries(webc_compiler ${llvm_libs})
 if(WIN32)
-    target_link_libraries(sysyplus_compiler
+    target_link_libraries(webc_compiler
             LLVM
             ${GTKMM_LIBRARIES}
             Boost::thread Boost::chrono
@@ -145,7 +145,7 @@ if(WIN32)
             wsock32
             )
 else()
-    target_link_libraries(sysyplus_compiler
+    target_link_libraries(webc_compiler
             LLVM
             ${GTKMM_LIBRARIES}
             Boost::thread Boost::chrono
@@ -153,8 +153,10 @@ else()
             )
 endif()
 
+install(TARGETS webc_compiler)
+
 #message(STATUS "UI逻辑：复制UI:${CMAKE_SOURCE_DIR}/ui/ui -> ${CMAKE_CURRENT_BINARY_DIR}/ui")
-#add_custom_command(TARGET sysyplus_compiler PRE_BUILD
+#add_custom_command(TARGET webc_compiler PRE_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy_directory
 #        ${CMAKE_SOURCE_DIR}/ui/ui ${CMAKE_CURRENT_BINARY_DIR}/ui)
 
