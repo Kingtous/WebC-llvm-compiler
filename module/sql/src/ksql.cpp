@@ -6,15 +6,14 @@
 
 mysql::MySQL_Driver *driver;
 Connection *conn;
-//Statement *statement;
-//ResultSet *resultSet;
 WEBC_SQL_DATA webcSqlData;
 unique_ptr<char[]> ch;
 vector<string> ans;
 
 string _ksql_resToJson(WEBC_SQL_DATA sqlData);
 
-int _ksql_connect_db(const char *hostname, const char *username, const char *password, const char *schema, int port) {
+int _ksql_connect_db(const char *hostname, const char *username, const char *password, const char *schema, int port,
+                     const char *charset) {
     try {
         driver = mysql::get_mysql_driver_instance();
         //连接到Mysql
@@ -25,6 +24,7 @@ int _ksql_connect_db(const char *hostname, const char *username, const char *pas
         connection_properties["schema"] = schema;
         connection_properties["port"] = port;
         connection_properties["OPT_RECONNECT"] = true;
+        connection_properties["OPT_CHARSET_NAME"] = charset;
         conn = driver->connect(connection_properties);
         if (!conn) {
             cout << "连接Mysql失败" << endl;
@@ -32,7 +32,7 @@ int _ksql_connect_db(const char *hostname, const char *username, const char *pas
         }
         return SUCCESS;
     } catch (SQLException e) {
-        cout << e.getErrorCode() << endl;
+        cout << "The error code is : "<<e.getErrorCode() << endl;
         cout << e.what() << endl;
     }
 }
@@ -45,10 +45,8 @@ const char *_ksql_query_db(const char *sqlSentence) {
         _ksql_free_memory();
         string temp = sqlSentence;
         replace(temp.begin(), temp.end(), '\"', '\'');
-//        statement = conn->createStatement();
         webcSqlData.statement = conn->createStatement();
         sqlSentence = temp.c_str();
-//        resultSet = statement->executeQuery(sqlSentence);
         webcSqlData.resultSet = webcSqlData.statement->executeQuery(sqlSentence);
         if (!webcSqlData.resultSet->next()) {
             char *resNull = "您所查询的表为空\n";
@@ -60,7 +58,7 @@ const char *_ksql_query_db(const char *sqlSentence) {
         strcpy(ch.get(), _ksql_resToJson(webcSqlData).data());
         return ch.get();
     } catch (SQLException e) {
-        cout << e.getErrorCode() << endl;
+        cout << "The error code is : "<<e.getErrorCode() << endl;
         cout << e.what() << endl;
     }
 }
@@ -72,7 +70,6 @@ string _ksql_resToJson(WEBC_SQL_DATA sqlData) {
         s += "\"result\":";
         s += "[";
         //列数
-//        int count = result->getMetaData()->getColumnCount();
         int count = sqlData.resultSet->getMetaData()->getColumnCount();
         if (ans.empty()) {
             sqlData.resultSet->beforeFirst();
@@ -108,7 +105,7 @@ string _ksql_resToJson(WEBC_SQL_DATA sqlData) {
         vector<string>().swap(ans);
         return s;
     } catch (SQLException e) {
-        cout << e.getErrorCode() << endl;
+        cout << "The error code is : "<<e.getErrorCode() << endl;
         cout << e.what() << endl;
     }
 }

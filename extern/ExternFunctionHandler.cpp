@@ -292,7 +292,10 @@ Function *ExternFunctionHandler::getOrAddConnectDB(LLVMContext &context, Module 
                                                                              context)->getPointerTo(),
                                                                      Type::getInt8Ty(
                                                                              context)->getPointerTo(),
-                                                                     Type::getInt32Ty(context)
+                                                                     Type::getInt32Ty(
+                                                                             context),
+                                                                     Type::getInt8Ty(
+                                                                             context)->getPointerTo()
                                          },
                                          false);
     func = Function::Create(ty, llvm::GlobalValue::ExternalLinkage, "_ksql_connect_db", module);

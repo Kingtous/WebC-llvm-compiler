@@ -23,6 +23,7 @@
 //操作成功状态码
 #define SUCCESS 0
 
+
 using namespace sql;
 using namespace std;
 
@@ -35,23 +36,24 @@ typedef SQLData WEBC_SQL_DATA;
 
 extern "C" {
 /**
- * 连接到mysql
+ * 连接到MySQL
  * @param hostname
  * @param username
  * @param password
  * @param schema
- * @param port
+ * @param port 端口
+ * @param charset 字符集
  * @return
  */
-int _ksql_connect_db(const char *hostname, const char *username, const char *password, const char *schema, int port);
+int _ksql_connect_db(const char *hostname, const char *username, const char *password, const char *schema, int port,const char *charset);
 /**
- * 释放资源
+ * 释放内存
  * @return
  */
 int _ksql_free_memory();
 /**
  * 查询数据
- * @param sqlSentence
+ * @param sqlSentence select语句
  * @return
  */
 const char *_ksql_query_db(const char *sqlSentence);
