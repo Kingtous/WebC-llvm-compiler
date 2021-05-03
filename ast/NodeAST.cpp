@@ -650,7 +650,9 @@ llvm::Function *FunctionAST::codegen() {
             ABORT_COMPILE;
             goto clean;
         } else {
+#ifdef DEBUG_FLAG
             function->print(outs());
+#endif
             cleanCodeGenContext();
         }
         return function;
@@ -703,10 +705,10 @@ Value *BlockAST::codegen() {
             lastStatementValue = it->codegen();
 #ifdef DEBUG_FLAG
             if (lastStatementValue != NIL) {
-//                lastStatementValue->print(outs());
+                lastStatementValue->print(outs());
             }
-        }
 #endif
+        }
         return lastStatementValue;
     } else {
         auto bb = BasicBlock::Create(*TheContext, "blk");

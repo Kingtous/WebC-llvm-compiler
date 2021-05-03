@@ -105,7 +105,7 @@ add_executable(webc_compiler
 # 平台公用宏定义
 add_compile_definitions(webc_compiler PUBLIC ASM_SUFFIX=".s")
 # CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式 CLANG_SUPPORT开启可执行文件输出
-add_compile_definitions(webc_compiler PUBLIC DEBUG_FLAG=1 CLANG_SUPPORT=1)
+add_compile_definitions(webc_compiler PUBLIC CLANG_SUPPORT=1)
 
 if (WIN32)
     add_compile_definitions(webc_compiler PUBLIC EXECUTABLE_SUFFIX=".exe" OBJ_SUFFIX=".obj")
