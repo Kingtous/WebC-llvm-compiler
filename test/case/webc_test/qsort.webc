@@ -9,12 +9,10 @@ int qsort(int a[],int left,int right){
     wh(j<k){
         wh(a[k]>=base && j<k){
             k = k - 1;
-            echo('k=k-1');
         }
         a[j] = a[k];
         wh(a[j]<=base && j<k){
             j = j + 1;
-            echo('j=j+1');
         }
         a[k] = a[j];
         echo('j,k,a[j],a[k]',j,k,a[j],a[k]);
@@ -27,11 +25,10 @@ int qsort(int a[],int left,int right){
 
 int main(){
     int b[5]= {4,7,1,2,3};
+    echo('original:',b[0],b[1],b[2],b[3],b[4]);
     int max = 4;
     echo('start qsort');
     qsort(b,0,max);
     echo('output qsort result');
-    lp(int i=0;i<=max;i=i+1){
-        echo(b[i]);
-    }
+    echo('now:',b[0],b[1],b[2],b[3],b[4]);
 }

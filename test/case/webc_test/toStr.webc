@@ -1,0 +1,9 @@
+int main(){
+    int a = 5;
+    double b = 5.55645345;
+    long c = 1000000000;
+    c = c * 300000;
+    echo('a is',toStr(a));
+    echo('b is',toStr(b));
+    echo('c is',toStr(c));
+}

@@ -133,10 +133,6 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     pass.add(createGVNPass());
     pass.add(createCFGSimplificationPass());
 #endif
-    pass.add(createTailCallEliminationPass());
-    pass.add(createReassociatePass());
-    pass.add(createGVNPass());
-    pass.add(createCFGSimplificationPass());
     if (opts.find(ArgsParser::Options::PASS_TIME_ANALYSIS) != opts.end()) {
         pass.add(new TimeAnalysisPass());
     }

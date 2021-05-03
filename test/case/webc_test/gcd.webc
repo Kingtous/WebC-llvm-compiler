@@ -1,0 +1,18 @@
+// 保证 x > y
+int gcd(int x, int y){
+    if (x < y){
+        int tmp = x;
+        x = y;
+        y = tmp;
+    }
+    if (y){
+        ret gcd(y, x%y);
+    } el {
+        ret x;
+    }
+    ret 0;
+}
+
+int main(){
+    echo('4与10的最大公约数是',gcd(4,10));
+}

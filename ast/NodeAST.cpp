@@ -11,6 +11,34 @@
 
 long StringExprAST::id = 0;
 
+/**
+ * 将右转左类型
+ * @param l
+ * @param r
+ * @return
+ */
+llvm::Value *makeMatch(Value *l, Value *r, NodeAST *node = NIL, bool left_is_local_mem = false) {
+    if (l == NIL || r == NIL) {
+        ABORT_COMPILE;
+        return NIL;
+    }
+    auto this_type = l->getType();
+    if (left_is_local_mem) {
+        this_type = l->getType()->getContainedType(0);
+    }
+    if (r->getType() != this_type) {
+        // 不同，尝试进行修剪
+        if (r->getType()->isIntegerTy() && this_type->isDoubleTy()) {
+            r = Builder->CreateSIToFP(r, this_type);
+        } else if (r->getType()->isDoubleTy() && this_type->isIntegerTy()) {
+            r = Builder->CreateFPToSI(r, this_type);
+        } else if (r->getType()->isIntOrIntVectorTy() && this_type->isIntOrIntVectorTy()) {
+            r = Builder->CreateZExtOrTrunc(r, this_type);
+        }
+    }
+    return r;
+}
+
 llvm::Value *DoubleExprAST::codegen() {
     // 在LLVM IR中，数字常量用ConstantFP类表示 ，它在APFloat 内部保存数值（APFloat能够保持任意精度的浮点常量）
     return llvm::ConstantFP::get(*TheContext, llvm::APFloat(Val));
@@ -329,7 +357,11 @@ Value *ConditionAST::codegen() {
         return LogErrorV("if parse error");
     }
     // 创建一条 icnp ne指令，用于if的比较，由于是bool比较，此处直接与0比较。
-    ifCondV = Builder->CreateICmpNE(ifCondV, ConstantInt::get(getTypeFromStr("bool"), 0), "neuq_jintao_ifcond");
+    if (ifCondV->getType()->isIntegerTy()) {
+        ifCondV = Builder->CreateICmpNE(ifCondV, ConstantInt::get(ifCondV->getType(), 0), "ifcond_integer");
+    } else if (ifCondV->getType()->isDoubleTy()) {
+        ifCondV = Builder->CreateFCmpUNE(ifCondV, ConstantFP::get(ifCondV->getType(), 0), "ifcond_double");
+    }
     // 获取if里面的函数体，准备创建基础块
     auto theFunction = Builder->GetInsertBlock()->getParent();
     if (!theFunction) {
@@ -553,6 +585,7 @@ llvm::Function *FunctionAST::codegen() {
             ABORT_COMPILE;
             goto clean;
         } else {
+            function->print(outs());
             cleanCodeGenContext();
         }
         return function;
@@ -647,11 +680,13 @@ llvm::Value *VariableAssignmentAST::codegen() {
     auto ori_v = FINDLOCAL(identifier);
     if (ori_v != nullptr) {
         auto v = expr == nullptr ? nullptr : expr->codegen();
+        v = makeMatch(ori_v, v, this, true);
         result = Builder->CreateStore(v, ori_v);
     } else {
         auto gv = TheModule->getNamedGlobal(identifier);
         if (gv) {
-            result = Builder->CreateStore(expr->codegen(), gv);
+            auto v = makeMatch(ori_v, gv, this);
+            result = Builder->CreateStore(expr->codegen(), v);
         } else {
             ABORT_COMPILE;
             return LogErrorV((identifier + " is not defined!").c_str());
@@ -682,17 +717,18 @@ llvm::Value *VariableDeclarationAST::codegen() {
                                           Constant::getNullValue(getTypeFromStr(type)), identifier->identifier);
             if (expr != nullptr) {
                 auto v = expr->codegen();
-                if (IS_COMPILE_ABORTED) {
+                if (IS_COMPILE_ABORTED || v == NIL) {
                     return NIL;
                 }
-                auto val = dyn_cast<Constant>(expr->codegen());
-                gv->setInitializer(val);
+                v = makeMatch(gv, v, this);
+                gv->setInitializer(dyn_cast<Constant>(v));
             }
             ret = gv;
         }
     } else {
+        auto this_type = getTypeFromStr(type);
         if (LOCALSVARS.find(identifier->identifier) == LOCALSVARS.end()) {
-            ret = Builder->CreateAlloca(getTypeFromStr(type));
+            ret = Builder->CreateAlloca(this_type);
 //            identifier.
 //            auto mem = Builder->CreateAlloca(getTypeFromStr(type),)
             if (expr != nullptr) {
@@ -700,10 +736,7 @@ llvm::Value *VariableDeclarationAST::codegen() {
                 if (IS_COMPILE_ABORTED) {
                     return NIL;
                 }
-                if (v->getType()->isIntegerTy() && v->getType() != getTypeFromStr(type)) {
-                    // 不同，尝试进行修剪
-                    v = Builder->CreateZExtOrTrunc(v, getTypeFromStr(type));
-                }
+                v = makeMatch(ret, v, this, true);
                 Builder->CreateStore(v, ret);
             }
             INSERTLOCAL(identifier->identifier, ret);
@@ -776,7 +809,7 @@ llvm::Value *FuncPtrAST::codegen() {
 }
 
 llvm::Value *IntegerExprAST::codegen() {
-    return ConstantInt::get(Type::getInt32Ty(*TheContext), Val, true);
+    return ConstantInt::get(*TheContext, APInt(32, Val, true));
 }
 
 string IntegerExprAST::toString() {
@@ -883,6 +916,10 @@ Type *getTypeFromStr(const std::string &type) {
     } else if (type == "str") {
         // 8b的指针
         return Type::getInt8Ty(*TheContext)->getPointerTo();
+    } else if (type.compare(0, 3, "int") == 0) {
+        auto int_num = type.substr(3);
+        int widths = stoi(int_num);
+        return Type::getIntNTy(*TheContext, widths);
     }
     return NIL;
 }
@@ -1195,6 +1232,7 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
     }
     ret = Builder->CreateInBoundsGEP(arr_addr, ArrayRef(vec));
     auto newV = expr->codegen();
+    newV = makeMatch(ret, newV, this);
     ret = Builder->CreateStore(newV, ret);
     return ret;
 }
@@ -1303,7 +1341,11 @@ llvm::Value *WhileStmtAST::codegen() {
         ABORT_COMPILE;
         return LogErrorV("while中的判断语句解析失败");
     }
-    condV = Builder->CreateICmpNE(condV, ConstantInt::get(getTypeFromStr("bool"), 0));
+    if (condV->getType()->isIntegerTy()) {
+        condV = Builder->CreateICmpNE(condV, ConstantInt::get(condV->getType(), 0), "while_cond_integer");
+    } else if (condV->getType()->isDoubleTy()) {
+        condV = Builder->CreateFCmpUNE(condV, ConstantFP::get(condV->getType(), 0), "while_cond_double");
+    }
     Builder->CreateCondBr(condV, bbBody, bbEndWhile);
     function->getBasicBlockList().push_back(bbBody);
     Builder->SetInsertPoint(bbBody);
