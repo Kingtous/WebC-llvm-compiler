@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "stat.h"
+
 FileReader::FileReader(const std::string &path) {
     std::ifstream ifs(path);
     if (ifs.is_open()) {
@@ -26,8 +28,8 @@ int FileReader::getchar() {
         if (ch == '\n') {
             lineno++;
             colno = 0;
-        } else {
             colno++;
+            webc::lex::line_num++;
         }
         return ch;
     } else {

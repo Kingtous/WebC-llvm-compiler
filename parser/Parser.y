@@ -110,8 +110,8 @@ program : stmts{
 		}
 	;
 
-stmts : stmt {$$ = new BlockAST(); $$->statements.push_back($<stmt>1);}
-	| stmts stmt {$1->statements.push_back($<stmt>2);}
+stmts : stmt {$$ = new BlockAST(); $$->addStatement($<stmt>1);}
+	| stmts stmt {$1->addStatement($<stmt>2);}
 	;
 
 stmt : var_decl ';' {

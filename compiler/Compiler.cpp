@@ -5,6 +5,7 @@
 #include "Compiler.h"
 
 #include "codegen/CodeGen.h"
+#include "stat.h"
 
 #ifdef CLANG_SUPPORT
 #include <llvm/Support/Program.h>
@@ -43,8 +44,12 @@ int startAnalyze(ArgsParser *parser) {
         int result = yyparse();
         if (!result) {
             auto ast = program;
-            std::cout << ast->toString();
             auto val = ast->codegen();
+#ifdef DEBUG_FLAG
+            ast->initChildrenLayers();
+            std::cout << ast->toString();
+            webc::outputStats();
+#endif
             if (val == nullptr) {
                 return RERR;
             } else {

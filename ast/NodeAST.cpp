@@ -8,6 +8,7 @@
 #include <iostream>
 #include "ErrHelper.h"
 #include "codegen/CodeGen.h"
+#include "stat.h"
 
 long StringExprAST::id = 0;
 
@@ -256,6 +257,15 @@ string BinaryExprAST::toString() {
     return string("二元操作结点：") + LEA->toString() + "," + REA->toString();
 }
 
+void BinaryExprAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    this->LEA->setLayer(getLayer() + 1);
+    this->REA->setLayer(getLayer() + 1);
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->LEA->initChildrenLayers();
+    this->REA->initChildrenLayers();
+}
+
 llvm::Value *CallExprAST::codegen() {
     // Look up the name in the global module table.
     llvm::Function *func = TheModule->getFunction(callName);
@@ -312,6 +322,17 @@ const string &CallExprAST::getCallName() const {
     return callName;
 }
 
+void CallExprAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    if (this->args.empty()) {
+        UPDATE_MAX_LAYERS(getLayer() + 1);
+    }
+    for (const auto &item : this->args) {
+        item->setLayer(getLayer() + 1);
+        item->initChildrenLayers();
+    }
+}
+
 llvm::Function *PrototypeAST::codegen() {
     // 形参的类型 int*()
     auto type = FunctionType::get(getTypeFromStr("int"), false);
@@ -350,6 +371,7 @@ llvm::Function *PrototypeAST::codegen() {
 }
 
 Value *ConditionAST::codegen() {
+    webc::parser::condition_num++;
     // 解析if表达式
     Value *ifCondV = if_cond->codegen();
     if (!ifCondV) {
@@ -431,10 +453,25 @@ Value *ConditionAST::codegen() {
 
 ConditionAST::ConditionAST(ExpressionAST *ifCond, BlockAST *ifStmt, BlockAST *elseStmt) : if_cond(ifCond),
                                                                                           if_stmt(ifStmt),
-                                                                                          else_stmt(elseStmt) {}
+                                                                                          else_stmt(elseStmt) {
+    webc::parser::condition_num++;
+}
 
 string ConditionAST::toString() {
     return "条件结点";
+}
+
+void ConditionAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    if_cond->setLayer(getLayer() + 1);
+    if_cond->initChildrenLayers();
+    if (this->else_stmt != NIL) {
+        this->else_stmt->setLayer(getLayer() + 1);
+        this->else_stmt->initChildrenLayers();
+    }
+    this->if_stmt->setLayer(getLayer() + 1);
+    this->if_stmt->initChildrenLayers();
 }
 
 Value *ForExprAST::codegen() {
@@ -499,10 +536,25 @@ Value *ForExprAST::codegen() {
 ForExprAST::ForExprAST(NodeAST *start, NodeAST *end, NodeAST *step, BlockAST *body) : Start(start),
                                                                                       Cond(end),
                                                                                       Step(step),
-                                                                                      Body(body) {}
+                                                                                      Body(body) {
+    webc::parser::loop_num++;
+}
 
 string ForExprAST::toString() {
     return "循环结点";
+}
+
+void ForExprAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    this->Body->setLayer(getLayer() + 1);
+    this->Cond->setLayer(getLayer() + 1);
+    this->Start->setLayer(getLayer() + 1);
+    this->Step->setLayer(getLayer() + 1);
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->Body->initChildrenLayers();
+    this->Cond->initChildrenLayers();
+    this->Start->initChildrenLayers();
+    this->Step->initChildrenLayers();
 }
 
 
@@ -510,11 +562,24 @@ const std::string &PrototypeAST::getName() const {
     return name;
 }
 
-PrototypeAST::PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args)
-        : returnType(returnType), name(name), args(args) {}
+PrototypeAST::PrototypeAST(string returnType, string name, const vector<VariableDeclarationAST *> &args)
+        : returnType(std::move(returnType)), name(std::move(name)), args(args) {
+    webc::parser::func_params_num += this->args.size();
+}
 
 string PrototypeAST::toString() {
     return "函数描述结点：" + this->getName() + " ret:" + returnType + " params:" + to_string(args.size());
+}
+
+void PrototypeAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    if (!this->args.empty()) {
+        UPDATE_MAX_LAYERS(getLayer() + 1);
+    }
+    for (const auto &item : this->args) {
+        item->setLayer(getLayer() + 1);
+        item->initChildrenLayers();
+    }
 }
 
 void FunctionAST::cleanCodeGenContext() {
@@ -597,10 +662,21 @@ llvm::Function *FunctionAST::codegen() {
     return nullptr;
 }
 
-FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {}
+FunctionAST::FunctionAST(PrototypeAST *proto, BlockAST *body) : Proto(proto), Body(body) {
+    webc::parser::func_num++;
+}
 
 string FunctionAST::toString() {
     return "函数结点：\n" + Proto->toString() + "\n" + Body->toString();
+}
+
+void FunctionAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    this->Proto->setLayer(getLayer() + 1);
+    this->Body->setLayer(getLayer() + 1);
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->Proto->initChildrenLayers();
+    this->Body->initChildrenLayers();
 }
 
 Value *BlockAST::codegen() {
@@ -670,7 +746,8 @@ Value *ExpressionStatementAST::codegen() {
     return expr->codegen();
 }
 
-ExpressionStatementAST::ExpressionStatementAST(ExpressionAST *expr) : expr(expr) {}
+ExpressionStatementAST::ExpressionStatementAST(ExpressionAST *expr) : expr(expr) {
+}
 
 VariableAssignmentAST::VariableAssignmentAST(const string &identifier, ExpressionAST *expr) : identifier(identifier),
                                                                                               expr(expr) {}
@@ -697,6 +774,13 @@ llvm::Value *VariableAssignmentAST::codegen() {
 
 string VariableAssignmentAST::toString() {
     return StatementAST::toString();
+}
+
+void VariableAssignmentAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    this->expr->setLayer(getLayer() + 1);
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->expr->initChildrenLayers();
 }
 
 llvm::Value *VariableDeclarationAST::codegen() {
@@ -760,6 +844,17 @@ std::string VariableDeclarationAST::getName() {
 string VariableDeclarationAST::toString() {
     string s = "变量声明：";
     return s + this->getName();
+}
+
+void VariableDeclarationAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->identifier->setLayer(getLayer() + 1);
+    this->identifier->initChildrenLayers();
+    if (this->expr != NIL) {
+        this->expr->setLayer(getLayer() + 1);
+        this->expr->initChildrenLayers();
+    }
 }
 
 llvm::Value *FuncPtrAST::codegen() {
@@ -840,6 +935,7 @@ llvm::Value *IdentifierExprAST::codegen() {
     // 可能是函数指针
     auto func = TheModule->getFunction(identifier);
     if (func != NIL) {
+        webc::parser::func_pointers_num++;
         return func;
     }
     ABORT_COMPILE;
@@ -893,6 +989,15 @@ llvm::Value *ReturnStmtAST::codegen() {
 
 string ReturnStmtAST::toString() {
     return string("ret：" + string(expr == NIL ? "void" : expr->toString()));
+}
+
+void ReturnStmtAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    if (expr != NIL) {
+        expr->setLayer(getLayer() + 1);
+        UPDATE_MAX_LAYERS(getLayer() + 1);
+        expr->initChildrenLayers();
+    }
 }
 
 Type *getTypeFromStr(const std::string &type) {
@@ -978,6 +1083,10 @@ Type *getArrayType(Value *value) {
     }
 }
 
+int getMaxLayer(BlockAST *ast) {
+    return 0;
+}
+
 
 llvm::Value *IdentifierArrExprAST::codegen() {
     auto local = FINDLOCAL(identifier);
@@ -1015,6 +1124,19 @@ IdentifierArrExprAST::IdentifierArrExprAST(const string &identifier, vector<Expr
 
 string IdentifierArrExprAST::toString() {
     return string("数组标识符：") + identifier;
+}
+
+void IdentifierArrExprAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    if (!arrIndex->empty()) {
+        UPDATE_MAX_LAYERS(getLayer() + 1);
+    }
+    for (auto const &arri:*arrIndex) {
+        if (arri != NIL) {
+            arri->setLayer(getLayer() + 1);
+            arri->initChildrenLayers();
+        }
+    }
 }
 
 
@@ -1199,8 +1321,40 @@ string VariableArrDeclarationAST::toString() {
     return identifier->identifier;
 }
 
+void VariableArrDeclarationAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->identifier->setLayer(getLayer() + 1);
+    this->identifier->initChildrenLayers();
+    if (this->exprs != NIL) {
+        for (const auto &item : *this->exprs) {
+            item->setLayer(getLayer() + 1);
+            item->initChildrenLayers();
+        }
+    }
+}
+
 string FuncPtrAST::getName() {
     return identifier->identifier;
+}
+
+FuncPtrAST::FuncPtrAST(std::vector<IdentifierExprAST *> args, IdentifierExprAST *identifier) : args(std::move(args)),
+                                                                                               identifier(identifier) {
+    webc::parser::func_pointers_num++;
+}
+
+void FuncPtrAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->identifier->setLayer(getLayer() + 1);
+    this->identifier->initChildrenLayers();
+    for (const auto &item : this->args) {
+        if (item != NIL) {
+            item->setLayer(getLayer() + 1);
+            item->initChildrenLayers();
+        }
+    }
+
 }
 
 VariableArrAssignmentAST::VariableArrAssignmentAST(IdentifierArrExprAST *identifier, ExpressionAST *expr) : identifier(
@@ -1239,6 +1393,15 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
 
 string VariableArrAssignmentAST::toString() {
     return string("数组变量赋值") + identifier->toString();
+}
+
+void VariableArrAssignmentAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    this->identifier->setLayer(getLayer() + 1);
+    this->expr->setLayer(getLayer() + 1);
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->identifier->initChildrenLayers();
+    this->expr->initChildrenLayers();
 }
 
 OutStmtAST::OutStmtAST() = default;
@@ -1319,7 +1482,9 @@ string ContinueStmtAST::toString() {
     return "继续";
 }
 
-WhileStmtAST::WhileStmtAST(NodeAST *cond, BlockAST *body) : Cond(cond), Body(body) {}
+WhileStmtAST::WhileStmtAST(NodeAST *cond, BlockAST *body) : Cond(cond), Body(body) {
+    webc::parser::loop_num++;
+}
 
 llvm::Value *WhileStmtAST::codegen() {
     auto function = Builder->GetInsertBlock()->getParent();
@@ -1370,6 +1535,15 @@ string WhileStmtAST::toString() {
     return s;
 }
 
+void WhileStmtAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    this->Cond->setLayer(getLayer() + 1);
+    this->Body->setLayer(getLayer() + 1);
+    UPDATE_MAX_LAYERS(getLayer() + 1);
+    this->Cond->initChildrenLayers();
+    this->Body->initChildrenLayers();
+}
+
 string ExpressionAST::toString() {
     return std::string();
 }
@@ -1382,12 +1556,40 @@ string ExpressionStatementAST::toString() {
     return std::string("变量声明：" + expr->toString());
 }
 
+void ExpressionStatementAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    if (expr != NIL) {
+        expr->setLayer(getLayer() + 1);
+        UPDATE_MAX_LAYERS(getLayer() + 1);
+        expr->initChildrenLayers();
+    }
+}
+
 string BlockAST::toString() {
     string s = "block域内容：\n";
     for (auto st : statements) {
         s.append(st->toString() + "\n");
     }
     return s;
+}
+
+BlockAST::BlockAST() {}
+
+void BlockAST::addStatement(StatementAST *stmt) {
+    this->statements.push_back(stmt);
+}
+
+void BlockAST::initChildrenLayers() {
+    NodeAST::initChildrenLayers();
+    if (!statements.empty()) {
+        UPDATE_MAX_LAYERS(getLayer() + 1);
+    }
+    for (const auto &stmt:statements) {
+        if (stmt != NIL) {
+            stmt->setLayer(getLayer() + 1);
+            stmt->initChildrenLayers();
+        }
+    }
 }
 
 string IdentifierExprAST::toString() {
@@ -1440,9 +1642,22 @@ llvm::Value *NullExprAST::codegen() {
 }
 
 llvm::Value *BoolExprAST::codegen() {
-    return is_true ? ConstantInt::get(getTypeFromStr("bool"),1) : ConstantInt::get(getTypeFromStr("bool"),0);
+    return is_true ? ConstantInt::get(getTypeFromStr("bool"), 1) : ConstantInt::get(getTypeFromStr("bool"), 0);
 }
 
 string BoolExprAST::toString() {
     return std::to_string(is_true);
+}
+
+int NodeAST::getLayer() const {
+    return layer;
+}
+
+void NodeAST::setLayer(int layer) {
+    this->layer = layer;
+}
+
+void NodeAST::initChildrenLayers() {
+    // empty impl
+    webc::ast::nodes_num++;
 }

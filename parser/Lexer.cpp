@@ -4,6 +4,8 @@
 
 #include "Lexer.h"
 
+#include "stat.h"
+
 int Lexer::_getNextToken() {
     while (isspace(last_char)) {
         NEXTCHAR;
@@ -230,6 +232,7 @@ int Lexer::getNextToken() {
         std::fprintf(stderr, "KEX: read token type: %d\n", currToken);
     }
 #endif   //如果不是debug模式的话，就不打印这些字符，直接返回
+    webc::lex::token_num++;
     return currToken;
 }
 
