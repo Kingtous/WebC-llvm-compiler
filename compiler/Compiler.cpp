@@ -193,10 +193,12 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     args.push_back("-lktime");
     args.push_back("-lkjson");
     args.push_back("-lkstring");
+    // 系统库
+    args.push_back("-lpthread");
     // 输出文件
     args.push_back("-o");
     args.push_back(outputPath);
-    IntrusiveRefCntPtr <clang::DiagnosticIDs> DiagID(new DiagnosticIDs());
+    IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID(new DiagnosticIDs());
     DiagnosticsEngine diag_engine(DiagID, new DiagnosticOptions());
     driver::Driver driver(args[0], sys::getDefaultTargetTriple(), diag_engine);
     auto webc_compilation = driver.BuildCompilation(args);

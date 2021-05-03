@@ -1,9 +1,7 @@
 // 保证 x > y
 int gcd(int x, int y){
     if (x < y){
-        int tmp = x;
-        x = y;
-        y = tmp;
+        x <-> y;
     }
     if (y){
         ret gcd(y, x%y);

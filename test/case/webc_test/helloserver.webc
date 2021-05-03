@@ -1,0 +1,17 @@
+str hello() {
+    ret 'hello from compiler';
+}
+
+int main() {
+    echo('init...');
+    str host = '0.0.0.0';
+    int port = 9000;
+    int core = 2;
+    echo('get server...');
+    int server_id = getServer(host, port, core);
+    echo('server id is', server_id);
+    addUrlHandler(server_id, 'GET', '/hello', 'text/html', hello);
+    echo('start server in host', host, ',port is', port);
+    startServer(server_id);
+    ret 0;
+}
