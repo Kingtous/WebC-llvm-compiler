@@ -53,6 +53,16 @@ public:
     virtual llvm::Value *codegen() = 0;
 
     virtual string toString() = 0;
+
+    // must call this
+    virtual void initChildrenLayers();
+
+    int getLayer() const;
+
+    void setLayer(int layer);
+
+private:
+    int layer = 1;
 };
 
 /// 表达式，如数字、代码块、赋值语句、二元操作语句
@@ -75,6 +85,8 @@ public:
     Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 class ReturnStmtAST : public StatementAST {
@@ -87,6 +99,8 @@ public:
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 /// 块结点，一个块含有多种声明，也可作为一个程序的入口点
@@ -97,6 +111,12 @@ public:
     Value *codegen() override;
 
     string toString() override;
+
+    BlockAST();
+
+    void addStatement(StatementAST *stmt);
+
+    void initChildrenLayers() override;
 };
 
 //////////////////// 用于存储数字的结点 ///////////////////////
@@ -163,6 +183,8 @@ public:
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 // 变量声明语句
@@ -193,20 +215,22 @@ public:
 
     string toString() override;
 
+    void initChildrenLayers() override;
+
 };
-class FuncPtrAST:public VariableDeclarationAST{
+
+class FuncPtrAST : public VariableDeclarationAST {
 public:
-    std::vector<IdentifierExprAST*> args;
+    std::vector<IdentifierExprAST *> args;
     IdentifierExprAST *identifier;
-    FuncPtrAST(std::vector<IdentifierExprAST*> args,IdentifierExprAST *identifier)
-    :args(std::move(args))
-    ,identifier(std::move(identifier)){}
+
+    FuncPtrAST(std::vector<IdentifierExprAST *> args, IdentifierExprAST *identifier);
 
     llvm::Value *codegen() override;
 
+    virtual std::string getName() override;
 
-
-    virtual  std::string getName() override;
+    void initChildrenLayers() override;
 };
 
 // 变量声明语句
@@ -256,6 +280,8 @@ public:
     string getName() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 // 变量赋值句
@@ -275,6 +301,8 @@ public:
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 class VariableArrAssignmentAST : public StatementAST {
@@ -293,6 +321,8 @@ public:
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 
@@ -353,6 +383,8 @@ public:
     Value *codeGenOr(NodeAST *l, NodeAST *r);
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 /// 空值结点
@@ -368,15 +400,17 @@ class CallExprAST : public ExpressionAST {
     std::vector<ExpressionAST*> args;
 
 public:
-       CallExprAST(std::string callName, std::vector<ExpressionAST*> args) : callName(std::move(callName)),
+    CallExprAST(std::string callName, std::vector<ExpressionAST *> args) : callName(std::move(callName)),
 
-                                                                                        args(std::move(args)) {}
+                                                                           args(std::move(args)) {}
 
     const string &getCallName() const;
 
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 /// 函数描述结点
@@ -384,16 +418,18 @@ public:
 class PrototypeAST : public NodeAST {
     std::string returnType;
     std::string name;
-    std::vector<VariableDeclarationAST*> args;
+    std::vector<VariableDeclarationAST *> args;
 
 public:
-    PrototypeAST(const string &returnType, const string &name, const vector<VariableDeclarationAST *> &args);
+    PrototypeAST(string returnType, string name, const vector<VariableDeclarationAST *> &args);
 
     llvm::Function *codegen() override;
 
     const std::string &getName() const;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 /// 函数结点
@@ -411,6 +447,8 @@ public:
     llvm::Function *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 /// Break结点
@@ -446,6 +484,8 @@ public:
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 /// For结点
@@ -461,6 +501,8 @@ public:
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 /// While结点
@@ -475,6 +517,8 @@ public:
     llvm::Value *codegen() override;
 
     string toString() override;
+
+    void initChildrenLayers() override;
 };
 
 Type *getTypeFromStr(const std::string &type);

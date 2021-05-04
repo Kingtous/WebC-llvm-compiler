@@ -1,0 +1,6 @@
+int main(){
+    connect_db('127.0.0.1', 'root', '123456', 'school',3306,'utf8');
+    str ans = query_db('select * from user');
+    echo('student database is',ans);
+    ret 0;
+}

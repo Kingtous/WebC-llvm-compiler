@@ -5,6 +5,8 @@
 #include "Compiler.h"
 
 #include "codegen/CodeGen.h"
+#include "stat.h"
+#include "module/time/src/time.c"
 
 #ifdef CLANG_SUPPORT
 #include <llvm/Support/Program.h>
@@ -40,14 +42,21 @@ int startAnalyze(ArgsParser *parser) {
         m_lexer = new Lexer(reader);
 
         TheLexer = m_lexer;
+        long t1 = __getms();
         int result = yyparse();
         if (!result) {
             auto ast = program;
-            std::cout << ast->toString();
             auto val = ast->codegen();
+#ifdef DEBUG_FLAG
+            ast->initChildrenLayers();
+            std::cout << ast->toString();
+            webc::outputStats();
+#endif
             if (val == nullptr) {
                 return RERR;
             } else {
+                long t2 = __getms();
+                printf("\n语法分析耗时：%ld", t2 - t1);
                 return ROK;
             }
         } else {
@@ -78,6 +87,7 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     LLVMInitializeX86AsmParser();
     LLVMInitializeX86AsmPrinter();
 #endif
+    long t1 = __getms();
     auto TargetTriple = sys::getDefaultTargetTriple();
     TheModule->setTargetTriple(TargetTriple);
 
@@ -193,10 +203,12 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     args.push_back("-lktime");
     args.push_back("-lkjson");
     args.push_back("-lkstring");
+    // 系统库
+    args.push_back("-lpthread");
     // 输出文件
     args.push_back("-o");
     args.push_back(outputPath);
-    IntrusiveRefCntPtr <clang::DiagnosticIDs> DiagID(new DiagnosticIDs());
+    IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID(new DiagnosticIDs());
     DiagnosticsEngine diag_engine(DiagID, new DiagnosticOptions());
     driver::Driver driver(args[0], sys::getDefaultTargetTriple(), diag_engine);
     auto webc_compilation = driver.BuildCompilation(args);
@@ -211,7 +223,9 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
         driver.generateCompilationDiagnostics(*webc_compilation, *failingCommand);
         return RERR;
     }
+    long t2 = __getms();
     LogInfo("编译完成");
+    LogInfo(to_string(t2 - t1).c_str());
     LogInfo(outputPath);
 #endif
     return ROK;
