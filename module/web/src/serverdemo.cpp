@@ -5,25 +5,13 @@
 #include "web.hpp"
 
 const char *say_hello() {
-    const char *ans = _ksql_query_db("select * from student");
-    return ans;
-}
-
-const char *say_hi() {
-    const char *ans = _ksql_query_db("select * from result");
-    return ans;
-}
-
-const char *say_hehe() {
-    const char *ans = _ksql_query_db("select * from subject");
+    const char *ans = _ksql_query_db("select * from students");
     return ans;
 }
 
 void startServer() {
-    int id = _web_getServerId("127.0.0.1", 9000, 2);
+    int id = _web_getServerId("127.0.0.1", 9000, 4);
     _web_addUrlHandler(id, "GET", "/hello", "text/html", say_hello);
-    _web_addUrlHandler(id, "GET", "/hi", "text/html", say_hi);
-    _web_addUrlHandler(id, "GET", "/hehe", "text/html", say_hehe);
     _web_startServe(id);
 }
 

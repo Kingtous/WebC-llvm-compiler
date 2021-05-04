@@ -4,13 +4,15 @@
 
 #include "ksql.h"
 
+#include <mutex>
+
 mysql::MySQL_Driver *driver;
 Connection *conn;
 WEBC_SQL_DATA webcSqlData;
-unique_ptr<char[]> ch;
-vector<string> ans;
 
-string _ksql_resToJson(WEBC_SQL_DATA sqlData);
+std::mutex mysql_mutex;
+
+string _ksql_resToJson(WEBC_SQL_DATA &sqlData);
 
 int _ksql_connect_db(const char *hostname, const char *username, const char *password, const char *schema, int port,
                      const char *charset) {
@@ -31,13 +33,15 @@ int _ksql_connect_db(const char *hostname, const char *username, const char *pas
             return FAILED;
         }
         return SUCCESS;
-    } catch (SQLException e) {
-        cout << "The error code is : "<<e.getErrorCode() << endl;
+    } catch (SQLException &e) {
+        cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;
     }
+    return FAILED;
 }
 
 const char *_ksql_query_db(const char *sqlSentence) {
+    mysql_mutex.lock();
     try {
         if (_ksql_isMysqlConnected() != 0) {
             return "mysql未能成功连接";
@@ -49,40 +53,42 @@ const char *_ksql_query_db(const char *sqlSentence) {
         sqlSentence = temp.c_str();
         webcSqlData.resultSet = webcSqlData.statement->executeQuery(sqlSentence);
         if (!webcSqlData.resultSet->next()) {
-            char *resNull = "您所查询的表为空\n";
-            return resNull;
+            return "您所查询的表为空\n";
         }
-        if (ch.get() == nullptr) {
-            ch.reset(new char[_ksql_resToJson(webcSqlData).size() + 1]);
-        }
-        strcpy(ch.get(), _ksql_resToJson(webcSqlData).data());
-        return ch.get();
-    } catch (SQLException e) {
-        cout << "The error code is : "<<e.getErrorCode() << endl;
+        // FIXME: 会有内存泄露
+        auto jsondata = new string(_ksql_resToJson(webcSqlData));
+        mysql_mutex.unlock();
+        return jsondata->c_str();
+    } catch (SQLException &e) {
+        cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;
+        mysql_mutex.unlock();
     }
+    return "";
 }
 
-string _ksql_resToJson(WEBC_SQL_DATA sqlData) {
+string _ksql_resToJson(WEBC_SQL_DATA &sqlData) {
+    vector<string> ans;
     try {
         string s;
         s += "{";
         s += "\"result\":";
         s += "[";
         //列数
-        int count = sqlData.resultSet->getMetaData()->getColumnCount();
+        uint count = sqlData.resultSet->getMetaData()->getColumnCount();
         if (ans.empty()) {
             sqlData.resultSet->beforeFirst();
             while (sqlData.resultSet->next()) {
+                auto metadata = sqlData.resultSet->getMetaData();
                 string temp;
                 for (int i = 1; i <= count; ++i) {
                     if (i == 1) {
                         temp += "{";
                     }
                     temp += "\"";
-                    temp += sqlData.resultSet->getMetaData()->getColumnLabel(i);
+                    temp += metadata->getColumnLabel(i);
                     temp += "\":";
-                    auto type = sqlData.resultSet->getMetaData()->getColumnTypeName(i);
+                    auto type = metadata->getColumnTypeName(i);
                     if (type == "VARCHAR") {
                         temp += "\"";
                         temp += sqlData.resultSet->getString(i);
@@ -97,17 +103,16 @@ string _ksql_resToJson(WEBC_SQL_DATA sqlData) {
             }
             ans[ans.size() - 1].pop_back();
         }
-        for (auto str:ans) {
+        for (const auto &str:ans) {
             s += str;
         }
         s += "]}";
-        ans.clear();
-        vector<string>().swap(ans);
-        return s;
-    } catch (SQLException e) {
-        cout << "The error code is : "<<e.getErrorCode() << endl;
+        return std::move(s);
+    } catch (SQLException &e) {
+        cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;
     }
+    return "";
 }
 
 int _ksql_free_memory() {
