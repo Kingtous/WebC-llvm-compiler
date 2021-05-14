@@ -56,9 +56,10 @@ const char *_ksql_query_db(const char *sqlSentence) {
             return "您所查询的表为空\n";
         }
         // FIXME: 会有内存泄露
-        auto jsondata = new string(_ksql_resToJson(webcSqlData));
+        auto jsondata = _ksql_resToJson(webcSqlData);
+        auto cstrdata = new string(jsondata);
         mysql_mutex.unlock();
-        return jsondata->c_str();
+        return cstrdata->c_str();
     } catch (SQLException &e) {
         cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;
@@ -107,7 +108,7 @@ string _ksql_resToJson(WEBC_SQL_DATA &sqlData) {
             s += str;
         }
         s += "]}";
-        return std::move(s);
+        return s;
     } catch (SQLException &e) {
         cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;

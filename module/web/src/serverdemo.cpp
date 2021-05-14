@@ -5,8 +5,8 @@
 #include "web.hpp"
 
 const char *say_hello() {
-    const char *ans = _ksql_query_db("select * from students");
-    return ans;
+//    const char *ans = _ksql_query_db("select * from students");
+    return "select * from students";
 }
 
 void startServer() {

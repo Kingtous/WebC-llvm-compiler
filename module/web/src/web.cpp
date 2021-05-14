@@ -95,10 +95,10 @@ public:
                                 [this](boost::system::error_code ec) {
                                     if (ec) {
                                         fprintf(stderr, "%s\n", ec.message().c_str());
+                                        close();
                                     } else {
                                         handle_handshake(ec);
                                     }
-
                                 });
     }
 

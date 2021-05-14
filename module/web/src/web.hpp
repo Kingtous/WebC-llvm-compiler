@@ -204,7 +204,6 @@ private:
     tcp::acceptor &acceptor;
 //    using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
     std::string base_path;
-    tcp::socket socket{acceptor.get_executor()};
 
     boost::asio::ssl::context ssl_context{boost::asio::ssl::context::tlsv12};
     std::shared_ptr<ssl_stream> ssl_stream_;
