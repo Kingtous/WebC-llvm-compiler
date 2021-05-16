@@ -6,8 +6,33 @@
 
 #include <mutex>
 
-mysql::MySQL_Driver *driver;
-Connection *conn;
+#include "mysql_driver.h"
+#include "mysql_connection.h"
+#include "cppconn/statement.h"
+#include "cppconn/prepared_statement.h"
+#include "iostream"
+#include "module/json/src/kjson.h"
+#include "vector"
+
+//mysql连接状态码
+#define NOT_CONNECT -2
+#define FAILED -1
+//操作成功状态码
+#define SUCCESS 0
+
+//extern sql::mysql::MySQL_Driver * get_mysql_driver_instance();
+
+using namespace std;
+
+struct SQLData {
+    sql::Statement *statement;
+    sql::ResultSet *resultSet;
+};
+
+typedef SQLData WEBC_SQL_DATA;
+
+sql::mysql::MySQL_Driver *driver;
+sql::Connection *conn;
 WEBC_SQL_DATA webcSqlData;
 
 std::mutex mysql_mutex;
@@ -17,9 +42,9 @@ string _ksql_resToJson(WEBC_SQL_DATA &sqlData);
 int _ksql_connect_db(const char *hostname, const char *username, const char *password, const char *schema, int port,
                      const char *charset) {
     try {
-        driver = mysql::get_mysql_driver_instance();
+        driver = sql::mysql::get_mysql_driver_instance();
         //连接到Mysql
-        ConnectOptionsMap connection_properties;
+        sql::ConnectOptionsMap connection_properties;
         connection_properties["hostName"] = hostname;
         connection_properties["userName"] = username;
         connection_properties["password"] = password;
@@ -33,7 +58,7 @@ int _ksql_connect_db(const char *hostname, const char *username, const char *pas
             return FAILED;
         }
         return SUCCESS;
-    } catch (SQLException &e) {
+    } catch (sql::SQLException &e) {
         cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;
     }
@@ -60,7 +85,7 @@ const char *_ksql_query_db(const char *sqlSentence) {
         auto cstrdata = new string(jsondata);
         mysql_mutex.unlock();
         return cstrdata->c_str();
-    } catch (SQLException &e) {
+    } catch (sql::SQLException &e) {
         cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;
         mysql_mutex.unlock();
@@ -76,7 +101,7 @@ string _ksql_resToJson(WEBC_SQL_DATA &sqlData) {
         s += "\"result\":";
         s += "[";
         //列数
-        uint count = sqlData.resultSet->getMetaData()->getColumnCount();
+        unsigned int count = sqlData.resultSet->getMetaData()->getColumnCount();
         if (ans.empty()) {
             sqlData.resultSet->beforeFirst();
             while (sqlData.resultSet->next()) {
@@ -109,7 +134,7 @@ string _ksql_resToJson(WEBC_SQL_DATA &sqlData) {
         }
         s += "]}";
         return s;
-    } catch (SQLException &e) {
+    } catch (sql::SQLException &e) {
         cout << "The error code is : " << e.getErrorCode() << endl;
         cout << e.what() << endl;
     }

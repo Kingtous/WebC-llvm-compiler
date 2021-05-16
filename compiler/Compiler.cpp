@@ -187,6 +187,18 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     // TODO 支持多文件
     args.push_back(clang->c_str());
     args.push_back(omit_file_name.c_str());
+#if WIN32
+#else
+    args.push_back("-L/usr/local/lib");
+#endif
+    args.push_back("-lksql");
+    args.push_back("-lmysqlcppconn");
+    args.push_back("-lkweb");
+    args.push_back("-lktime");
+    args.push_back("-lkjson");
+    args.push_back("-lkstring");
+    // 系统库
+    args.push_back("-lpthread");
     // 链接openssl
     auto openssl_libs = getOpenSSLLibDir();
     if (openssl_libs == nullptr) {
@@ -196,15 +208,10 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     for (const auto &item : *openssl_libs) {
         args.push_back(item.c_str());
     }
-    args.push_back("-L/usr/local/lib");
-    args.push_back("-lksql");
-    args.push_back("-lmysqlcppconn");
-    args.push_back("-lkweb");
-    args.push_back("-lktime");
-    args.push_back("-lkjson");
-    args.push_back("-lkstring");
-    // 系统库
-    args.push_back("-lpthread");
+#ifdef WIN32
+    args.push_back("-lwsock32");
+    args.push_back("-lws2_32");
+#endif
     // 输出文件
     args.push_back("-o");
     args.push_back(outputPath);

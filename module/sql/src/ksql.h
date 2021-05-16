@@ -5,35 +5,6 @@
 #ifndef SYSYPLUS_COMPILER_KSQL_H
 #define SYSYPLUS_COMPILER_KSQL_H
 
-#include "mysql_driver.h"
-#include "mysql_connection.h"
-#include "mysql_error.h"
-#include "cppconn/statement.h"
-#include "cppconn/resultset.h"
-#include "cppconn/connection.h"
-#include "cppconn/prepared_statement.h"
-#include "iostream"
-#include "module/json/src/kjson.h"
-#include "unordered_map"
-#include "vector"
-
-//mysql连接状态码
-#define NOT_CONNECT -2
-#define FAILED -1
-//操作成功状态码
-#define SUCCESS 0
-
-
-using namespace sql;
-using namespace std;
-
-struct SQLData {
-    Statement *statement;
-    ResultSet *resultSet;
-};
-
-typedef SQLData WEBC_SQL_DATA;
-
 extern "C" {
 /**
  * 连接到MySQL

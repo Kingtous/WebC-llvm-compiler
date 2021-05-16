@@ -6,7 +6,7 @@
 
 const char *say_hello() {
 //    const char *ans = _ksql_query_db("select * from students");
-    return "select * from students";
+    return "select * from weather";
 }
 
 void startServer() {
@@ -17,7 +17,7 @@ void startServer() {
 
 
 int main() {
-    _ksql_connect_db("127.0.0.1", "root", "123456", "school",3306,"utf8");
+    _ksql_connect_db("39.107.226.2", "weather", "jintao123", "weather",3306,"utf8");
 //    _ksql_connect_db(HOST, USER, PASSWD, DATABASE);
     startServer();
     // for test interface

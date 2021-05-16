@@ -12,7 +12,6 @@
 #include <filesystem>
 
 using namespace std;
-using namespace std::filesystem;
 
 class ArgsParser {
 public:

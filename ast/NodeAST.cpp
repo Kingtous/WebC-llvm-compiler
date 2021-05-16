@@ -1147,7 +1147,7 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
     ArrayType *arr_type = buildArrayType(identifier->arrIndex, getTypeFromStr(type));
     if (!HASLOCALS) {
         vector<Constant *> *ca = genGlobalExprs();
-        auto constant_arr_value = ConstantArray::get(arr_type, ArrayRef(*ca));
+        auto constant_arr_value = ConstantArray::get(arr_type, ArrayRef<Constant*>(*ca));
         // 全局变量
         auto global_variable = TheModule->getNamedGlobal(identifier->identifier);
         if (global_variable) {
@@ -1157,7 +1157,7 @@ llvm::Value *VariableArrDeclarationAST::codegen() {
             auto gv = new GlobalVariable(*TheModule, arr_type, true,
                                          GlobalVariable::LinkageTypes::ExternalLinkage,
                                          Constant::getNullValue(arr_type), identifier->identifier);
-            auto vs = ArrayRef(*ca);
+            auto vs = ArrayRef<Constant*>(*ca);
             gv->setInitializer(constant_arr_value);
 //            gv->print(outs(), true);
             ret = gv;
@@ -1229,7 +1229,7 @@ void VariableArrDeclarationAST::genLocalStoreExprs(Value *mem) {
                 auto intv = ConstantInt::get(Type::getInt32Ty(*TheContext), index);
                 gepindex_vec.push_back(intv);
             }
-            auto ret = Builder->CreateInBoundsGEP(mem, ArrayRef(gepindex_vec));
+            auto ret = Builder->CreateInBoundsGEP(mem, ArrayRef<Value*>(gepindex_vec));
             Builder->CreateStore(e->codegen(), ret);
             if (incrementVectorIndex(vindex, vmaxindex)) {
 //                LogWarn("数组声明超过定义，超过定义的值将被忽略");
@@ -1386,7 +1386,7 @@ llvm::Value *VariableArrAssignmentAST::codegen() {
         auto v = (*st)->codegen();
         vec.push_back(v);
     }
-    ret = Builder->CreateInBoundsGEP(arr_addr, ArrayRef(vec));
+    ret = Builder->CreateInBoundsGEP(arr_addr, ArrayRef<Value*>(vec));
     auto newV = expr->codegen();
     newV = makeMatch(ret, newV, this);
     ret = Builder->CreateStore(newV, ret);
