@@ -29,6 +29,7 @@
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
+#include <boost/regex.hpp>
 
 /// 状态字
 #define ROK 0
@@ -65,6 +66,11 @@ extern std::unique_ptr<llvm::IRBuilder<>> Builder;
 extern std::unique_ptr<llvm::Module> TheModule;
 
 class CodeGenContext;
+
 /// 代码生成上下文
 extern std::unique_ptr<CodeGenContext> TheCodeGenContext;
+
+namespace network {
+    extern boost::regex url_regex;
+}
 #endif //LLVM_KALEIDOSCOPE_GLOBAL_H

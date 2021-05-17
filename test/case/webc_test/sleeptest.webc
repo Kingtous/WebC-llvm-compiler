@@ -1,0 +1,15 @@
+void sleep_1(){
+    sleep(1);
+}
+void sleep_2(){
+    sleep(2);
+}
+void sleep_3(){
+    sleep(3);
+}
+
+int main(){
+    sleep_1();
+    sleep_2();
+    sleep_3();
+}
