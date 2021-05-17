@@ -22,8 +22,6 @@ class StringReader : public IFileReader {
 public:
     explicit StringReader(std::string *str);
 
-private:
-
     int getchar() override;
 
     int seek() override;

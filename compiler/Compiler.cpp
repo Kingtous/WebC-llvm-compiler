@@ -7,6 +7,7 @@
 #include "codegen/CodeGen.h"
 #include "stat.h"
 #include "module/time/src/time.c"
+#include "parser/NetworkReader.h"
 
 #ifdef CLANG_SUPPORT
 #include <llvm/Support/Program.h>
@@ -15,6 +16,7 @@
 #include <clang/Driver/Driver.h>
 #include <glibmm/spawn.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 
 using namespace clang;
 #endif
@@ -36,11 +38,16 @@ void initExternFunc() {
 int startAnalyze(ArgsParser *parser) {
     // 初始化外层函数
     initExternFunc();
-    for (const auto &file : parser->getFiles()) {
-        outs() << "正在分析 " << file << "...\n";
-        auto reader = new FileReader(file);
-        m_lexer = new Lexer(reader);
-
+    for (const auto &uri : parser->getFiles()) {
+        outs() << "正在分析 " << uri << "...\n";
+        boost::cmatch url_parsed;
+        IFileReader *file_reader;
+        if (boost::regex_match(uri.c_str(), url_parsed, network::url_regex)) {
+            file_reader = new NetworkReader(uri);
+        } else {
+            file_reader = new FileReader(uri);
+        }
+        m_lexer = new Lexer(file_reader);
         TheLexer = m_lexer;
         long t1 = __getms();
         int result = yyparse();
@@ -187,6 +194,18 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     // TODO 支持多文件
     args.push_back(clang->c_str());
     args.push_back(omit_file_name.c_str());
+#if WIN32
+#else
+    args.push_back("-L/usr/local/lib");
+#endif
+    args.push_back("-lksql");
+    args.push_back("-lmysqlcppconn");
+    args.push_back("-lkweb");
+    args.push_back("-lktime");
+    args.push_back("-lkjson");
+    args.push_back("-lkstring");
+    // 系统库
+    args.push_back("-lpthread");
     // 链接openssl
     auto openssl_libs = getOpenSSLLibDir();
     if (openssl_libs == nullptr) {
@@ -196,15 +215,10 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
     for (const auto &item : *openssl_libs) {
         args.push_back(item.c_str());
     }
-    args.push_back("-L/usr/local/lib");
-    args.push_back("-lksql");
-    args.push_back("-lmysqlcppconn");
-    args.push_back("-lkweb");
-    args.push_back("-lktime");
-    args.push_back("-lkjson");
-    args.push_back("-lkstring");
-    // 系统库
-    args.push_back("-lpthread");
+#ifdef WIN32
+    args.push_back("-lwsock32");
+    args.push_back("-lws2_32");
+#endif
     // 输出文件
     args.push_back("-o");
     args.push_back(outputPath);

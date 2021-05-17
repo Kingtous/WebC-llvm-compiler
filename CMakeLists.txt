@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.13)
 project(webc_compiler)
+if(WIN32)
+    set(CMAKE_CXX_STANDARD 14)
+else()
+    set(CMAKE_CXX_STANDARD 17)
+endif()
 
-set(CMAKE_CXX_STANDARD 17)
 # 始终选择最高版本依赖
 SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
 SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
@@ -22,7 +26,7 @@ message(STATUS "clang: ${CLANG_INCLUDE_DIRS}")
 #add_definitions(${LLD_DEFINITIONS})
 
 message(STATUS "查找Boost框架")
-find_package(Boost COMPONENTS system filesystem thread chrono REQUIRED)
+find_package(Boost COMPONENTS system filesystem thread chrono regex REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIR})
 
@@ -134,13 +138,21 @@ endif ()
 
 message(STATUS "Found ${llvm_libs}")
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SSLLib openssl)
+message(STATUS "found ssl lib in ${SSLLib_INCLUDE_DIRS}")
+message(STATUS "found ssl lib in ${SSLLib_LIBRARY_DIRS}")
+include_directories(${SSLLib_INCLUDE_DIRS})
+link_directories(${SSLLib_LIBRARY_DIRS})
+
 # Link against LLVM libraries
 #target_link_libraries(webc_compiler ${llvm_libs})
-if(WIN32)
+if (WIN32)
     target_link_libraries(webc_compiler
             LLVM
             ${GTKMM_LIBRARIES}
-            Boost::thread Boost::chrono
+            ${SSLLib_LIBRARIES}
+            Boost::thread Boost::chrono Boost::regex
             clangDriver
             wsock32
             )
@@ -148,7 +160,8 @@ else()
     target_link_libraries(webc_compiler
             LLVM
             ${GTKMM_LIBRARIES}
-            Boost::thread Boost::chrono
+            ${SSLLib_LIBRARIES}
+            Boost::thread Boost::chrono Boost::regex
             clangDriver
             )
 endif()

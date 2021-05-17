@@ -437,5 +437,7 @@ Value *KsqlFunctionHandler::tryhandle(LLVMContext &context, Module &module, std:
     } else if (callName == "isMysqlConnected" && argV->empty()) {
         auto func = ExternFunctionHandler::getOrAddIsMysqlConnected(context, module);
         return Builder->CreateCall(func);
+    } else {
+        return nullptr;
     }
 }

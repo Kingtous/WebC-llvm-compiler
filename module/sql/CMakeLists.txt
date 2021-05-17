@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(KingtousProject)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 message(STATUS ${CMAKE_SOURCE_DIR})
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
@@ -24,10 +24,17 @@ endif ()
 
 aux_source_directory(src SRC)
 
-add_library(ksql STATIC ${SRC})
-add_executable(ksqldemo ${SRC})
+message(STATUS "ksql files: ${SRC}")
 
-target_link_libraries(ksqldemo mysqlcppconn kjson)
+add_library(ksql STATIC src/ksql.cpp)
+
+add_executable(ksqldemo src/ksqldemo.cpp)
+
+target_link_libraries(ksqldemo kjson ksql mysqlcppconn)
+
+if (WIN32)
+    target_link_libraries(ksqldemo ws2_32 secur32 mysqlclient)
+endif ()
 
 install(TARGETS ksql
         ARCHIVE DESTINATION ${LOCATION}
