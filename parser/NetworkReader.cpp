@@ -72,6 +72,7 @@ NetworkReader::NetworkReader(std::string url) : url(std::move(url)) {
 int NetworkReader::download() {
     boost::asio::post(thread_pool, [this]() {
         download_status = network::download_status::IN_DOWNLOAD;
+        LogInfo("正在下载代码数据\n");
         try {
             boost::cmatch url_parsed;
             if (boost::regex_match(url.c_str(), url_parsed, network::url_regex)) {
