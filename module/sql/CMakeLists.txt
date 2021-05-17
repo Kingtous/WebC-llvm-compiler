@@ -30,7 +30,11 @@ add_library(ksql STATIC src/ksql.cpp)
 
 add_executable(ksqldemo src/ksqldemo.cpp)
 
-target_link_libraries(ksqldemo kjson ksql mysqlcppconn mysqlclient ws2_32 secur32 )
+target_link_libraries(ksqldemo kjson ksql mysqlcppconn)
+
+if (WIN32)
+    target_link_libraries(ksqldemo ws2_32 secur32 mysqlclient)
+endif ()
 
 install(TARGETS ksql
         ARCHIVE DESTINATION ${LOCATION}
