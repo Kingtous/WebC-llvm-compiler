@@ -9,7 +9,7 @@
 
 #include "extern/ExternFunctionHandler.h"
 
-struct TimeAnalysisPass : public FunctionPass{
+struct TimeAnalysisPass : public FunctionPass {
     static char ID;
 
 public:

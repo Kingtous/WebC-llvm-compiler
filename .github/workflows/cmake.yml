@@ -33,7 +33,7 @@ jobs:
       run: sudo apt install -y libmysqlcppconn-dev
 
     - name: Installing openssl
-      run: sudo apt install -y openssl
+      run: sudo apt install -y openssl libssl-dev
 
     - name: Installing pkgconfig
       run: sudo apt install -y pkg-config
