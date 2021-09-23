@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v2
     
     - name: Installing LLVM 11
-      run: sudo apt remove llvm-12* libclang-12* clang-12* sudo apt install -y llvm-11-dev libclang-11-dev clang-11
+      run: sudo apt remove -y llvm-12* libclang-12* clang-12* && sudo apt install -y llvm-11-dev libclang-11-dev clang-11
 
     - name: Installing libedit
       run: sudo apt install -y libedit-dev
