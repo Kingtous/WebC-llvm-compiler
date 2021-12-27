@@ -11,3 +11,4 @@ Makefile
 module/lib/**
 module/CMakeFiles/**
 module/time/CMakeFiles/**
+.idea/*
