@@ -66,8 +66,8 @@ jobs:
       run: cmake --build .
 
     - name: Test
-      working-directory: ${{runner.workspace}}/build
-      run: ./webc_compiler -i ../test/case/webc_test/qsort.webc -o output.o && ./output.o
+      run: ${{github.workspace}}/build/webc_compiler -i ${{github.workspace}}/test/case/webc_test/qsort.webc -o output.o 
+            && ${{github.workspace}}/build/output.o
 
 #    - name: Create Release
 #      id: create_release
