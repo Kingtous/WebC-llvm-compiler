@@ -17,8 +17,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: Installing LLVM 11
-      run: sudo apt remove -y llvm-12* libclang-12* clang-12* && sudo apt install -y llvm-11-dev libclang-11-dev clang-11
+    - name: Installing LLVM 12
+      run: sudo apt remove -y llvm-11* libclang-11* clang-11* && sudo apt install -y llvm-12-dev libclang-12-dev clang-12
+
+    - name: Installing build-essential
+      run: sudo apt install -y build-essential
 
     - name: Installing libedit
       run: sudo apt install -y libedit-dev
@@ -54,13 +57,17 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -G "Ninja" && ls 
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -G "Ninja"
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build .
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ./webc_compiler -i ../test/case/webc_test/qsort.webc -o output.o && ./output.o
 
 #    - name: Create Release
 #      id: create_release

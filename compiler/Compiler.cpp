@@ -183,7 +183,7 @@ int genCode(const set<ArgsParser::Options> &opts, const char *outputPath) {
         return ROK;
     }
     LogInfo("开始生成可执行文件");
-    auto clang = llvm::sys::findProgramByName("clang++");
+    auto clang = llvm::sys::findProgramByName("clang++-12");
     if (auto ec = clang.getError()) {
         LogInfo("clang++未找到");
         LogInfo(ec.message().c_str());
