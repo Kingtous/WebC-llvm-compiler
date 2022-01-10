@@ -1,6 +1,6 @@
-# SysyPlus Language For Kingtous
+# WebC Language For Kingtous
 
-使用LLVM框架的SysyPlus语言编译器
+使用LLVM框架的WebC语言编译器
 ---
 
 仓库地址：[Github Repo](https://github.com/Kingtous/Sysy2020-llvm-compiler)
