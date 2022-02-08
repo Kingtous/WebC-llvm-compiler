@@ -65,9 +65,9 @@ jobs:
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build .
 
-    - name: Test
-      run: ${{github.workspace}}/build/webc_compiler -i ${{github.workspace}}/test/case/webc_test/qsort.webc -o output.o 
-            && ${{github.workspace}}/build/output.o
+#    - name: Test
+#      run: ${{github.workspace}}/build/webc_compiler -i ${{github.workspace}}/test/case/webc_test/qsort.webc -o output.o
+#            && ${{github.workspace}}/build/output.o
 
 #    - name: Create Release
 #      id: create_release
