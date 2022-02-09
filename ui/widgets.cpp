@@ -354,6 +354,7 @@ void CompilerWindow::initCodeForm() {
     // style
     auto scheme = m_style_scheme_manager->get_scheme("oblivion");
     m_gsv->get_source_buffer()->set_style_scheme(scheme);
+    m_gsv->get_source_buffer()->fo
     // TODO 增加字体可修改
     try {
         auto style_context = get_style_context();

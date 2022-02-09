@@ -1,11 +1,11 @@
-# WebC-llvm-compiler
+# SysyPlus Language For Kingtous
 
 使用LLVM框架的SysyPlus语言编译器
 ---
 
-仓库地址：[Github Repo](NEUQ-2084team-Compiler/WebC-llvm-compiler)
+仓库地址：[Github Repo](https://github.com/Kingtous/Sysy2020-llvm-compiler)
 
-当前编译状态：![build status](https://github.com/NEUQ-2084team-Compiler/WebC-llvm-compiler/actions/workflows/cmake.yml/badge.svg)
+当前编译状态：![build status](https://github.com/Kingtous/Sysy2020-llvm-compiler/actions/workflows/cmake.yml/badge.svg)
 
 LLVM框架语言：LLVM 12.0.0
 

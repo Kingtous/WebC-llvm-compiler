@@ -2,6 +2,11 @@
 /*    font: 15px "Monospace";*/
 /*}*/
 
-* {
-    font-size: 1.25em;
+
+
+/*
+菜单字体大小
+ */
+*{
+    font-size: 1em;
 }
