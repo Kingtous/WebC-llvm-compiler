@@ -13,22 +13,22 @@ SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
 find_package(LLVM REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
-message(STATUS "LLVM : ${LLVM_INCLUDE_DIRS}")
+message(STATUS "Found llvm in ${LLVM_INCLUDE_DIRS}")
 
 find_package(Clang REQUIRED CONFIG)
 include_directories(${CLANG_INCLUDE_DIRS})
 add_definitions(${ClANG_DEFINITIONS})
-message(STATUS "Clang : ${CLANG_INCLUDE_DIRS}")
+message(STATUS "clang: ${CLANG_INCLUDE_DIRS}")
 
 #find_package(LLD REQUIRED CONFIG)
 #message(STATUS "find lld ${LLD_INCLUDE_DIRS}")
 #include_directories(${LLD_INCLUDE_DIRS})
 #add_definitions(${LLD_DEFINITIONS})
 
+message(STATUS "查找Boost框架")
 find_package(Boost COMPONENTS system filesystem thread chrono regex REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIR})
-message(STATUS "Boost : ${Boost_INCLUDE_DIRS}")
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
@@ -109,7 +109,7 @@ add_executable(webc_compiler
 # 平台公用宏定义
 add_compile_definitions(webc_compiler PUBLIC ASM_SUFFIX=".s")
 # CGUI存在则生成可视化界面 DEBUG_FLAG开启调试模式 CLANG_SUPPORT开启可执行文件输出
-add_compile_definitions(webc_compiler PUBLIC CLANG_SUPPORT=1)
+add_compile_definitions(webc_compiler PUBLIC CLANG_SUPPORT=1 CGUI=1)
 
 if (WIN32)
     add_compile_definitions(webc_compiler PUBLIC EXECUTABLE_SUFFIX=".exe" OBJ_SUFFIX=".obj")

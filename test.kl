@@ -1,0 +1,4 @@
+def average(x y) (x+y)/2;
+
+
+def main() average(3,4);
