@@ -19,6 +19,8 @@
 #define FAILED -1
 //操作成功状态码
 #define SUCCESS 0
+//操作失败状态码
+#define FFAILED 1
 
 //extern sql::mysql::MySQL_Driver * get_mysql_driver_instance();
 
@@ -93,6 +95,97 @@ const char *_ksql_query_db(const char *sqlSentence) {
     return "";
 }
 
+int _ksql_update_db(const char *sqlSentence)
+{
+    mysql_mutex.lock();
+    try
+    {
+        if (_ksql_isMysqlConnected() != 0) {
+            return FAILED;
+        }
+        _ksql_free_memory();
+        string temp = sqlSentence;
+        replace(temp.begin(), temp.end(), '\"', '\'');
+
+        webcSqlData.statement = conn->createStatement();
+        sqlSentence = temp.c_str();
+
+        int ret = webcSqlData.statement->executeUpdate(sqlSentence);
+        mysql_mutex.unlock();
+        return ret;   //返回修改的行数
+    }
+    catch(sql::SQLException &e)
+    {
+        cout << "The error code is : " << e.getErrorCode() << endl;
+        cout << e.what() << endl;
+        mysql_mutex.unlock();
+    }
+    return FFAILED;
+}
+
+int _ksql_delete_db(const char *sqlSentence)
+{
+    mysql_mutex.lock();
+    try
+    {
+        if (_ksql_isMysqlConnected() != 0) {
+            return FAILED;
+        }
+        _ksql_free_memory();
+        string temp = sqlSentence;
+        replace(temp.begin(), temp.end(), '\"', '\'');
+
+        webcSqlData.statement = conn->createStatement();
+        sqlSentence = temp.c_str();
+
+        int ret = webcSqlData.statement->executeUpdate(sqlSentence);
+        mysql_mutex.unlock();
+        return ret;   //返回删除的行数
+    }
+    catch(sql::SQLException &e)
+    {
+        cout << "The error code is : " << e.getErrorCode() << endl;
+        cout << e.what() << endl;
+        mysql_mutex.unlock();
+    }
+    return FFAILED;
+}
+
+int _ksql_insert_db(const char *sqlSentence)
+{
+    mysql_mutex.lock();
+    try
+    {
+        if (_ksql_isMysqlConnected() != 0) {
+            return FAILED;
+        }
+        _ksql_free_memory();
+        string temp = sqlSentence;
+        replace(temp.begin(), temp.end(), '\"', '\'');
+
+        webcSqlData.statement = conn->createStatement();
+        sqlSentence = temp.c_str();
+        int ret = webcSqlData.statement->execute(sqlSentence);
+
+        mysql_mutex.unlock();
+        if(ret == 0)
+        {
+            return SUCCESS;
+        }
+        else
+        {
+            return FFAILED;
+        }
+    }
+    catch(sql::SQLException &e)
+    {
+        cout << "The error code is : " << e.getErrorCode() << endl;
+        cout << e.what() << endl;
+        mysql_mutex.unlock();
+    }
+    return FFAILED;
+}
+
 string _ksql_resToJson(WEBC_SQL_DATA &sqlData) {
     vector<string> ans;
     try {
@@ -152,5 +245,6 @@ int _ksql_free_memory() {
 int _ksql_isMysqlConnected() {
     return conn->isClosed() ? NOT_CONNECT : SUCCESS;
 }
+
 
 

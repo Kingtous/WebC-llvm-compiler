@@ -33,6 +33,24 @@ const char *_ksql_query_db(const char *sqlSentence);
  * @return
  */
 int _ksql_isMysqlConnected();
+/**
+ * 添加数据
+ * @param sqlSentence select语句
+ * @return
+ */
+int _ksql_insert_db(const char *sqlSentence);
+/**
+ * 修改数据
+ * @param sqlSentence update语句
+ * @return
+ */
+int _ksql_update_db(const char *sqlSentence);
+/**
+ * 删除数据
+ * @param sqlSentence delete语句
+ * @return
+ */
+int _ksql_delete_db(const char *sqlSentence);
 }
 
 #endif //SYSYPLUS_COMPILER_KSQL_H
