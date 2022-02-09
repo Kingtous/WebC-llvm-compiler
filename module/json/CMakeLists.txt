@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(KingtousProject)
 set(CMAKE_CXX_STANDARD 17)
 
-message(STATUS cmake_source_dir : ${CMAKE_SOURCE_DIR})
+message(STATUS ${CMAKE_SOURCE_DIR})
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/obj/unknown)
 set(LOCATION "lib")
 
